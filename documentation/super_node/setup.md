@@ -138,9 +138,9 @@ Finally, we can begin the vulcanizeDB process itself.
 
 Start by downloading vulcanizedb and moving into the repo:
 
-`go get github.com/vulcanize/vulcanizedb`
+`go get github.com/vulcanize/ipfs-chain-watcher`
 
-`cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
+`cd $GOPATH/src/github.com/vulcanize/ipfs-chain-watcher`
 
 Run the db migrations against the Postgres database we created for vulcanizeDB:
 

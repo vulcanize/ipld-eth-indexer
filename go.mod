@@ -1,4 +1,4 @@
-module github.com/vulcanize/vulcanizedb
+module github.com/vulcanize/ipfs-chain-watcher
 
 go 1.12
 

@@ -28,11 +28,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/client"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/streamer"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
 )
 
 // streamEthSubscriptionCmd represents the streamEthSubscription command
@@ -64,7 +64,7 @@ func streamEthSubscription() {
 	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan super_node.SubscriptionPayload, 20000)
+	payloadChan := make(chan watcher.SubscriptionPayload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
 	rlpParams, err := rlp.EncodeToBytes(ethSubConfig)

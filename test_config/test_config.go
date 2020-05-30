@@ -19,12 +19,13 @@ package test_config
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/postgres"
-	"os"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/config"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
 )
 
 var TestConfig *viper.Viper
@@ -40,7 +41,7 @@ func init() {
 func setTestConfig() {
 	TestConfig = viper.New()
 	TestConfig.SetConfigName("testing")
-	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/ipfs-chain-watcher/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {
 		logrus.Fatal(err)
@@ -72,7 +73,7 @@ func setTestConfig() {
 
 func setABIPath() {
 	gp := os.Getenv("GOPATH")
-	ABIFilePath = gp + "/src/github.com/vulcanize/vulcanizedb/pkg/eth/testing/"
+	ABIFilePath = gp + "/src/github.com/vulcanize/ipfs-chain-watcher/pkg/eth/testing/"
 }
 
 func NewTestDB(node core.Node) *postgres.DB {
@@ -84,9 +85,6 @@ func NewTestDB(node core.Node) *postgres.DB {
 }
 
 func CleanTestDB(db *postgres.DB) {
-	db.MustExec("DELETE FROM addresses")
-	db.MustExec("DELETE FROM blocks")
-	db.MustExec("DELETE FROM checked_headers")
 	// can't delete from nodes since this function is called after the required node is persisted
 	db.MustExec("DELETE FROM goose_db_version")
 	db.MustExec("DELETE FROM header_sync_logs")

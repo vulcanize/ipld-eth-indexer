@@ -19,20 +19,20 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	v "github.com/vulcanize/vulcanizedb/version"
+	v "github.com/vulcanize/ipfs-chain-watcher/version"
 )
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Prints the version of vulcanizeDB",
-	Long: `Use this command to fetch the version of vulcanizeDB
+	Short: "Prints the version of ipfs-chain-watcher",
+	Long: `Use this command to fetch the version of ipfs-chain-watcher
 
-Usage: ./vulcanizedb version`,
+Usage: ./ipfs-chain-watcher version`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
-		logWithCommand.Infof("VulcanizeDB version: %s", v.VersionWithMeta)
+		logWithCommand.Infof("ipfs-chain-watcher version: %s", v.VersionWithMeta)
 	},
 }
 

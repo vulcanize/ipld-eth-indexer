@@ -17,17 +17,14 @@
 package utils
 
 import (
-	"math/big"
-	"os"
-	"path/filepath"
+	"errors"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/postgres"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/config"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
 )
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
@@ -38,54 +35,56 @@ func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 	return *db
 }
 
-func ReadAbiFile(abiFilepath string) string {
-	abiFilepath = AbsFilePath(abiFilepath)
-	abi, err := eth.ReadAbiFile(abiFilepath)
-	if err != nil {
-		logrus.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
+// GetBlockHeightBins splits a block range up into bins of block heights of the given batch size
+func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint64, error) {
+	if endingBlock < startingBlock {
+		return nil, errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
-	return abi
+	if batchSize == 0 {
+		return nil, errors.New("backfill: batchsize needs to be greater than zero")
+	}
+	length := endingBlock - startingBlock + 1
+	numberOfBins := length / batchSize
+	remainder := length % batchSize
+	if remainder != 0 {
+		numberOfBins++
+	}
+	blockRangeBins := make([][]uint64, numberOfBins)
+	for i := range blockRangeBins {
+		nextBinStart := startingBlock + batchSize
+		blockRange := make([]uint64, 0, nextBinStart-startingBlock+1)
+		for j := startingBlock; j < nextBinStart && j <= endingBlock; j++ {
+			blockRange = append(blockRange, j)
+		}
+		startingBlock = nextBinStart
+		blockRangeBins[i] = blockRange
+	}
+	return blockRangeBins, nil
 }
 
-func AbsFilePath(filePath string) string {
-	if !filepath.IsAbs(filePath) {
-		cwd, _ := os.Getwd()
-		filePath = filepath.Join(cwd, filePath)
+// MissingHeightsToGaps returns a slice of gaps from a slice of missing block heights
+func MissingHeightsToGaps(heights []uint64) []shared.Gap {
+	if len(heights) == 0 {
+		return nil
 	}
-	return filePath
-}
-
-func GetAbi(abiFilepath string, contractHash string, network string) string {
-	var contractAbiString string
-	if abiFilepath != "" {
-		contractAbiString = ReadAbiFile(abiFilepath)
-	} else {
-		url := eth.GenURL(network)
-		etherscan := eth.NewEtherScanClient(url)
-		logrus.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
-		contractAbiString, _ = etherscan.GetAbi(contractHash)
+	validationGaps := make([]shared.Gap, 0)
+	start := heights[0]
+	lastHeight := start
+	for i, height := range heights[1:] {
+		if height != lastHeight+1 {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  lastHeight,
+			})
+			start = height
+		}
+		if i+2 == len(heights) {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  height,
+			})
+		}
+		lastHeight = height
 	}
-	_, err := eth.ParseAbi(contractAbiString)
-	if err != nil {
-		logrus.Fatalln("Invalid ABI: ", err)
-	}
-	return contractAbiString
-}
-
-func RequestedBlockNumber(blockNumber *int64) *big.Int {
-	var _blockNumber *big.Int
-	if *blockNumber == -1 {
-		_blockNumber = nil
-	} else {
-		_blockNumber = big.NewInt(*blockNumber)
-	}
-	return _blockNumber
-}
-
-func RollbackAndLogFailure(tx *sqlx.Tx, txErr error, fieldName string) {
-	rollbackErr := tx.Rollback()
-	if rollbackErr != nil {
-		logrus.WithFields(logrus.Fields{"rollbackErr": rollbackErr, "txErr": txErr}).
-			Warnf("failed to rollback transaction after failing to insert %s", fieldName)
-	}
+	return validationGaps
 }

@@ -40,10 +40,10 @@ An example of how to subscribe to a real-time Ethereum data feed from the super 
     	"github.com/ethereum/go-ethereum/rpc"
     	"github.com/spf13/viper"
     	
-    	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-    	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
-    	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-    	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+    	"github.com/vulcanize/ipfs-chain-watcher/libraries/shared/streamer"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth/client"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/super_node"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/super_node/eth"
     )
 
     config, _ := eth.NewEthSubscriptionConfig()
@@ -162,10 +162,10 @@ An example of how to subscribe to a real-time Bitcoin data feed from the super n
     	"github.com/ethereum/go-ethereum/rpc"
     	"github.com/spf13/viper"
     	
-    	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-    	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
-    	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-    	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
+    	"github.com/vulcanize/ipfs-chain-watcher/libraries/shared/streamer"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth/client"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/super_node"
+    	"github.com/vulcanize/ipfs-chain-watcher/pkg/super_node/btc"
     )
 
     config, _ := btc.NewBtcSubscriptionConfig()
