@@ -22,8 +22,8 @@ import (
 
 	node "github.com/ipfs/go-ipld-format"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
 )
 
 var (

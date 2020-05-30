@@ -8,14 +8,14 @@ RUN apk add busybox-extras
 FROM golang:1.12.4 as builder
 
 # Get and build vulcanizedb
-ADD . /go/src/github.com/vulcanize/vulcanizedb
+ADD . /go/src/github.com/vulcanize/ipfs-chain-watcher
 
 # Build migration tool
 RUN go get -u -d github.com/pressly/goose/cmd/goose
 WORKDIR /go/src/github.com/pressly/goose/cmd/goose
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -tags='no_mysql no_sqlite' -o goose .
 
-WORKDIR /go/src/github.com/vulcanize/vulcanizedb
+WORKDIR /go/src/github.com/vulcanize/ipfs-chain-watcher
 
 # app container
 FROM alpine
@@ -29,12 +29,12 @@ USER $USER
 
 # chown first so dir is writable
 # note: using $USER is merged, but not in the stable release yet
-COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/dockerfiles/migrations/startup_script.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipfs-chain-watcher/dockerfiles/migrations/startup_script.sh .
 
 
 # keep binaries immutable
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
-COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations migrations/vulcanizedb
+COPY --from=builder /go/src/github.com/vulcanize/ipfs-chain-watcher/db/migrations migrations/vulcanizedb
 # XXX dir is already writeable RUN touch vulcanizedb.log
 
 CMD ["./startup_script.sh"]

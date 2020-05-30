@@ -17,13 +17,19 @@
 package eth_test
 
 import (
+	"io/ioutil"
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
+	"github.com/sirupsen/logrus"
 )
 
-func TestGeth(t *testing.T) {
+func TestETHSuperNode(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Eth Suite")
+	RunSpecs(t, "Super Node ETH Suite Test")
 }
+
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})

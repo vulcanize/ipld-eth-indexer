@@ -19,11 +19,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/resync"
-	v "github.com/vulcanize/vulcanizedb/version"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-chain-watcher/pkg/resync"
+	v "github.com/vulcanize/ipfs-chain-watcher/version"
 )
 
 // resyncCmd represents the resync command
