@@ -1,73 +1,40 @@
 # Vulcanize DB
 
-[![Build Status](https://travis-ci.org/vulcanize/vulcanizedb.svg?branch=master)](https://travis-ci.org/vulcanize/vulcanizedb)
-[![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-chain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-chain-watcher)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
 
-> Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
-
+> Tool for extracting and indexing blockchain data on PG-IPFS
 
 ## Table of Contents
 1. [Background](#background)
+1. [Architecture](#architecture)
 1. [Install](#install)
 1. [Usage](#usage)
 1. [Contributing](#contributing)
 1. [License](#license)
 
-
 ## Background
-The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine
-complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by
-providing a suite of tools to ease the extraction and transformation of data into a more useful state, including
-allowing for exposing aggregate data from a suite of smart contracts.
+ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, and store in Postgres-IPFS
+all chain data. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
 
-VulanizeDB includes processes that sync, transform and expose data. Syncing involves
-querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to
-query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting
-data from VulcanizeDB's underlying Postgres database and making it accessible.
+Currently the service supports complete processing of all Bitcoin and Ethereum data.
 
-![VulcanizeDB Overview Diagram](documentation/diagrams/vdb-overview.png)
+## Architecture
+More details on the design of ipfs-blockchain-watcher can be found in [here](./documentation/architecture.md)
 
 ## Install
+1. [Postgres](#postgres)
+1. [Goose](#goose)
+1. [IPFS](#ipfs)
+1. [Blockchain](#blockchain)
+1. [Watcher](#watcher)
 
-1. [Dependencies](#dependencies)
-1. [Building the project](#building-the-project)
-1. [Setting up the database](#setting-up-the-database)
-1. [Configuring a synced Ethereum node](#configuring-a-synced-ethereum-node)
-
-### Dependencies
- - Go 1.12+
- - Postgres 11.2
- - Ethereum Node
-   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
-   - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
-
-### Building the project
-Download the codebase to your local `GOPATH` via:
-
-`go get github.com/vulcanize/ipfs-chain-watcher`
-
-Move to the project directory:
-
-`cd $GOPATH/src/github.com/vulcanize/ipfs-chain-watcher`
-
-Be sure you have enabled Go Modules (`export GO111MODULE=on`), and build the executable with:
-
-`make build`
-
-If you need to use a different dependency than what is currently defined in `go.mod`, it may helpful to look into [the replace directive](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive).
-This instruction enables you to point at a fork or the local filesystem for dependency resolution.
-
-If you are running into issues at this stage, ensure that `GOPATH` is defined in your shell.
-If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system.
-It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
-
-### Setting up the database
-1. Install Postgres
+### Postgres
+1. [Install Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. `createdb vulcanize_public`
-1. `cd $GOPATH/src/github.com/vulcanize/ipfs-chain-watcher`
+1. `cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
-    - There is an optional var `USER=username` if the database user is not the default user `postgres`
+    - There are optional vars `USER=username` and `PASS=password` if the database user is not the default user `postgres` and/or a password is present
     - To rollback a single step: `make rollback NAME=vulcanize_public`
     - To rollback to a certain migration: `make rollback_to MIGRATION=n NAME=vulcanize_public`
     - To see status of migrations: `make migration_status NAME=vulcanize_public`
@@ -79,76 +46,207 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
 
 (It should be noted that trusted auth should only be enabled on systems without sensitive data in them: development and local test databases)
 
-### Configuring a synced Ethereum node
-- To use a local Ethereum node, copy `environments/public.toml.example` to
-  `environments/public.toml` and update the `ipcPath` and `levelDbPath`.
-  - `ipcPath` should match the local node's IPC filepath:
-      - For Geth:
-        - The IPC file is called `geth.ipc`.
-        - The geth IPC file path is printed to the console when you start geth.
-        - The default location is:
-          - Mac: `<full home path>/Library/Ethereum/geth.ipc`
-          - Linux: `<full home path>/ethereum/geth.ipc`
-        - Note: the geth.ipc file may not exist until you've started the geth process
+### Goose
+We use [goose](https://github.com/pressly/goose) as our migration management tool. While it is not necessary to use `goose` for manual setup, it
+is required for running the automated tests.
 
-      - For Parity:
-        - The IPC file is called `jsonrpc.ipc`.
-        - The default location is:
-          - Mac: `<full home path>/Library/Application\ Support/io.parity.ethereum/`
-          - Linux: `<full home path>/local/share/io.parity.ethereum/`
+### IPFS
+We use IPFS to store IPLD objects for each type of data we extract from on chain.
 
-  - `levelDbPath` should match Geth's chaindata directory path.
-      - The geth LevelDB chaindata path is printed to the console when you start geth.
-      - The default location is:
-          - Mac: `<full home path>/Library/Ethereum/geth/chaindata`
-          - Linux: `<full home path>/ethereum/geth/chaindata`
-      - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
+To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs):
 
+`go get github.com/ipfs/go-ipfs`
+
+`cd $GOPATH/src/github.com/ipfs/go-ipfs`
+
+`make install`
+
+If we want to use Postgres as our backing datastore, we need to use the vulcanize fork of go-ipfs.
+
+Start by adding the fork and switching over to it:
+
+`git remote add vulcanize https://github.com/vulcanize/go-ipfs.git`
+
+`git fetch vulcanize`
+
+`git checkout -b postgres_update vulcanize/postgres_update`
+
+Now install this fork of ipfs, first be sure to remove any previous installation:
+
+`make install`
+
+Check that is installed properly by running:
+
+`ipfs`
+
+You should see the CLI info/help output.
+
+And now we initialize with the `postgresds` profile.
+If ipfs was previously initialized we will need to remove the old profile first.
+We also need to provide env variables for the postgres connection:
+
+We can either set these manually, e.g.
+```bash
+export IPFS_PGHOST=
+export IPFS_PGUSER=
+export IPFS_PGDATABASE=
+export IPFS_PGPORT=
+export IPFS_PGPASSWORD=
+```
+
+And then run the ipfs command:
+
+`ipfs init --profile=postgresds`
+
+Or we can use the pre-made script at `GOPATH/src/github.com/ipfs/go-ipfs/misc/utility/ipfs_postgres.sh`
+which has usage:
+
+`./ipfs_postgres.sh <IPFS_PGHOST> <IPFS_PGPORT> <IPFS_PGUSER> <IPFS_PGDATABASE>"`
+
+and will ask us to enter the password, avoiding storing it to an ENV variable.
+
+Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes.
+
+### Blockchain
+This section describes how to setup an Ethereum or Bitcoin node to serve as a data source for ipfs-blockchain-watcher
+
+#### Ethereum
+For Ethereum, we currently *require* [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11). This can be setup as follows.
+Skip this steps if you already have access to a node that displays the statediffing endpoints.
+
+Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch:
+
+`go get github.com/ethereum/go-ethereum`
+
+`cd $GOPATH/src/github.com/ethereum/go-ethereum`
+
+`git remote add vulcanize https://github.com/vulcanize/go-ethereum.git`
+
+`git fetch vulcanize`
+
+`git checkout -b statediffing vulcanize/statediff_at_anyblock-1.9.11`
+
+Now, install this fork of geth (make sure any old versions have been uninstalled/binaries removed first):
+
+`make geth`
+
+And run the output binary with statediffing turned on:
+
+`cd $GOPATH/src/github.com/ethereum/go-ethereum/build/bin`
+
+`./geth --statediff --statediff.streamblock --ws --syncmode=full`
+
+Note: if you wish to access historical data (perform `backFill`) then the node will need to operate as an archival node (`--gcmode=archive`)
+
+Note: other CLI options- statediff specific ones included- can be explored with `./geth help`
+
+The output from geth should mention that it is `Starting statediff service` and block synchronization should begin shortly thereafter.
+Note that until it receives a subscriber, the statediffing process does nothing but wait for one. Once a subscription is received, this
+will be indicated in the output and node will begin processing and sending statediffs.
+
+Also in the output will be the endpoints that we will use to interface with the node.
+The default ws url is "127.0.0.1:8546" and the default http url is "127.0.0.1:8545".
+These values will be used as the `ethereum.wsPath` and `ethereum.httpPath` in the config, respectively.
+
+#### Bitcoin
+For Bitcoin, ipfs-blockchain-watcher is able to operate entirely through the universally exposed JSON-RPC interfaces.
+This means we can use any of the standard full nodes (e.g. bitcoind, btcd) as our data source.
+
+Point at a remote node or set one up locally using the instructions for [bitcoind](https://github.com/bitcoin/bitcoin) and [btcd](https://github.com/btcsuite/btcd).
+
+The default http url is "127.0.0.1:8332". We will use the http endpoint as both the `bitcoin.wsPath` and `bitcoin.httpPath`
+(bitcoind does not support websocket endpoints, we are currently using a "subscription" wrapper around the http endpoints)
+
+### Watcher
+Finally, we can setup the watcher process itself.
+
+Start by downloading vulcanizedb and moving into the repo:
+
+`go get github.com/vulcanize/ipfs-chain-watcher`
+
+`cd $GOPATH/src/github.com/vulcanize/ipfs-chain-watcher`
+
+Then, build the binary:
+
+`make build`
 
 ## Usage
-As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.
+After building the binary, run as
 
-### Data syncing
-To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
-This is accomplished through the use of the `headerSync` command.
-These commands are described in detail [here](documentation/data-syncing.md).
+`./ipfs-blockchain-watcher watch --config=<config_file.toml`
 
-### Data transformation
-Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to
-specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it
-follows that there are different ways to transform this data. We've started by categorizing this into Generic and
-Custom transformers:
+### Configuration
 
-- Generic Contract Transformer: Generic contract transformation can be done using a built-in command,
-`contractWatcher`, which transforms contract events provided the contract's ABI is available. It also
-provides some state variable coverage by automating polling of public methods, with some restrictions.
-`contractWatcher` is described further [here](documentation/generic-transformer.md).
+Below is the set of universal config parameters for the ipfs-blockchain-watcher command, in .toml form, with the respective environmental variables commented to the side.
+This set of parameters needs to be set no matter the chain type.
 
-- Custom Transformers: In many cases custom transformers will need to be written to provide
-more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and
-`composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write,
-build and run custom transformers as Go plugins can be found
-[here](documentation/custom-transformers.md).
+```toml
+[database]
+    name     = "vulcanize_public" # $DATABASE_NAME
+    hostname = "localhost" # $DATABASE_HOSTNAME
+    port     = 5432 # $DATABASE_PORT
+    user     = "vdbm" # $DATABASE_USER
+    password = "" # $DATABASE_PASSWORD
+
+[ipfs]
+    path = "~/.ipfs" # $IPFS_PATH
+    mode = "postgres" # $IPFS_MODE
+
+[superNode]
+    chain = "bitcoin" # $SUPERNODE_CHAIN
+    server = true # $SUPERNODE_SERVER
+    ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
+    wsPath = "127.0.0.1:8082" # $SUPERNODE_WS_PATH
+    httpPath = "127.0.0.1:8083" # $SUPERNODE_HTTP_PATH
+    sync = true # $SUPERNODE_SYNC
+    workers = 1 # $SUPERNODE_WORKERS
+    backFill = true # $SUPERNODE_BACKFILL
+    frequency = 45 # $SUPERNODE_FREQUENCY
+    batchSize = 1 # $SUPERNODE_BATCH_SIZE
+    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    timeout = 300 # $HTTP_TIMEOUT
+    validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
+```
+
+Additional parameters need to be set depending on the specific chain.
+
+For Bitcoin:
+
+```toml
+[bitcoin]
+    wsPath  = "127.0.0.1:8332" # $BTC_WS_PATH
+    httpPath = "127.0.0.1:8332" # $BTC_HTTP_PATH
+    pass = "password" # $BTC_NODE_PASSWORD
+    user = "username" # $BTC_NODE_USER
+    nodeID = "ocd0" # $BTC_NODE_ID
+    clientName = "Omnicore" # $BTC_CLIENT_NAME
+    genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f" # $BTC_GENESIS_BLOCK
+    networkID = "0xD9B4BEF9" # $BTC_NETWORK_ID
+```
+
+For Ethereum:
+
+```toml
+[ethereum]
+    wsPath  = "127.0.0.1:8546" # $ETH_WS_PATH
+    httpPath = "127.0.0.1:8545" # $ETH_HTTP_PATH
+    nodeID = "arch1" # $ETH_NODE_ID
+    clientName = "Geth" # $ETH_CLIENT_NAME
+    genesisBlock = "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" # $ETH_GENESIS_BLOCK
+    networkID = "1" # $ETH_NETWORK_ID
+```
 
 ### Exposing the data
-[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](documentation/postgraphile.md).
+We can expose a number of different APIs for remote access to ipfs-blockchain-watcher data, these are dicussed in more detail [here](./documentation/apis.md)
 
-
-### Tests
-- Replace the empty `ipcPath` in the `environments/testing.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
-    - Note: must be mainnet
-    - Note: integration tests require configuration with an archival node
-- `make test` will run the unit tests and skip the integration tests
-- `make integrationtest` will run just the integration tests
-- `make test` and `make integrationtest` setup a clean `vulcanize_testing` db
-
+### Testing
+`make test` will run the unit tests
+`make test` setups a clean `vulcanize_testing` db
 
 ## Contributing
 Contributions are welcome!
 
 VulcanizeDB follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct).
-
-For more information on contributing, please see [here](documentation/contributing.md).
 
 ## License
 [AGPL-3.0](LICENSE) © Vulcanize Inc
