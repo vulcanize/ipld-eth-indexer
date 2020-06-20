@@ -1,5 +1,5 @@
-## VulcanizeDB Super Node Resync
-The `resync` command is made available for directing the resyncing of super node data within specified ranges.
+## ipfs-blockchain-watcher resync
+The `resync` command is made available for directing the resyncing of ipfs-blockchain-watcherdata within specified ranges.
 It also contains a utility for cleaning out old data, and resetting the validation level of data.
 
 ### Rational
@@ -8,15 +8,15 @@ Manual resyncing of data is useful when we want to re-validate data within speci
 
 Cleaning out data is useful when we need to remove bad/deprecated data or prepare for breaking changes to the db schemas.
 
-Resetting the validation level of data is useful for designating ranges of data for resyncing by an ongoing super node
+Resetting the validation level of data is useful for designating ranges of data for resyncing by an ongoing ipfs-blockchain-watcher
 backfill process.
 
 ### Command
 
-Usage: `./vulcanizedb resync --config={config.toml}`
+Usage: `./ipfs-blockchain-watcher resync --config={config.toml}`
 
 Configuration can also be done through CLI options and/or environmental variables.
-CLI options can be found using `./vulcanizedb resync --help`.
+CLI options can be found using `./ipfs-blockchain-watcher resync --help`.
 
 ### Config
 
