@@ -27,9 +27,9 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/multiformats/go-multihash"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // ResponseFilterer satisfies the ResponseFilterer interface for ethereum

@@ -26,9 +26,9 @@ import (
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-chain-watcher/utils"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
 // CIDRetriever satisfies the CIDRetriever interface for bitcoin

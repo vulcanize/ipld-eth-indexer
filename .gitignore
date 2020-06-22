@@ -7,7 +7,7 @@ Vagrantfile
 vagrant*.sh
 .vagrant
 test_scripts/
-ipfs-chain-watcher
+ipfs-blockchain-watcher
 postgraphile/build/
 postgraphile/node_modules/
 postgraphile/package-lock.json

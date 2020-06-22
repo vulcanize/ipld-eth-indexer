@@ -25,12 +25,12 @@ import (
 	"github.com/multiformats/go-multihash"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc/mocks"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 var _ = Describe("PublishAndIndexer", func() {
@@ -74,7 +74,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			Expect(header.ParentHash).To(Equal(mocks.MockHeaderMetaData.ParentHash))
 			dc, err := cid.Decode(header.CID)
 			Expect(err).ToNot(HaveOccurred())
-			mhKey := dshelp.CidToDsKey(dc)
+			mhKey := dshelp.MultihashToDsKey(dc.Hash())
 			prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 			var data []byte
 			err = db.Get(&data, ipfsPgGet, prefixedKey)
@@ -109,7 +109,7 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(tx.TxHash).To(Equal(mocks.MockBlock.Transactions[tx.Index].TxHash().String()))
 				dc, err := cid.Decode(tx.CID)
 				Expect(err).ToNot(HaveOccurred())
-				mhKey := dshelp.CidToDsKey(dc)
+				mhKey := dshelp.MultihashToDsKey(dc.Hash())
 				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 				var data []byte
 				err = db.Get(&data, ipfsPgGet, prefixedKey)

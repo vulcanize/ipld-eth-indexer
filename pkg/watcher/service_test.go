@@ -24,10 +24,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth/mocks"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	mocks2 "github.com/vulcanize/ipfs-chain-watcher/pkg/shared/mocks"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
 )
 
 var _ = Describe("Service", func() {

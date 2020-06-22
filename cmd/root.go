@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/config"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
 )
 
 var (

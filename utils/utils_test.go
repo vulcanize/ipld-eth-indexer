@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-chain-watcher/utils"
+	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
 var _ = Describe("GetBlockHeightBins", func() {

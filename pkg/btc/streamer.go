@@ -22,7 +22,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 const (

@@ -25,17 +25,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
-	v "github.com/vulcanize/ipfs-chain-watcher/version"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 
 // superNodeCmd represents the superNode command
 var superNodeCmd = &cobra.Command{
 	Use:   "superNode",
 	Short: "sync chain data into PG-IPFS",
-	Long: `This command configures a VulcanizeDB ipfs-chain-watcher.
+	Long: `This command configures a VulcanizeDB ipfs-blockchain-watcher.
 
 The Sync process streams all chain data from the appropriate chain, processes this data into IPLD objects
 and publishes them to IPFS. It then indexes the CIDs against useful data fields/metadata in Postgres. 

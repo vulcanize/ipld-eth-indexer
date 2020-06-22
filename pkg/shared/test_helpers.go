@@ -17,9 +17,9 @@
 package shared
 
 import (
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 )
 
 // SetupDB is use to setup a db for super node tests

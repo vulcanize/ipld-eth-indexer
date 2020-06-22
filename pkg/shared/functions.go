@@ -19,7 +19,7 @@ package shared
 import (
 	"bytes"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 
 	"github.com/ipfs/go-cid"
 
@@ -30,7 +30,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 )
 
 // ListContainsString used to check if a list of strings contains a particular string
@@ -88,7 +88,7 @@ func Rollback(tx *sqlx.Tx) {
 
 // PublishIPLD is used to insert an ipld into Postgres blockstore with the provided tx
 func PublishIPLD(tx *sqlx.Tx, i node.Node) error {
-	dbKey := dshelp.CidToDsKey(i.Cid())
+	dbKey := dshelp.MultihashToDsKey(i.Cid().Hash())
 	prefixedKey := blockstore.BlockPrefix.String() + dbKey.String()
 	raw := i.RawData()
 	_, err := tx.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, prefixedKey, raw)
@@ -112,7 +112,7 @@ func MultihashKeyFromCIDString(c string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dbKey := dshelp.CidToDsKey(dc)
+	dbKey := dshelp.MultihashToDsKey(dc.Hash())
 	return blockstore.BlockPrefix.String() + dbKey.String(), nil
 }
 
@@ -122,7 +122,7 @@ func PublishRaw(tx *sqlx.Tx, codec, mh uint64, raw []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dbKey := dshelp.CidToDsKey(c)
+	dbKey := dshelp.MultihashToDsKey(c.Hash())
 	prefixedKey := blockstore.BlockPrefix.String() + dbKey.String()
 	_, err = tx.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, prefixedKey, raw)
 	return c.String(), err

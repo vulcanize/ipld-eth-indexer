@@ -23,7 +23,7 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // HTTPPayloadStreamer satisfies the PayloadStreamer interface for bitcoin over http endpoints (since bitcoin core doesn't support websockets)

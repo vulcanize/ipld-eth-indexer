@@ -19,7 +19,7 @@ package btc
 import (
 	"math/big"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"

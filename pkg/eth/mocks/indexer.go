@@ -19,9 +19,9 @@ package mocks
 import (
 	"fmt"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
 )
 
 // CIDIndexer is the underlying struct for the Indexer interface

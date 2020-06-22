@@ -23,9 +23,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc/mocks"
-	mocks2 "github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc/mocks"
+	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/mocks"
 )
 
 var (

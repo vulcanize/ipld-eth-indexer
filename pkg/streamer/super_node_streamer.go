@@ -20,8 +20,8 @@ package streamer
 import (
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
 )
 
 // SuperNodeStreamer is the underlying struct for the shared.SuperNodeStreamer interface
