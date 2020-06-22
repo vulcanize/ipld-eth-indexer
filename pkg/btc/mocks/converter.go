@@ -19,8 +19,8 @@ package mocks
 import (
 	"fmt"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // PayloadConverter is the underlying struct for the Converter interface

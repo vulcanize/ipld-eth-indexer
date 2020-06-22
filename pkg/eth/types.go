@@ -23,7 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 )
 
 // ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers

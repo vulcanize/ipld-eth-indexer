@@ -1,4 +1,4 @@
-# Vulcanize DB
+# ipfs-blockchain-watcher
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
 
@@ -162,9 +162,9 @@ Finally, we can setup the watcher process itself.
 
 Start by downloading vulcanizedb and moving into the repo:
 
-`go get github.com/vulcanize/ipfs-chain-watcher`
+`go get github.com/vulcanize/ipfs-blockchain-watcher`
 
-`cd $GOPATH/src/github.com/vulcanize/ipfs-chain-watcher`
+`cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
 
 Then, build the binary:
 

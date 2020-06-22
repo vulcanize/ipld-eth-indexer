@@ -24,11 +24,11 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-chain-watcher/utils"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
 // Env variables

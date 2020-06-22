@@ -34,9 +34,9 @@ import (
 	"github.com/multiformats/go-multihash"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 )
 
 // Test variables

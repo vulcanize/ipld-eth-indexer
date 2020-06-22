@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion

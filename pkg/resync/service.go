@@ -21,9 +21,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
-	"github.com/vulcanize/ipfs-chain-watcher/utils"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
 type Resync interface {

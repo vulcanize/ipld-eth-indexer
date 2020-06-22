@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/vulcanize/ipfs-chain-watcher/cmd"
+	"github.com/vulcanize/ipfs-blockchain-watcher/cmd"
 
 	"github.com/sirupsen/logrus"
 )

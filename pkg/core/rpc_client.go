@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/client"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
 )
 
 type RPCClient interface {

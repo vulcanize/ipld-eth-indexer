@@ -24,11 +24,11 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
-	v "github.com/vulcanize/ipfs-chain-watcher/version"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 
 // APIName is the namespace used for the state diffing service API

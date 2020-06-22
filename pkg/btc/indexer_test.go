@@ -20,10 +20,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc/mocks"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 var _ = Describe("Indexer", func() {

@@ -26,7 +26,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
 )
 
 var (

@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs/ipld"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // IPLDPublisherAndIndexer satisfies the IPLDPublisher interface for bitcoin

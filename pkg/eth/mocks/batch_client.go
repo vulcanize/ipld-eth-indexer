@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/client"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
 )
 
 // BackFillerClient is a mock client for use in backfiller tests

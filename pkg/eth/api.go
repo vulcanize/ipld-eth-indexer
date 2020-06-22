@@ -20,7 +20,7 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"

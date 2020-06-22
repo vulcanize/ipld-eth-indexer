@@ -28,11 +28,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/client"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/core"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/streamer"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/streamer"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
 )
 
 // streamEthSubscriptionCmd represents the streamEthSubscription command

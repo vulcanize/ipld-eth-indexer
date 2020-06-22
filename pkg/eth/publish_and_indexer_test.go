@@ -24,10 +24,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/eth/mocks"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 var _ = Describe("PublishAndIndexer", func() {
@@ -70,7 +70,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			Expect(header.Reward).To(Equal("5000000000000000000"))
 			dc, err := cid.Decode(header.CID)
 			Expect(err).ToNot(HaveOccurred())
-			mhKey := dshelp.CidToDsKey(dc)
+			mhKey := dshelp.MultihashToDsKey(dc.Hash())
 			prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 			var data []byte
 			err = db.Get(&data, ipfsPgGet, prefixedKey)
@@ -96,7 +96,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			for _, c := range trxs {
 				dc, err := cid.Decode(c)
 				Expect(err).ToNot(HaveOccurred())
-				mhKey := dshelp.CidToDsKey(dc)
+				mhKey := dshelp.MultihashToDsKey(dc.Hash())
 				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 				var data []byte
 				err = db.Get(&data, ipfsPgGet, prefixedKey)
@@ -132,7 +132,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			for _, c := range rcts {
 				dc, err := cid.Decode(c)
 				Expect(err).ToNot(HaveOccurred())
-				mhKey := dshelp.CidToDsKey(dc)
+				mhKey := dshelp.MultihashToDsKey(dc.Hash())
 				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 				var data []byte
 				err = db.Get(&data, ipfsPgGet, prefixedKey)
@@ -164,7 +164,7 @@ var _ = Describe("PublishAndIndexer", func() {
 				var data []byte
 				dc, err := cid.Decode(stateNode.CID)
 				Expect(err).ToNot(HaveOccurred())
-				mhKey := dshelp.CidToDsKey(dc)
+				mhKey := dshelp.MultihashToDsKey(dc.Hash())
 				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 				err = db.Get(&data, ipfsPgGet, prefixedKey)
 				Expect(err).ToNot(HaveOccurred())
@@ -228,7 +228,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			var data []byte
 			dc, err := cid.Decode(storageNodes[0].CID)
 			Expect(err).ToNot(HaveOccurred())
-			mhKey := dshelp.CidToDsKey(dc)
+			mhKey := dshelp.MultihashToDsKey(dc.Hash())
 			prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
 			err = db.Get(&data, ipfsPgGet, prefixedKey)
 			Expect(err).ToNot(HaveOccurred())

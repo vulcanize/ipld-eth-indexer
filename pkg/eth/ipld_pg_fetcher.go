@@ -25,9 +25,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-chain-watcher/pkg/shared"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // IPLDPGFetcher satisfies the IPLDFetcher interface for ethereum
