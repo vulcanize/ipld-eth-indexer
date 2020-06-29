@@ -22,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 

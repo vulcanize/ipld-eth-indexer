@@ -27,7 +27,7 @@ import (
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 

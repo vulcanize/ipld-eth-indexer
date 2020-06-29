@@ -22,7 +22,7 @@ All of their data can then be queried with standard [GraphQL](https://graphql.or
 
 
 ### RPC Subscription Interface
-A direct, real-time subscription to the data being processed by ipfs-blockchain-watcher can be established over WS or IPC through the [Stream](../pkg/watcher/api.go#L53) RPC method.
+A direct, real-time subscription to the data being processed by ipfs-blockchain-watcher can be established over WS or IPC through the [Stream](../pkg/watch/api.go#L53) RPC method.
 This method is not chain-specific and each chain-type supports it, it is accessed under the "vdb" namespace rather than a chain-specific namespace. An interface for
 subscribing to this endpoint is provided [here](../pkg/streamer/super_node_streamer.go).
 
@@ -43,7 +43,7 @@ An example of how to subscribe to a real-time Ethereum data feed from ipfs-block
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/streamer"
-        "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+        "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
     )
 
     config, _ := eth.NewEthSubscriptionConfig()

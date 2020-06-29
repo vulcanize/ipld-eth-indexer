@@ -27,7 +27,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared/mocks"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
 var _ = Describe("BackFiller", func() {

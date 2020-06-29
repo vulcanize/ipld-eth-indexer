@@ -32,7 +32,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/streamer"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
 // streamEthSubscriptionCmd represents the streamEthSubscription command
