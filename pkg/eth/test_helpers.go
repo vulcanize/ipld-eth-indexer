@@ -22,7 +22,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 )
 
-// TearDownDB is used to tear down the super node dbs after tests
+// TearDownDB is used to tear down the watcher dbs after tests
 func TearDownDB(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())

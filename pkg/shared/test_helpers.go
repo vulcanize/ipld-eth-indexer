@@ -18,15 +18,15 @@ package shared
 
 import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 )
 
-// SetupDB is use to setup a db for super node tests
+// SetupDB is use to setup a db for watcher tests
 func SetupDB() (*postgres.DB, error) {
 	return postgres.NewDB(config.Database{
 		Hostname: "localhost",
 		Name:     "vulcanize_testing",
 		Port:     5432,
-	}, core.Node{})
+	}, node.Node{})
 }

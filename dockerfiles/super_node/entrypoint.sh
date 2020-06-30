@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs the db migrations and starts the super node services
+# Runs the db migrations and starts the watcher services
 
 # Exit if the variable tests fail
 set -e
@@ -14,7 +14,7 @@ set +x
 #test $DATABASE_PASSWORD
 #test $IPFS_INIT
 #test $IPFS_PATH
-VDB_COMMAND=${VDB_COMMAND:-superNode}
+VDB_COMMAND=${VDB_COMMAND:-watch}
 set +e
 
 # Construct the connection string for postgres

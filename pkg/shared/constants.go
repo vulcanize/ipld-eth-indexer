@@ -14,44 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package core
-
-import (
-	"fmt"
-)
-
-type NodeType int
+package shared
 
 const (
-	GETH NodeType = iota
-	PARITY
-	INFURA
-	GANACHE
+	DefaultMaxBatchSize   uint64 = 100
+	DefaultMaxBatchNumber int64  = 50
 )
-
-const (
-	KOVAN_NETWORK_ID = 42
-)
-
-type Node struct {
-	GenesisBlock string
-	NetworkID    string
-	ID           string
-	ClientName   string
-}
-
-type ParityNodeInfo struct {
-	Track         string
-	ParityVersion `json:"version"`
-	Hash          string
-}
-
-func (pn ParityNodeInfo) String() string {
-	return fmt.Sprintf("Parity/v%d.%d.%d/", pn.Major, pn.Minor, pn.Patch)
-}
-
-type ParityVersion struct {
-	Major int
-	Minor int
-	Patch int
-}

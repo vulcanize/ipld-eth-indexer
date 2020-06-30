@@ -24,7 +24,7 @@ All of their data can then be queried with standard [GraphQL](https://graphql.or
 ### RPC Subscription Interface
 A direct, real-time subscription to the data being processed by ipfs-blockchain-watcher can be established over WS or IPC through the [Stream](../pkg/watch/api.go#L53) RPC method.
 This method is not chain-specific and each chain-type supports it, it is accessed under the "vdb" namespace rather than a chain-specific namespace. An interface for
-subscribing to this endpoint is provided [here](../pkg/streamer/super_node_streamer.go).
+subscribing to this endpoint is provided [here](../pkg/client/client.go).
 
 When subscribing to this endpoint, the subscriber provides a set of RLP-encoded subscription parameters. These parameters will be chain-specific, and are used
 by ipfs-blockchain-watcher to filter and return a requested subset of chain data to the subscriber. (e.g. [BTC](../pkg/btc/subscription_config.go), [ETH](../../pkg/eth/subscription_config.go)).
@@ -48,7 +48,7 @@ An example of how to subscribe to a real-time Ethereum data feed from ipfs-block
 
     config, _ := eth.NewEthSubscriptionConfig()
     rlpConfig, _ := rlp.EncodeToBytes(config)
-    vulcPath := viper.GetString("superNode.ethSubscription.path")
+    vulcPath := viper.GetString("watcher.ethSubscription.path")
     rawRPCClient, _ := rpc.Dial(vulcPath)
     rpcClient := client.NewRPCClient(rawRPCClient, vulcPath)
     stream := streamer.NewSuperNodeStreamer(rpcClient)
@@ -67,32 +67,32 @@ An example of how to subscribe to a real-time Ethereum data feed from ipfs-block
 The .toml file being used to fill the Ethereum subscription config would look something like this:
 
 ```toml
-[superNode]
-    [superNode.ethSubscription]
+[watcher]
+    [watcher.ethSubscription]
         historicalData = false
         historicalDataOnly = false
         startingBlock = 0
         endingBlock = 0
         wsPath = "ws://127.0.0.1:8080"
-        [superNode.ethSubscription.headerFilter]
+        [watcher.ethSubscription.headerFilter]
             off = false
             uncles = false
-        [superNode.ethSubscription.txFilter]
+        [watcher.ethSubscription.txFilter]
             off = false
             src = []
             dst = []
-        [superNode.ethSubscription.receiptFilter]
+        [watcher.ethSubscription.receiptFilter]
             off = false
             contracts = []
             topic0s = []
             topic1s = []
             topic2s = []
             topic3s = []
-        [superNode.ethSubscription.stateFilter]
+        [watcher.ethSubscription.stateFilter]
             off = false
             addresses = []
            intermediateNodes = false
-        [superNode.ethSubscription.storageFilter]
+        [watcher.ethSubscription.storageFilter]
             off = true
             addresses = []
             storageKeys = []
@@ -131,9 +131,9 @@ in `src` and `dst`, respectively.
 - Setting `off` to true tells ipfs-blockchain-watcher to not send any receipts to the subscriber
 - `topic0s` is a string array which can be filled with event topics we want to filter for,
 if it has any topics then ipfs-blockchain-watcher will only send receipts that contain logs which have that topic0.
-- `contracts` is a string array which can be filled with contract addresses we want to filter for, if it contains any contract addresses the super node will
+- `contracts` is a string array which can be filled with contract addresses we want to filter for, if it contains any contract addresses the watcher will
 only send receipts that correspond to one of those contracts. 
-- `matchTrxs` is a bool which when set to true any receipts that correspond to filtered for transactions will be sent by the super node, regardless of whether or not the receipt satisfies the `topics` or `contracts` filters.
+- `matchTrxs` is a bool which when set to true any receipts that correspond to filtered for transactions will be sent by the watcher, regardless of whether or not the receipt satisfies the `topics` or `contracts` filters.
 
 `ethSubscription.stateFilter` has three sub-options: `off`, `addresses`, and `intermediateNodes`. 
 
@@ -170,7 +170,7 @@ An example of how to subscribe to a real-time Bitcoin data feed from ipfs-blockc
 
     config, _ := btc.NewBtcSubscriptionConfig()
     rlpConfig, _ := rlp.EncodeToBytes(config)
-    vulcPath := viper.GetString("superNode.btcSubscription.path")
+    vulcPath := viper.GetString("watcher.btcSubscription.path")
     rawRPCClient, _ := rpc.Dial(vulcPath)
     rpcClient := client.NewRPCClient(rawRPCClient, vulcPath)
     stream := streamer.NewSuperNodeStreamer(rpcClient)
@@ -189,16 +189,16 @@ An example of how to subscribe to a real-time Bitcoin data feed from ipfs-blockc
 The .toml file being used to fill the Bitcoin subscription config would look something like this:
 
 ```toml
-[superNode]
-    [superNode.btcSubscription]
+[watcher]
+    [watcher.btcSubscription]
         historicalData = false
         historicalDataOnly = false
         startingBlock = 0
         endingBlock = 0
         wsPath = "ws://127.0.0.1:8080"
-        [superNode.btcSubscription.headerFilter]
+        [watcher.btcSubscription.headerFilter]
             off = false
-        [superNode.btcSubscription.txFilter]
+        [watcher.btcSubscription.txFilter]
             off = false
             segwit = false
             witnessHashes = []

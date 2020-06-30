@@ -169,7 +169,7 @@ func (bcr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
 func (bcr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
-	log.Info("searching for gaps in the btc super node database")
+	log.Info("searching for gaps in the btc ipfs watcher database")
 	startingBlock, err := bcr.RetrieveFirstBlockNumber()
 	if err != nil {
 		return nil, fmt.Errorf("btc CIDRetriever RetrieveFirstBlockNumber error: %v", err)

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watcher
+package watch
 
 import (
 	"errors"
@@ -29,14 +29,14 @@ const (
 	BackFillCompleteFlag
 )
 
-// Subscription holds the information for an individual client subscription to the super node
+// Subscription holds the information for an individual client subscription to the watcher
 type Subscription struct {
 	ID          rpc.ID
 	PayloadChan chan<- SubscriptionPayload
 	QuitChan    chan<- bool
 }
 
-// SubscriptionPayload is the struct for a super node stream payload
+// SubscriptionPayload is the struct for a watcher data subscription payload
 // It carries data of a type specific to the chain being supported/queried and an error message
 type SubscriptionPayload struct {
 	Data   []byte `json:"data"` // e.g. for Ethereum rlp serialized eth.StreamPayload

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watcher
+package watch
 
 import (
 	"context"
@@ -25,8 +25,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
@@ -37,22 +37,22 @@ const APIName = "vdb"
 // APIVersion is the version of the state diffing service API
 const APIVersion = "0.0.1"
 
-// PublicSuperNodeAPI is the public api for the super node
-type PublicSuperNodeAPI struct {
-	sn SuperNode
+// PublicWatcherAPI is the public api for the watcher
+type PublicWatcherAPI struct {
+	w Watcher
 }
 
-// NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
-	return &PublicSuperNodeAPI{
-		sn: superNodeInterface,
+// NewPublicWatcherAPI creates a new PublicWatcherAPI with the provided underlying Watcher process
+func NewPublicWatcherAPI(w Watcher) *PublicWatcherAPI {
+	return &PublicWatcherAPI{
+		w: w,
 	}
 }
 
-// Stream is the public method to setup a subscription that fires off super node payloads as they are processed
-func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc.Subscription, error) {
+// Stream is the public method to setup a subscription that fires off IPLD payloads as they are processed
+func (api *PublicWatcherAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc.Subscription, error) {
 	var params shared.SubscriptionSettings
-	switch api.sn.Chain() {
+	switch api.w.Chain() {
 	case shared.Ethereum:
 		var ethParams eth.SubscriptionSettings
 		if err := rlp.DecodeBytes(rlpParams, &ethParams); err != nil {
@@ -81,22 +81,22 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*r
 		// subscribe to events from the SyncPublishScreenAndServe service
 		payloadChannel := make(chan SubscriptionPayload, PayloadChanBufferSize)
 		quitChan := make(chan bool, 1)
-		go api.sn.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
+		go api.w.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
 
 		// loop and await payloads and relay them to the subscriber using notifier
 		for {
 			select {
 			case packet := <-payloadChannel:
 				if err := notifier.Notify(rpcSub.ID, packet); err != nil {
-					log.Error("Failed to send super node packet", "err", err)
-					api.sn.Unsubscribe(rpcSub.ID)
+					log.Error("Failed to send watcher data packet", "err", err)
+					api.w.Unsubscribe(rpcSub.ID)
 					return
 				}
 			case <-rpcSub.Err():
-				api.sn.Unsubscribe(rpcSub.ID)
+				api.w.Unsubscribe(rpcSub.ID)
 				return
 			case <-quitChan:
-				// don't need to unsubscribe to super node, the service does so before sending the quit signal this way
+				// don't need to unsubscribe from the watcher, the service does so before sending the quit signal this way
 				return
 			}
 		}
@@ -105,21 +105,21 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*r
 	return rpcSub, nil
 }
 
-// Node is a public rpc method to allow transformers to fetch the node info for the super node
-// NOTE: this is the node info for the node that the super node is syncing from, not the node info for the super node itself
-func (api *PublicSuperNodeAPI) Node() *core.Node {
-	return api.sn.Node()
+// Node is a public rpc method to allow transformers to fetch the node info for the watcher
+// NOTE: this is the node info for the node that the watcher is syncing from, not the node info for the watcher itself
+func (api *PublicWatcherAPI) Node() *node.Node {
+	return api.w.Node()
 }
 
-// Chain returns the chain type that this super node instance supports
-func (api *PublicSuperNodeAPI) Chain() shared.ChainType {
-	return api.sn.Chain()
+// Chain returns the chain type that this watcher instance supports
+func (api *PublicWatcherAPI) Chain() shared.ChainType {
+	return api.w.Chain()
 }
 
-// Struct for holding super node meta data
+// Struct for holding watcher meta data
 type InfoAPI struct{}
 
-// NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
+// NewInfoAPI creates a new InfoAPI
 func NewInfoAPI() *InfoAPI {
 	return &InfoAPI{}
 }
@@ -131,7 +131,7 @@ func (iapi *InfoAPI) Modules() map[string]string {
 	}
 }
 
-// NodeInfo gathers and returns a collection of metadata for the super node
+// NodeInfo gathers and returns a collection of metadata for the watcher
 func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
 	return &p2p.NodeInfo{
 		// TODO: formalize this
@@ -140,7 +140,7 @@ func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
 	}
 }
 
-// Version returns the version of the super node
+// Version returns the version of the watcher
 func (iapi *InfoAPI) Version() string {
 	return v.VersionWithMeta
 }

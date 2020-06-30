@@ -22,12 +22,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-func LoadPostgres(database config.Database, node core.Node) postgres.DB {
+func LoadPostgres(database config.Database, node node.Node) postgres.DB {
 	db, err := postgres.NewDB(database, node)
 	if err != nil {
 		logrus.Fatal("Error loading postgres: ", err)
@@ -45,8 +45,7 @@ func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint6
 	}
 	length := endingBlock - startingBlock + 1
 	numberOfBins := length / batchSize
-	remainder := length % batchSize
-	if remainder != 0 {
+	if length%batchSize != 0 {
 		numberOfBins++
 	}
 	blockRangeBins := make([][]uint64, numberOfBins)

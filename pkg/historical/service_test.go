@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watcher_test
+package historical_test
 
 import (
 	"sync"
@@ -25,14 +25,14 @@ import (
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/historical"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared/mocks"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
 var _ = Describe("BackFiller", func() {
 	Describe("FillGaps", func() {
-		It("Periodically checks for and fills in gaps in the super node's data", func() {
+		It("Periodically checks for and fills in gaps in the watcher's data", func() {
 			mockCidRepo := &mocks.CIDIndexer{
 				ReturnErr: nil,
 			}
@@ -59,15 +59,15 @@ var _ = Describe("BackFiller", func() {
 				},
 			}
 			quitChan := make(chan bool, 1)
-			backfiller := &watcher.BackFillService{
+			backfiller := &historical.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
-				BatchSize:         watcher.DefaultMaxBatchSize,
-				BatchNumber:       watcher.DefaultMaxBatchNumber,
+				BatchSize:         shared.DefaultMaxBatchSize,
+				BatchNumber:       shared.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
@@ -114,15 +114,15 @@ var _ = Describe("BackFiller", func() {
 				},
 			}
 			quitChan := make(chan bool, 1)
-			backfiller := &watcher.BackFillService{
+			backfiller := &historical.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
-				BatchSize:         watcher.DefaultMaxBatchSize,
-				BatchNumber:       watcher.DefaultMaxBatchNumber,
+				BatchSize:         shared.DefaultMaxBatchSize,
+				BatchNumber:       shared.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
@@ -168,15 +168,15 @@ var _ = Describe("BackFiller", func() {
 				},
 			}
 			quitChan := make(chan bool, 1)
-			backfiller := &watcher.BackFillService{
+			backfiller := &historical.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
-				BatchSize:         watcher.DefaultMaxBatchSize,
-				BatchNumber:       watcher.DefaultMaxBatchNumber,
+				BatchSize:         shared.DefaultMaxBatchSize,
+				BatchNumber:       shared.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}

@@ -443,7 +443,7 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
 // it finds the union of heights where no data exists and where the times_validated is lower than the validation level
 func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
-	log.Info("searching for gaps in the eth super node database")
+	log.Info("searching for gaps in the eth ipfs watcher database")
 	startingBlock, err := ecr.RetrieveFirstBlockNumber()
 	if err != nil {
 		return nil, fmt.Errorf("eth CIDRetriever RetrieveFirstBlockNumber error: %v", err)

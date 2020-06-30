@@ -29,18 +29,16 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/streamer"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
+	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
 // streamEthSubscriptionCmd represents the streamEthSubscription command
 var streamEthSubscriptionCmd = &cobra.Command{
 	Use:   "streamEthSubscription",
-	Short: "This command is used to subscribe to the super node eth stream with the provided filters",
-	Long: `This command is for demo and testing purposes and is used to subscribe to the super node with the provided subscription configuration parameters.
-It does not do anything with the data streamed from the super node other than unpack it and print it out for demonstration purposes.`,
+	Short: "This command is used to subscribe to the eth ipfs watcher data stream with the provided filters",
+	Long: `This command is for demo and testing purposes and is used to subscribe to the watcher with the provided subscription configuration parameters.
+It does not do anything with the data streamed from the watcher other than unpack it and print it out for demonstration purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
@@ -60,18 +58,21 @@ func streamEthSubscription() {
 	}
 
 	// Create a new rpc client and a subscription streamer with that client
-	rpcClient := getRPCClient()
-	str := streamer.NewSuperNodeStreamer(rpcClient)
+	rpcClient, err := getRPCClient()
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+	subClient := client.NewClient(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan watcher.SubscriptionPayload, 20000)
+	payloadChan := make(chan w.SubscriptionPayload, 20000)
 
-	// Subscribe to the super node service with the given config/filter parameters
+	// Subscribe to the watcher service with the given config/filter parameters
 	rlpParams, err := rlp.EncodeToBytes(ethSubConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	sub, err := str.Stream(payloadChan, rlpParams)
+	sub, err := subClient.Stream(payloadChan, rlpParams)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
@@ -167,14 +168,10 @@ func streamEthSubscription() {
 	}
 }
 
-func getRPCClient() core.RPCClient {
-	vulcPath := viper.GetString("superNode.ethSubscription.wsPath")
+func getRPCClient() (*rpc.Client, error) {
+	vulcPath := viper.GetString("watcher.ethSubscription.wsPath")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}
-	rawRPCClient, err := rpc.Dial(vulcPath)
-	if err != nil {
-		logWithCommand.Fatal(err)
-	}
-	return client.NewRPCClient(rawRPCClient, vulcPath)
+	return rpc.Dial(vulcPath)
 }

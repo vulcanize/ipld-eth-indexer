@@ -158,7 +158,7 @@ func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log
 }
 
 // BlockByNumber returns the requested canonical block.
-// Since the SuperNode can contain forked blocks, it is recommended to fetch BlockByHash as
+// Since the ipfs-blockchain-watcher database can contain forked blocks, it is recommended to fetch BlockByHash as
 // fetching by number can return non-deterministic results (returns the first block found at that height)
 func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber) (*types.Block, error) {
 	var err error

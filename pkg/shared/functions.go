@@ -19,11 +19,8 @@ package shared
 import (
 	"bytes"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
-
-	"github.com/ipfs/go-cid"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs-blockstore"
 	"github.com/ipfs/go-ipfs-ds-help"
 	node "github.com/ipfs/go-ipld-format"
@@ -31,6 +28,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 )
 
 // ListContainsString used to check if a list of strings contains a particular string

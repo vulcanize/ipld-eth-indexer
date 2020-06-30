@@ -30,7 +30,7 @@ import (
 var resyncCmd = &cobra.Command{
 	Use:   "resync",
 	Short: "Resync historical data",
-	Long:  `Use this command to fill in sections of missing data in the super node`,
+	Long:  `Use this command to fill in sections of missing data in the ipfs-blockchain-watcher database`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
@@ -40,8 +40,8 @@ var resyncCmd = &cobra.Command{
 
 func rsyncCmdCommand() {
 	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
-	logWithCommand.Debug("loading super node configuration variables")
-	rConfig, err := resync.NewReSyncConfig()
+	logWithCommand.Debug("loading resync configuration variables")
+	rConfig, err := resync.NewConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}

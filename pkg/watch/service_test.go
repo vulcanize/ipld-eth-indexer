@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watcher_test
+package watch_test
 
 import (
 	"sync"
@@ -54,7 +54,7 @@ var _ = Describe("Service", func() {
 				ReturnIPLDPayload: mocks.MockConvertedPayload,
 				ReturnErr:         nil,
 			}
-			processor := &watcher.Service{
+			processor := &watch.Service{
 				Indexer:        mockCidIndexer,
 				Publisher:      mockPublisher,
 				Streamer:       mockStreamer,

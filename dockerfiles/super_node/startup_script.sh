@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs the db migrations and starts the super node services
+# Runs the db migrations and starts the watcher services
 
 # Exit if the variable tests fail
 set -e

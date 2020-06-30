@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestETHSuperNode(t *testing.T) {
+func TestETHWatcher(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Super Node ETH Suite Test")
+	RunSpecs(t, "ETH IPFS WatcherSuite Test")
 }
 
 var _ = BeforeSuite(func() {

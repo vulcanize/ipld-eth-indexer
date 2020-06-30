@@ -21,7 +21,7 @@
     clearOldCache = true # $RESYNC_CLEAR_OLD_CACHE
     resetValidation = true # $RESYNC_RESET_VALIDATION
 
-[superNode]
+[watcher]
     chain = "ethereum" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
     ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH

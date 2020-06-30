@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/test_config"
 )
@@ -84,7 +84,7 @@ var _ = Describe("Postgres DB", func() {
 
 	It("throws error when can't connect to the database", func() {
 		invalidDatabase := config.Database{}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "geth"}
+		node := node.Node{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "geth"}
 
 		_, err := postgres.NewDB(invalidDatabase, node)
 
@@ -94,7 +94,7 @@ var _ = Describe("Postgres DB", func() {
 
 	It("throws error when can't create node", func() {
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		node := core.Node{GenesisBlock: badHash, NetworkID: "1", ID: "x123", ClientName: "geth"}
+		node := node.Node{GenesisBlock: badHash, NetworkID: "1", ID: "x123", ClientName: "geth"}
 
 		_, err := postgres.NewDB(test_config.DBConfig, node)
 

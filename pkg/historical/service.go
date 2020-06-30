@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watcher
+package historical
 
 import (
 	"sync"
@@ -22,23 +22,19 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/builders"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
-const (
-	DefaultMaxBatchSize   uint64 = 100
-	DefaultMaxBatchNumber int64  = 50
-)
-
-// BackFillInterface for filling in gaps in the super node
+// BackFillInterface for filling in gaps in the ipfs-blockchain-watcher db
 type BackFillInterface interface {
-	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
+	// Method for the watcher to periodically check for and fill in gaps in its data using an archival node
 	BackFill(wg *sync.WaitGroup)
 	Stop() error
 }
 
-// BackFillService for filling in gaps in the super node
+// BackFillService for filling in gaps in the watcher
 type BackFillService struct {
 	// Interface for converting payloads into IPLD object payloads
 	Converter shared.PayloadConverter
@@ -68,33 +64,33 @@ type BackFillService struct {
 
 // NewBackFillService returns a new BackFillInterface
 func NewBackFillService(settings *Config, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
-	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.BackFillDBConn, settings.IPFSMode)
+	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	indexer, err := NewCIDIndexer(settings.Chain, settings.BackFillDBConn, settings.IPFSMode)
+	indexer, err := builders.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	converter, err := NewPayloadConverter(settings.Chain)
+	converter, err := builders.NewPayloadConverter(settings.Chain)
 	if err != nil {
 		return nil, err
 	}
-	retriever, err := NewCIDRetriever(settings.Chain, settings.BackFillDBConn)
+	retriever, err := builders.NewCIDRetriever(settings.Chain, settings.DB)
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
+	fetcher, err := builders.NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
 	if err != nil {
 		return nil, err
 	}
 	batchSize := settings.BatchSize
 	if batchSize == 0 {
-		batchSize = DefaultMaxBatchSize
+		batchSize = shared.DefaultMaxBatchSize
 	}
 	batchNumber := int64(settings.BatchNumber)
 	if batchNumber == 0 {
-		batchNumber = DefaultMaxBatchNumber
+		batchNumber = shared.DefaultMaxBatchNumber
 	}
 	return &BackFillService{
 		Indexer:            indexer,
@@ -112,7 +108,7 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 	}, nil
 }
 
-// BackFill periodically checks for and fills in gaps in the super node db
+// BackFill periodically checks for and fills in gaps in the watcher db
 func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
 	go func() {
@@ -126,7 +122,7 @@ func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 			case <-ticker.C:
 				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)
 				if err != nil {
-					log.Errorf("%s super node db backFill RetrieveGapsInData error: %v", bfs.chain.String(), err)
+					log.Errorf("%s watcher db backFill RetrieveGapsInData error: %v", bfs.chain.String(), err)
 					continue
 				}
 				// spin up worker goroutines for this search pass
@@ -140,7 +136,7 @@ func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 					log.Infof("backFilling %s data from %d to %d", bfs.chain.String(), gap.Start, gap.Stop)
 					blockRangeBins, err := utils.GetBlockHeightBins(gap.Start, gap.Stop, bfs.BatchSize)
 					if err != nil {
-						log.Errorf("%s super node db backFill GetBlockHeightBins error: %v", bfs.chain.String(), err)
+						log.Errorf("%s watcher db backFill GetBlockHeightBins error: %v", bfs.chain.String(), err)
 						continue
 					}
 					for _, heights := range blockRangeBins {

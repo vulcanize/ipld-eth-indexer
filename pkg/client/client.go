@@ -14,20 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package core
+// Client is used by watchers to stream chain IPLD data from a vulcanizedb ipfs-blockchain-watcher
+package client
 
 import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
-type RPCClient interface {
-	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
-	BatchCall(batch []client.BatchElem) error
-	IpcPath() string
-	SupportedModules() (map[string]string, error)
-	Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error)
+// Client is used to subscribe to the ipfs-blockchain-watcher ipld data stream
+type Client struct {
+	c *rpc.Client
+}
+
+// NewClient creates a new Client
+func NewClient(c *rpc.Client) *Client {
+	return &Client{
+		c: c,
+	}
+}
+
+// Stream is the main loop for subscribing to iplds from an ipfs-blockchain-watcher server
+func (c *Client) Stream(payloadChan chan watch.SubscriptionPayload, rlpParams []byte) (*rpc.ClientSubscription, error) {
+	return c.c.Subscribe(context.Background(), "vdb", payloadChan, "stream", rlpParams)
 }

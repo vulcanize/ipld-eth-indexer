@@ -8,17 +8,17 @@
 1. [IPFS Considerations](#ipfs-considerations)
 
 ## Processes
-ipfs-blockchain-watcher is a [service](../pkg/super_node/service.go#L61) comprised of the following interfaces:
+ipfs-blockchain-watcher is a [service](../pkg/watch/service.go#L61) comprised of the following interfaces:
 
-* [Payload Fetcher](../pkg/super_node/shared/interfaces.go#L29): Fetches raw chain data from a half-duplex endpoint (HTTP/IPC), used for historical data fetching. ([BTC](../../pkg/super_node/btc/payload_fetcher.go), [ETH](../../pkg/super_node/eth/payload_fetcher.go)).
-* [Payload Streamer](../pkg/super_node/shared/interfaces.go#L24): Streams raw chain data from a full-duplex endpoint (WebSocket/IPC), used for syncing data at the head of the chain in real-time. ([BTC](../../pkg/super_node/btc/http_streamer.go), [ETH](../../pkg/super_node/eth/streamer.go)).
-* [Payload Converter](../pkg/super_node/shared/interfaces.go#L34): Converters raw chain data to an intermediary form prepared for IPFS publishing. ([BTC](../../pkg/super_node/btc/converter.go), [ETH](../../pkg/super_node/eth/converter.go)).
-* [IPLD Publisher](../pkg/super_node/shared/interfaces.go#L39): Publishes the converted data to IPFS, returning their CIDs and associated metadata for indexing. ([BTC](../../pkg/super_node/btc/publisher.go), [ETH](../../pkg/super_node/eth/publisher.go)).
-* [CID Indexer](../pkg/super_node/shared/interfaces.go#L44): Indexes CIDs in Postgres with their associated metadata. This metadata is chain specific and selected based on utility. ([BTC](../../pkg/super_node/btc/indexer.go), [ETH](../../pkg/super_node/eth/indexer.go)).
-* [CID Retriever](../pkg/super_node/shared/interfaces.go#L54): Retrieves CIDs from Postgres by searching against their associated metadata, is used to lookup data to serve API requests/subscriptions. ([BTC](../../pkg/super_node/btc/retriever.go), [ETH](../../pkg/super_node/eth/retriever.go)).
-* [IPLD Fetcher](../pkg/super_node/shared/interfaces.go#L62): Fetches the IPLDs needed to service API requests/subscriptions from IPFS using retrieved CIDS; can route through a IPFS block-exchange to search for objects that are not directly available. ([BTC](../../pkg/super_node/btc/ipld_fetcher.go), [ETH](../../pkg/super_node/eth/ipld_fetcher.go))
-* [Response Filterer](../pkg/super_node/shared/interfaces.go#L49): Filters converted data payloads served to API subscriptions; filters according to the subscriber provided parameters. ([BTC](../../pkg/super_node/btc/filterer.go), [ETH](../../pkg/super_node/eth/filterer.go)).
-* [API](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L31): Expose RPC methods for clients to interface with the data. Chain-specific APIs should aim to recapitulate as much of the native API as possible. ([VDB](../../pkg/super_node/api.go), [ETH](../../pkg/super_node/eth/api.go)).
+* [Payload Fetcher](../pkg/shared/interfaces.go#L29): Fetches raw chain data from a half-duplex endpoint (HTTP/IPC), used for historical data fetching. ([BTC](../../pkg/btc/payload_fetcher.go), [ETH](../../pkg/eth/payload_fetcher.go)).
+* [Payload Streamer](../pkg/shared/interfaces.go#L24): Streams raw chain data from a full-duplex endpoint (WebSocket/IPC), used for syncing data at the head of the chain in real-time. ([BTC](../../pkg/btc/http_streamer.go), [ETH](../../pkg/eth/streamer.go)).
+* [Payload Converter](../pkg/shared/interfaces.go#L34): Converters raw chain data to an intermediary form prepared for IPFS publishing. ([BTC](../../pkg/btc/converter.go), [ETH](../../pkg/eth/converter.go)).
+* [IPLD Publisher](../pkg/shared/interfaces.go#L39): Publishes the converted data to IPFS, returning their CIDs and associated metadata for indexing. ([BTC](../../pkg/btc/publisher.go), [ETH](../../pkg/eth/publisher.go)).
+* [CID Indexer](../pkg/shared/interfaces.go#L44): Indexes CIDs in Postgres with their associated metadata. This metadata is chain specific and selected based on utility. ([BTC](../../pkg/btc/indexer.go), [ETH](../../pkg/eth/indexer.go)).
+* [CID Retriever](../pkg/shared/interfaces.go#L54): Retrieves CIDs from Postgres by searching against their associated metadata, is used to lookup data to serve API requests/subscriptions. ([BTC](../../pkg/btc/retriever.go), [ETH](../../pkg/eth/retriever.go)).
+* [IPLD Fetcher](../pkg/shared/interfaces.go#L62): Fetches the IPLDs needed to service API requests/subscriptions from IPFS using retrieved CIDS; can route through a IPFS block-exchange to search for objects that are not directly available. ([BTC](../../pkg/btc/ipld_fetcher.go), [ETH](../../pkg/eth/ipld_fetcher.go))
+* [Response Filterer](../pkg/shared/interfaces.go#L49): Filters converted data payloads served to API subscriptions; filters according to the subscriber provided parameters. ([BTC](../../pkg/btc/filterer.go), [ETH](../../pkg/eth/filterer.go)).
+* [API](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L31): Expose RPC methods for clients to interface with the data. Chain-specific APIs should aim to recapitulate as much of the native API as possible. ([VDB](../../pkg/api.go), [ETH](../../pkg/eth/api.go)).
 
 
 Appropriating the service for a new chain is done by creating underlying types to satisfy these interfaces for
@@ -56,7 +56,7 @@ This set of parameters needs to be set no matter the chain type.
     path = "~/.ipfs" # $IPFS_PATH
     mode = "direct" # $IPFS_MODE
 
-[superNode]
+[watcher]
     chain = "bitcoin" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
     ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH

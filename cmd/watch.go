@@ -18,22 +18,23 @@ package cmd
 import (
 	"os"
 	"os/signal"
-	"sync"
+	s "sync"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	h "github.com/vulcanize/ipfs-blockchain-watcher/pkg/historical"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
+	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 
-// superNodeCmd represents the superNode command
-var superNodeCmd = &cobra.Command{
-	Use:   "superNode",
+// watchCmd represents the watch command
+var watchCmd = &cobra.Command{
+	Use:   "watch",
 	Short: "sync chain data into PG-IPFS",
 	Long: `This command configures a VulcanizeDB ipfs-blockchain-watcher.
 
@@ -49,146 +50,155 @@ and fill in gaps in the data
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
-		superNode()
+		watch()
 	},
 }
 
-func superNode() {
+func watch() {
 	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
-	logWithCommand.Debug("loading super node configuration variables")
-	superNodeConfig, err := watcher.NewSuperNodeConfig()
+
+	var forwardPayloadChan chan shared.ConvertedData
+	wg := new(s.WaitGroup)
+	logWithCommand.Debug("loading watcher configuration variables")
+	watcherConfig, err := w.NewConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	logWithCommand.Infof("super node config: %+v", superNodeConfig)
-	if superNodeConfig.IPFSMode == shared.LocalInterface {
+	logWithCommand.Infof("watcher config: %+v", watcherConfig)
+	if watcherConfig.IPFSMode == shared.LocalInterface {
 		if err := ipfs.InitIPFSPlugins(); err != nil {
 			logWithCommand.Fatal(err)
 		}
 	}
-	wg := &sync.WaitGroup{}
-	logWithCommand.Debug("initializing new super node service")
-	superNode, err := watcher.NewSuperNode(superNodeConfig)
+	logWithCommand.Debug("initializing new watcher service")
+	watcher, err := w.NewWatcher(watcherConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	var forwardPayloadChan chan shared.ConvertedData
-	if superNodeConfig.Serve {
-		logWithCommand.Info("starting up super node servers")
-		forwardPayloadChan = make(chan shared.ConvertedData, watcher.PayloadChanBufferSize)
-		superNode.Serve(wg, forwardPayloadChan)
-		if err := startServers(superNode, superNodeConfig); err != nil {
+
+	if watcherConfig.Serve {
+		logWithCommand.Info("starting up watcher servers")
+		forwardPayloadChan = make(chan shared.ConvertedData, w.PayloadChanBufferSize)
+		watcher.Serve(wg, forwardPayloadChan)
+		if err := startServers(watcher, watcherConfig); err != nil {
 			logWithCommand.Fatal(err)
 		}
 	}
-	if superNodeConfig.Sync {
-		logWithCommand.Info("starting up super node sync process")
-		if err := superNode.Sync(wg, forwardPayloadChan); err != nil {
+
+	if watcherConfig.Sync {
+		logWithCommand.Info("starting up watcher sync process")
+		if err := watcher.Sync(wg, forwardPayloadChan); err != nil {
 			logWithCommand.Fatal(err)
 		}
 	}
-	var backFiller watcher.BackFillInterface
-	if superNodeConfig.BackFill {
-		logWithCommand.Debug("initializing new super node backfill service")
-		backFiller, err = watcher.NewBackFillService(superNodeConfig, forwardPayloadChan)
+
+	var backFiller h.BackFillInterface
+	if watcherConfig.Historical {
+		historicalConfig, err := h.NewConfig()
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
-		logWithCommand.Info("starting up super node backfill process")
+		logWithCommand.Debug("initializing new historical backfill service")
+		backFiller, err = h.NewBackFillService(historicalConfig, forwardPayloadChan)
+		if err != nil {
+			logWithCommand.Fatal(err)
+		}
+		logWithCommand.Info("starting up watcher backfill process")
 		backFiller.BackFill(wg)
 	}
+
 	shutdown := make(chan os.Signal)
 	signal.Notify(shutdown, os.Interrupt)
 	<-shutdown
-	if superNodeConfig.BackFill {
+	if watcherConfig.Historical {
 		backFiller.Stop()
 	}
-	superNode.Stop()
+	watcher.Stop()
 	wg.Wait()
 }
 
-func startServers(superNode watcher.SuperNode, settings *watcher.Config) error {
+func startServers(watcher w.Watcher, settings *w.Config) error {
 	logWithCommand.Debug("starting up IPC server")
-	_, _, err := rpc.StartIPCEndpoint(settings.IPCEndpoint, superNode.APIs())
+	_, _, err := rpc.StartIPCEndpoint(settings.IPCEndpoint, watcher.APIs())
 	if err != nil {
 		return err
 	}
 	logWithCommand.Debug("starting up WS server")
-	_, _, err = rpc.StartWSEndpoint(settings.WSEndpoint, superNode.APIs(), []string{"vdb"}, nil, true)
+	_, _, err = rpc.StartWSEndpoint(settings.WSEndpoint, watcher.APIs(), []string{"vdb"}, nil, true)
 	if err != nil {
 		return err
 	}
 	logWithCommand.Debug("starting up HTTP server")
-	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
+	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, watcher.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
 	return err
 }
 
 func init() {
-	rootCmd.AddCommand(superNodeCmd)
+	rootCmd.AddCommand(watchCmd)
 
 	// flags for all config variables
-	superNodeCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
+	watchCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
 
-	superNodeCmd.PersistentFlags().String("supernode-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
-	superNodeCmd.PersistentFlags().Bool("supernode-server", false, "turn vdb server on or off")
-	superNodeCmd.PersistentFlags().String("supernode-ws-path", "", "vdb server ws path")
-	superNodeCmd.PersistentFlags().String("supernode-http-path", "", "vdb server http path")
-	superNodeCmd.PersistentFlags().String("supernode-ipc-path", "", "vdb server ipc path")
-	superNodeCmd.PersistentFlags().Bool("supernode-sync", false, "turn vdb sync on or off")
-	superNodeCmd.PersistentFlags().Int("supernode-workers", 0, "how many worker goroutines to publish and index data")
-	superNodeCmd.PersistentFlags().Bool("supernode-back-fill", false, "turn vdb backfill on or off")
-	superNodeCmd.PersistentFlags().Int("supernode-frequency", 0, "how often (in seconds) the backfill process checks for gaps")
-	superNodeCmd.PersistentFlags().Int("supernode-batch-size", 0, "data fetching batch size")
-	superNodeCmd.PersistentFlags().Int("supernode-batch-number", 0, "how many goroutines to fetch data concurrently")
-	superNodeCmd.PersistentFlags().Int("supernode-validation-level", 0, "backfill will resync any data below this level")
-	superNodeCmd.PersistentFlags().Int("supernode-timeout", 0, "timeout used for backfill http requests")
+	watchCmd.PersistentFlags().String("watcher-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
+	watchCmd.PersistentFlags().Bool("watcher-server", false, "turn vdb server on or off")
+	watchCmd.PersistentFlags().String("watcher-ws-path", "", "vdb server ws path")
+	watchCmd.PersistentFlags().String("watcher-http-path", "", "vdb server http path")
+	watchCmd.PersistentFlags().String("watcher-ipc-path", "", "vdb server ipc path")
+	watchCmd.PersistentFlags().Bool("watcher-sync", false, "turn vdb sync on or off")
+	watchCmd.PersistentFlags().Int("watcher-workers", 0, "how many worker goroutines to publish and index data")
+	watchCmd.PersistentFlags().Bool("watcher-back-fill", false, "turn vdb backfill on or off")
+	watchCmd.PersistentFlags().Int("watcher-frequency", 0, "how often (in seconds) the backfill process checks for gaps")
+	watchCmd.PersistentFlags().Int("watcher-batch-size", 0, "data fetching batch size")
+	watchCmd.PersistentFlags().Int("watcher-batch-number", 0, "how many goroutines to fetch data concurrently")
+	watchCmd.PersistentFlags().Int("watcher-validation-level", 0, "backfill will resync any data below this level")
+	watchCmd.PersistentFlags().Int("watcher-timeout", 0, "timeout used for backfill http requests")
 
-	superNodeCmd.PersistentFlags().String("btc-ws-path", "", "ws url for bitcoin node")
-	superNodeCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
-	superNodeCmd.PersistentFlags().String("btc-password", "", "password for btc node")
-	superNodeCmd.PersistentFlags().String("btc-username", "", "username for btc node")
-	superNodeCmd.PersistentFlags().String("btc-node-id", "", "btc node id")
-	superNodeCmd.PersistentFlags().String("btc-client-name", "", "btc client name")
-	superNodeCmd.PersistentFlags().String("btc-genesis-block", "", "btc genesis block hash")
-	superNodeCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
+	watchCmd.PersistentFlags().String("btc-ws-path", "", "ws url for bitcoin node")
+	watchCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
+	watchCmd.PersistentFlags().String("btc-password", "", "password for btc node")
+	watchCmd.PersistentFlags().String("btc-username", "", "username for btc node")
+	watchCmd.PersistentFlags().String("btc-node-id", "", "btc node id")
+	watchCmd.PersistentFlags().String("btc-client-name", "", "btc client name")
+	watchCmd.PersistentFlags().String("btc-genesis-block", "", "btc genesis block hash")
+	watchCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
 
-	superNodeCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
-	superNodeCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
-	superNodeCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
-	superNodeCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
-	superNodeCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
-	superNodeCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
+	watchCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
+	watchCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
+	watchCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
+	watchCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
+	watchCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
+	watchCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
 
 	// and their bindings
-	viper.BindPFlag("ipfs.path", superNodeCmd.PersistentFlags().Lookup("ipfs-path"))
+	viper.BindPFlag("ipfs.path", watchCmd.PersistentFlags().Lookup("ipfs-path"))
 
-	viper.BindPFlag("superNode.chain", superNodeCmd.PersistentFlags().Lookup("supernode-chain"))
-	viper.BindPFlag("superNode.server", superNodeCmd.PersistentFlags().Lookup("supernode-server"))
-	viper.BindPFlag("superNode.wsPath", superNodeCmd.PersistentFlags().Lookup("supernode-ws-path"))
-	viper.BindPFlag("superNode.httpPath", superNodeCmd.PersistentFlags().Lookup("supernode-http-path"))
-	viper.BindPFlag("superNode.ipcPath", superNodeCmd.PersistentFlags().Lookup("supernode-ipc-path"))
-	viper.BindPFlag("superNode.sync", superNodeCmd.PersistentFlags().Lookup("supernode-sync"))
-	viper.BindPFlag("superNode.workers", superNodeCmd.PersistentFlags().Lookup("supernode-workers"))
-	viper.BindPFlag("superNode.backFill", superNodeCmd.PersistentFlags().Lookup("supernode-back-fill"))
-	viper.BindPFlag("superNode.frequency", superNodeCmd.PersistentFlags().Lookup("supernode-frequency"))
-	viper.BindPFlag("superNode.batchSize", superNodeCmd.PersistentFlags().Lookup("supernode-batch-size"))
-	viper.BindPFlag("superNode.batchNumber", superNodeCmd.PersistentFlags().Lookup("supernode-batch-number"))
-	viper.BindPFlag("superNode.validationLevel", superNodeCmd.PersistentFlags().Lookup("supernode-validation-level"))
-	viper.BindPFlag("superNode.timeout", superNodeCmd.PersistentFlags().Lookup("supernode-timeout"))
+	viper.BindPFlag("watcher.chain", watchCmd.PersistentFlags().Lookup("watcher-chain"))
+	viper.BindPFlag("watcher.server", watchCmd.PersistentFlags().Lookup("watcher-server"))
+	viper.BindPFlag("watcher.wsPath", watchCmd.PersistentFlags().Lookup("watcher-ws-path"))
+	viper.BindPFlag("watcher.httpPath", watchCmd.PersistentFlags().Lookup("watcher-http-path"))
+	viper.BindPFlag("watcher.ipcPath", watchCmd.PersistentFlags().Lookup("watcher-ipc-path"))
+	viper.BindPFlag("watcher.sync", watchCmd.PersistentFlags().Lookup("watcher-sync"))
+	viper.BindPFlag("watcher.workers", watchCmd.PersistentFlags().Lookup("watcher-workers"))
+	viper.BindPFlag("watcher.backFill", watchCmd.PersistentFlags().Lookup("watcher-back-fill"))
+	viper.BindPFlag("watcher.frequency", watchCmd.PersistentFlags().Lookup("watcher-frequency"))
+	viper.BindPFlag("watcher.batchSize", watchCmd.PersistentFlags().Lookup("watcher-batch-size"))
+	viper.BindPFlag("watcher.batchNumber", watchCmd.PersistentFlags().Lookup("watcher-batch-number"))
+	viper.BindPFlag("watcher.validationLevel", watchCmd.PersistentFlags().Lookup("watcher-validation-level"))
+	viper.BindPFlag("watcher.timeout", watchCmd.PersistentFlags().Lookup("watcher-timeout"))
 
-	viper.BindPFlag("bitcoin.wsPath", superNodeCmd.PersistentFlags().Lookup("btc-ws-path"))
-	viper.BindPFlag("bitcoin.httpPath", superNodeCmd.PersistentFlags().Lookup("btc-http-path"))
-	viper.BindPFlag("bitcoin.pass", superNodeCmd.PersistentFlags().Lookup("btc-password"))
-	viper.BindPFlag("bitcoin.user", superNodeCmd.PersistentFlags().Lookup("btc-username"))
-	viper.BindPFlag("bitcoin.nodeID", superNodeCmd.PersistentFlags().Lookup("btc-node-id"))
-	viper.BindPFlag("bitcoin.clientName", superNodeCmd.PersistentFlags().Lookup("btc-client-name"))
-	viper.BindPFlag("bitcoin.genesisBlock", superNodeCmd.PersistentFlags().Lookup("btc-genesis-block"))
-	viper.BindPFlag("bitcoin.networkID", superNodeCmd.PersistentFlags().Lookup("btc-network-id"))
+	viper.BindPFlag("bitcoin.wsPath", watchCmd.PersistentFlags().Lookup("btc-ws-path"))
+	viper.BindPFlag("bitcoin.httpPath", watchCmd.PersistentFlags().Lookup("btc-http-path"))
+	viper.BindPFlag("bitcoin.pass", watchCmd.PersistentFlags().Lookup("btc-password"))
+	viper.BindPFlag("bitcoin.user", watchCmd.PersistentFlags().Lookup("btc-username"))
+	viper.BindPFlag("bitcoin.nodeID", watchCmd.PersistentFlags().Lookup("btc-node-id"))
+	viper.BindPFlag("bitcoin.clientName", watchCmd.PersistentFlags().Lookup("btc-client-name"))
+	viper.BindPFlag("bitcoin.genesisBlock", watchCmd.PersistentFlags().Lookup("btc-genesis-block"))
+	viper.BindPFlag("bitcoin.networkID", watchCmd.PersistentFlags().Lookup("btc-network-id"))
 
-	viper.BindPFlag("ethereum.wsPath", superNodeCmd.PersistentFlags().Lookup("eth-ws-path"))
-	viper.BindPFlag("ethereum.httpPath", superNodeCmd.PersistentFlags().Lookup("eth-http-path"))
-	viper.BindPFlag("ethereum.nodeID", superNodeCmd.PersistentFlags().Lookup("eth-node-id"))
-	viper.BindPFlag("ethereum.clientName", superNodeCmd.PersistentFlags().Lookup("eth-client-name"))
-	viper.BindPFlag("ethereum.genesisBlock", superNodeCmd.PersistentFlags().Lookup("eth-genesis-block"))
-	viper.BindPFlag("ethereum.networkID", superNodeCmd.PersistentFlags().Lookup("eth-network-id"))
+	viper.BindPFlag("ethereum.wsPath", watchCmd.PersistentFlags().Lookup("eth-ws-path"))
+	viper.BindPFlag("ethereum.httpPath", watchCmd.PersistentFlags().Lookup("eth-http-path"))
+	viper.BindPFlag("ethereum.nodeID", watchCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", watchCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", watchCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", watchCmd.PersistentFlags().Lookup("eth-network-id"))
 }

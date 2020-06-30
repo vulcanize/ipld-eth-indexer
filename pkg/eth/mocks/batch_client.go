@@ -22,9 +22,7 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
 )
 
 // BackFillerClient is a mock client for use in backfiller tests
@@ -46,7 +44,7 @@ func (mc *BackFillerClient) SetReturnDiffAt(height uint64, diffPayload statediff
 }
 
 // BatchCall mockClient method to simulate batch call to geth
-func (mc *BackFillerClient) BatchCall(batch []client.BatchElem) error {
+func (mc *BackFillerClient) BatchCall(batch []rpc.BatchElem) error {
 	if mc.MappedStateDiffAt == nil {
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}

@@ -192,7 +192,7 @@ This set of parameters needs to be set no matter the chain type.
     path = "~/.ipfs" # $IPFS_PATH
     mode = "postgres" # $IPFS_MODE
 
-[superNode]
+[watcher]
     chain = "bitcoin" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
     ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
