@@ -149,10 +149,10 @@ func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload,
 		if stateCID.StateKey != nullHash.String() {
 			stateKey = stateCID.StateKey
 		}
-		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
+		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type, diff) VALUES ($1, $2, $3, $4, $5, $6)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type, diff) = ($2, $3, $5, $6)
 									RETURNING id`,
-			headerID, stateKey, stateCID.CID, stateCID.Path, stateCID.NodeType).Scan(&stateID)
+			headerID, stateKey, stateCID.CID, stateCID.Path, stateCID.NodeType, true).Scan(&stateID)
 		if err != nil {
 			return err
 		}
@@ -180,10 +180,10 @@ func (in *CIDIndexer) indexStateCID(tx *sqlx.Tx, stateNode StateNodeModel, heade
 	if stateNode.StateKey != nullHash.String() {
 		stateKey = stateNode.StateKey
 	}
-	err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
+	err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type, diff) VALUES ($1, $2, $3, $4, $5, $6)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type, diff) = ($2, $3, $5, $6)
 									RETURNING id`,
-		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType).Scan(&stateID)
+		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType, true).Scan(&stateID)
 	return stateID, err
 }
 
@@ -199,8 +199,8 @@ func (in *CIDIndexer) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeModel, 
 	if storageCID.StorageKey != nullHash.String() {
 		storageKey = storageCID.StorageKey
 	}
-	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_leaf_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
-							  ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_leaf_key, cid, node_type) = ($2, $3, $5)`,
-		stateID, storageKey, storageCID.CID, storageCID.Path, storageCID.NodeType)
+	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_leaf_key, cid, storage_path, node_type, diff) VALUES ($1, $2, $3, $4, $5, $6) 
+							  ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_leaf_key, cid, node_type, diff) = ($2, $3, $5, $6)`,
+		stateID, storageKey, storageCID.CID, storageCID.Path, storageCID.NodeType, true)
 	return err
 }

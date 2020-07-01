@@ -80,6 +80,7 @@ type StateNodeModel struct {
 	StateKey string `db:"state_leaf_key"`
 	NodeType int    `db:"node_type"`
 	CID      string `db:"cid"`
+	Diff     bool   `db:"diff"`
 }
 
 // StorageNodeModel is the db model for eth.storage_cids
@@ -90,6 +91,7 @@ type StorageNodeModel struct {
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+	Diff       bool   `db:"diff"`
 }
 
 // StorageNodeWithStateKeyModel is a db model for eth.storage_cids + eth.state_cids.state_key
@@ -101,6 +103,7 @@ type StorageNodeWithStateKeyModel struct {
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+	Diff       bool   `db:"diff"`
 }
 
 // StateAccountModel is a db model for an eth state account (decoded value of state leaf node)

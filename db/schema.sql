@@ -413,7 +413,8 @@ CREATE TABLE eth.state_cids (
     state_leaf_key character varying(66),
     cid text NOT NULL,
     state_path bytea,
-    node_type integer
+    node_type integer,
+    diff boolean DEFAULT false NOT NULL
 );
 
 
@@ -447,7 +448,8 @@ CREATE TABLE eth.storage_cids (
     storage_leaf_key character varying(66),
     cid text NOT NULL,
     storage_path bytea,
-    node_type integer
+    node_type integer,
+    diff boolean DEFAULT false NOT NULL
 );
 
 
