@@ -5,6 +5,7 @@ CREATE TABLE eth.transaction_cids (
   tx_hash               VARCHAR(66) NOT NULL,
   index                 INTEGER NOT NULL,
   cid                   TEXT NOT NULL,
+  mh_key                TEXT NOT NULL REFERENCES public.blocks (key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   dst                   VARCHAR(66) NOT NULL,
   src                   VARCHAR(66) NOT NULL,
   UNIQUE (header_id, tx_hash)

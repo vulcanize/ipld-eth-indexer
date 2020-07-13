@@ -44,6 +44,7 @@ CREATE TABLE btc.header_cids (
     block_hash character varying(66) NOT NULL,
     parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     "timestamp" numeric NOT NULL,
     bits bigint NOT NULL,
     node_id integer NOT NULL,
@@ -86,44 +87,6 @@ ALTER SEQUENCE btc.header_cids_id_seq OWNED BY btc.header_cids.id;
 
 
 --
--- Name: queue_data; Type: TABLE; Schema: btc; Owner: -
---
-
-CREATE TABLE btc.queue_data (
-    id integer NOT NULL,
-    data bytea NOT NULL,
-    height bigint NOT NULL
-);
-
-
---
--- Name: TABLE queue_data; Type: COMMENT; Schema: btc; Owner: -
---
-
-COMMENT ON TABLE btc.queue_data IS '@name BtcQueueData';
-
-
---
--- Name: queue_data_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
---
-
-CREATE SEQUENCE btc.queue_data_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: queue_data_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
---
-
-ALTER SEQUENCE btc.queue_data_id_seq OWNED BY btc.queue_data.id;
-
-
---
 -- Name: transaction_cids; Type: TABLE; Schema: btc; Owner: -
 --
 
@@ -133,6 +96,7 @@ CREATE TABLE btc.transaction_cids (
     index integer NOT NULL,
     tx_hash character varying(66) NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     segwit boolean NOT NULL,
     witness_hash character varying(66)
 );
@@ -246,15 +210,16 @@ CREATE TABLE eth.header_cids (
     block_hash character varying(66) NOT NULL,
     parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     td numeric NOT NULL,
     node_id integer NOT NULL,
     reward numeric NOT NULL,
-    state_root character varying(66),
-    tx_root character varying(66),
-    receipt_root character varying(66),
-    uncle_root character varying(66),
-    bloom bytea,
-    "timestamp" numeric,
+    state_root character varying(66) NOT NULL,
+    tx_root character varying(66) NOT NULL,
+    receipt_root character varying(66) NOT NULL,
+    uncle_root character varying(66) NOT NULL,
+    bloom bytea NOT NULL,
+    "timestamp" numeric NOT NULL,
     times_validated integer DEFAULT 1 NOT NULL
 );
 
@@ -294,44 +259,6 @@ ALTER SEQUENCE eth.header_cids_id_seq OWNED BY eth.header_cids.id;
 
 
 --
--- Name: queue_data; Type: TABLE; Schema: eth; Owner: -
---
-
-CREATE TABLE eth.queue_data (
-    id integer NOT NULL,
-    data bytea NOT NULL,
-    height bigint NOT NULL
-);
-
-
---
--- Name: TABLE queue_data; Type: COMMENT; Schema: eth; Owner: -
---
-
-COMMENT ON TABLE eth.queue_data IS '@name EthQueueData';
-
-
---
--- Name: queue_data_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
---
-
-CREATE SEQUENCE eth.queue_data_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: queue_data_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
---
-
-ALTER SEQUENCE eth.queue_data_id_seq OWNED BY eth.queue_data.id;
-
-
---
 -- Name: receipt_cids; Type: TABLE; Schema: eth; Owner: -
 --
 
@@ -339,13 +266,14 @@ CREATE TABLE eth.receipt_cids (
     id integer NOT NULL,
     tx_id integer NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     contract character varying(66),
+    contract_hash character varying(66),
     topic0s character varying(66)[],
     topic1s character varying(66)[],
     topic2s character varying(66)[],
     topic3s character varying(66)[],
-    log_contracts character varying(66)[],
-    contract_hash character varying(66)
+    log_contracts character varying(66)[]
 );
 
 
@@ -412,6 +340,7 @@ CREATE TABLE eth.state_cids (
     header_id integer NOT NULL,
     state_leaf_key character varying(66),
     cid text NOT NULL,
+    mh_key text NOT NULL,
     state_path bytea,
     node_type integer,
     diff boolean DEFAULT false NOT NULL
@@ -447,8 +376,9 @@ CREATE TABLE eth.storage_cids (
     state_id integer NOT NULL,
     storage_leaf_key character varying(66),
     cid text NOT NULL,
+    mh_key text NOT NULL,
     storage_path bytea,
-    node_type integer,
+    node_type integer NOT NULL,
     diff boolean DEFAULT false NOT NULL
 );
 
@@ -483,6 +413,7 @@ CREATE TABLE eth.transaction_cids (
     tx_hash character varying(66) NOT NULL,
     index integer NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     dst character varying(66) NOT NULL,
     src character varying(66) NOT NULL
 );
@@ -525,6 +456,7 @@ CREATE TABLE eth.uncle_cids (
     block_hash character varying(66) NOT NULL,
     parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
+    mh_key text NOT NULL,
     reward numeric NOT NULL
 );
 
@@ -646,13 +578,6 @@ ALTER TABLE ONLY btc.header_cids ALTER COLUMN id SET DEFAULT nextval('btc.header
 
 
 --
--- Name: queue_data id; Type: DEFAULT; Schema: btc; Owner: -
---
-
-ALTER TABLE ONLY btc.queue_data ALTER COLUMN id SET DEFAULT nextval('btc.queue_data_id_seq'::regclass);
-
-
---
 -- Name: transaction_cids id; Type: DEFAULT; Schema: btc; Owner: -
 --
 
@@ -678,13 +603,6 @@ ALTER TABLE ONLY btc.tx_outputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_outp
 --
 
 ALTER TABLE ONLY eth.header_cids ALTER COLUMN id SET DEFAULT nextval('eth.header_cids_id_seq'::regclass);
-
-
---
--- Name: queue_data id; Type: DEFAULT; Schema: eth; Owner: -
---
-
-ALTER TABLE ONLY eth.queue_data ALTER COLUMN id SET DEFAULT nextval('eth.queue_data_id_seq'::regclass);
 
 
 --
@@ -760,22 +678,6 @@ ALTER TABLE ONLY btc.header_cids
 
 
 --
--- Name: queue_data queue_data_height_key; Type: CONSTRAINT; Schema: btc; Owner: -
---
-
-ALTER TABLE ONLY btc.queue_data
-    ADD CONSTRAINT queue_data_height_key UNIQUE (height);
-
-
---
--- Name: queue_data queue_data_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
---
-
-ALTER TABLE ONLY btc.queue_data
-    ADD CONSTRAINT queue_data_pkey PRIMARY KEY (id);
-
-
---
 -- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
 --
 
@@ -837,22 +739,6 @@ ALTER TABLE ONLY eth.header_cids
 
 ALTER TABLE ONLY eth.header_cids
     ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: queue_data queue_data_height_key; Type: CONSTRAINT; Schema: eth; Owner: -
---
-
-ALTER TABLE ONLY eth.queue_data
-    ADD CONSTRAINT queue_data_height_key UNIQUE (height);
-
-
---
--- Name: queue_data queue_data_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
---
-
-ALTER TABLE ONLY eth.queue_data
-    ADD CONSTRAINT queue_data_pkey PRIMARY KEY (id);
 
 
 --
@@ -984,6 +870,14 @@ ALTER TABLE ONLY public.nodes
 
 
 --
+-- Name: header_cids header_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: header_cids header_cids_node_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
 --
 
@@ -997,6 +891,14 @@ ALTER TABLE ONLY btc.header_cids
 
 ALTER TABLE ONLY btc.transaction_cids
     ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES btc.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: transaction_cids transaction_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1016,11 +918,27 @@ ALTER TABLE ONLY btc.tx_outputs
 
 
 --
+-- Name: header_cids header_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.header_cids
+    ADD CONSTRAINT header_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: header_cids header_cids_node_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.header_cids
     ADD CONSTRAINT header_cids_node_id_fkey FOREIGN KEY (node_id) REFERENCES public.nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: receipt_cids receipt_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.receipt_cids
+    ADD CONSTRAINT receipt_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1048,6 +966,22 @@ ALTER TABLE ONLY eth.state_cids
 
 
 --
+-- Name: state_cids state_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_cids
+    ADD CONSTRAINT state_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: storage_cids storage_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_cids
+    ADD CONSTRAINT storage_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: storage_cids storage_cids_state_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
 --
 
@@ -1064,11 +998,27 @@ ALTER TABLE ONLY eth.transaction_cids
 
 
 --
+-- Name: transaction_cids transaction_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.transaction_cids
+    ADD CONSTRAINT transaction_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: uncle_cids uncle_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.uncle_cids
     ADD CONSTRAINT uncle_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES eth.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: uncle_cids uncle_cids_mh_key_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.uncle_cids
+    ADD CONSTRAINT uncle_cids_mh_key_fkey FOREIGN KEY (mh_key) REFERENCES public.blocks(key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --

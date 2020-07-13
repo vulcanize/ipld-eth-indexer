@@ -5,6 +5,7 @@ CREATE TABLE btc.transaction_cids (
 	index        INTEGER NOT NULL,
 	tx_hash      VARCHAR(66) NOT NULL UNIQUE,
 	cid          TEXT NOT NULL,
+	mh_key       TEXT NOT NULL REFERENCES public.blocks (key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
 	segwit       BOOL NOT NULL,
 	witness_hash VARCHAR(66)
 );
