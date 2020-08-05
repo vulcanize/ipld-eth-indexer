@@ -47,7 +47,7 @@ var (
 	BlockNumber = big.NewInt(1)
 	MockHeader  = types.Header{
 		Time:        0,
-		Number:      BlockNumber,
+		Number:      new(big.Int).Set(BlockNumber),
 		Root:        common.HexToHash("0x0"),
 		TxHash:      common.HexToHash("0x0"),
 		ReceiptHash: common.HexToHash("0x0"),
@@ -298,7 +298,7 @@ var (
 	}
 
 	MockStateDiff = statediff.StateObject{
-		BlockNumber: BlockNumber,
+		BlockNumber: new(big.Int).Set(BlockNumber),
 		BlockHash:   MockBlock.Hash(),
 		Nodes:       StateDiffs,
 	}
@@ -414,7 +414,7 @@ var (
 	}
 
 	MockCIDWrapper = &eth.CIDWrapper{
-		BlockNumber: big.NewInt(1),
+		BlockNumber: new(big.Int).Set(BlockNumber),
 		Header: eth.HeaderModel{
 			BlockNumber:     "1",
 			BlockHash:       MockBlock.Hash().String(),
@@ -459,7 +459,7 @@ var (
 	StorageIPLD, _ = blocks.NewBlockWithCid(StorageLeafNode, StorageCID)
 
 	MockIPLDs = eth.IPLDs{
-		BlockNumber: big.NewInt(1),
+		BlockNumber: new(big.Int).Set(BlockNumber),
 		Header: ipfs.BlockModel{
 			Data: HeaderIPLD.RawData(),
 			CID:  HeaderIPLD.Cid().String(),
@@ -533,7 +533,7 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	trx1 := types.NewTransaction(0, Address, big.NewInt(1000), 50, big.NewInt(100), []byte{})
 	trx2 := types.NewTransaction(1, AnotherAddress, big.NewInt(2000), 100, big.NewInt(200), []byte{})
 	trx3 := types.NewContractCreation(2, big.NewInt(1500), 75, big.NewInt(150), []byte{0, 1, 2, 3, 4, 5})
-	transactionSigner := types.MakeSigner(params.MainnetChainConfig, BlockNumber)
+	transactionSigner := types.MakeSigner(params.MainnetChainConfig, new(big.Int).Set(BlockNumber))
 	mockCurve := elliptic.P256()
 	mockPrvKey, err := ecdsa.GenerateKey(mockCurve, rand.Reader)
 	if err != nil {

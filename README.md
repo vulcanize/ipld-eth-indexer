@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
 
->  ipfs-blockchain-watcher is used to extract, transform, and load all eth or btc data into an IPFS-backing Postgres datastore while generating useful secondary indexes around that data in other Postgres tables
+>  ipfs-blockchain-watcher is used to extract, transform, and load all eth or btc data into an IPFS-backing Postgres datastore while generating useful secondary indexes around the data in other Postgres tables
 
 ## Table of Contents
 1. [Background](#background)
@@ -102,7 +102,7 @@ Warning: There is a good chance even a fully synced archive node has incomplete 
 
 The output from geth should mention that it is `Starting statediff service` and block synchronization should begin shortly thereafter.
 Note that until it receives a subscriber, the statediffing process does nothing but wait for one. Once a subscription is received, this
-will be indicated in the output and node will begin processing and sending statediffs.
+will be indicated in the output and the node will begin processing and sending statediffs.
 
 Also in the output will be the endpoints that will be used to interface with the node.
 The default ws url is "127.0.0.1:8546" and the default http url is "127.0.0.1:8545".

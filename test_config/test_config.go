@@ -34,7 +34,7 @@ func init() {
 func setTestConfig() {
 	vip := viper.New()
 	vip.SetConfigName("testing")
-	vip.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	vip.AddConfigPath("$GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher/environments/")
 	if err := vip.ReadInConfig(); err != nil {
 		logrus.Fatal(err)
 	}
