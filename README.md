@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
 
-> Tool for extracting and indexing blockchain data on PG-IPFS
+>  ipfs-blockchain-watcher is used to extract, transform, and load all eth or btc data into an IPFS-backing Postgres datastore while generating useful secondary indexes around that data in other Postgres tables
 
 ## Table of Contents
 1. [Background](#background)
@@ -30,7 +30,7 @@ More details on the design of ipfs-blockchain-watcher can be found in [here](./d
 
 ### Goose
 [goose](https://github.com/pressly/goose) is used for migration management. While it is not necessary to use `goose` for manual setup, it
-is required for running the automated tests and by the `make migrate` command.
+is required for running the automated tests and is used by the `make migrate` command.
 
 ### Postgres
 1. [Install Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
@@ -52,12 +52,12 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
 
 ### IPFS
 Data is stored in an [IPFS-backing Postgres datastore](https://github.com/ipfs/go-ds-sql).
-By default data is writen directly to the ipfs blockstore in Postgres; the public.blocks table.
+By default data is written directly to the ipfs blockstore in Postgres; the public.blocks table.
 In this case no further IPFS configuration is needed at this time.
 
 Optionally, ipfs-blockchain-watcher can be configured to function through an internal ipfs node interface using the flag: `-ipfs-mode=interface`.
 Operating through the ipfs interface provides the option to configure a block exchange that can search remotely for IPLD data found missing in the local datastore.
-This option is irrelevant in most cases and this mode some disadvantages, namely:
+This option is irrelevant in most cases and this mode has some disadvantages, namely:
 
 1. Environment must have IPFS configured
 1. Process will contend with the lockfile at `$IPFS_PATH`
@@ -120,7 +120,7 @@ The default http url is "127.0.0.1:8332". We will use the http endpoint as both 
 ### Watcher
 Finally, setup the watcher process itself.
 
-Start by downloading vulcanizedb and moving into the repo:
+Start by downloading ipfs-blockchain-watcher and moving into the repo:
 
 `go get github.com/vulcanize/ipfs-blockchain-watcher`
 

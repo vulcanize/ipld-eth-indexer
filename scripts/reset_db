@@ -11,9 +11,9 @@ fi
 
 db=$1
 dir=$(basename "$(pwd)")
-if [ $dir != "vulcanizedb" ]
+if [ $dir != "ipfs-blockchain-watcher" ]
 then
-  echo "Run me from the vulcanizedb root dir"
+  echo "Run me from the ipfs-blockchain-watcher root dir"
   exit 1
 fi
 
