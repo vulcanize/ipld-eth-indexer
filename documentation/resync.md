@@ -4,9 +4,9 @@ It also contains a utility for cleaning out old data, and resetting the validati
 
 ### Rational
 
-Manual resyncing of data is useful when we want to re-validate data within specific ranges using a new source.
+Manual resyncing of data can be used to re-validate data within specific ranges using a new source.
 
-Cleaning out data is useful when we need to remove bad/deprecated data or prepare for breaking changes to the db schemas.
+Option to remove data may be needed for bad/deprecated data or to prepare for breaking changes to the db schemas.
 
 Resetting the validation level of data is useful for designating ranges of data for resyncing by an ongoing ipfs-blockchain-watcher
 backfill process.

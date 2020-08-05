@@ -101,18 +101,18 @@ The .toml file being used to fill the Ethereum subscription config would look so
 
 These configuration parameters are broken down as follows:
 
-`ethSubscription.wsPath` is used to define the SuperNode ws url OR ipc endpoint we subscribe to
+`ethSubscription.wsPath` is used to define the watcher ws url OR ipc endpoint to subscribe to
 
 `ethSubscription.historicalData` specifies whether or not ipfs-blockchain-watcher should look up historical data in its cache and
-send that to the subscriber, if this is set to `false` then we only streams newly synced/incoming data
+send that to the subscriber, if this is set to `false` then only newly synced/incoming data is streamed
 
 `ethSubscription.historicalDataOnly` will tell ipfs-blockchain-watcher to only send historical data with the specified range and
 not stream forward syncing data
 
-`ethSubscription.startingBlock` is the starting block number for the range we want to receive data in
+`ethSubscription.startingBlock` is the starting block number for the range to receive data in
 
-`ethSubscription.endingBlock` is the ending block number for the range we want to receive data in;
-setting to 0 means there is no end/we will continue streaming indefinitely.
+`ethSubscription.endingBlock` is the ending block number for the range to receive data in;
+setting to 0 means the process will continue streaming indefinitely.
 
 `ethSubscription.headerFilter` has two sub-options: `off` and `uncles`. 
 
@@ -122,34 +122,34 @@ setting to 0 means there is no end/we will continue streaming indefinitely.
 `ethSubscription.txFilter` has three sub-options: `off`, `src`, and `dst`. 
 
 - Setting `off` to true tells ipfs-blockchain-watcher to not send any transactions to the subscriber
-- `src` and `dst` are string arrays which can be filled with ETH addresses we want to filter transactions for,
+- `src` and `dst` are string arrays which can be filled with ETH addresses to filter transactions for,
 if they have any addresses then ipfs-blockchain-watcher will only send transactions that were sent or received by the addresses contained
 in `src` and `dst`, respectively.
 
 `ethSubscription.receiptFilter` has four sub-options: `off`, `topics`, `contracts` and `matchTxs`. 
 
 - Setting `off` to true tells ipfs-blockchain-watcher to not send any receipts to the subscriber
-- `topic0s` is a string array which can be filled with event topics we want to filter for,
+- `topic0s` is a string array which can be filled with event topics to filter for,
 if it has any topics then ipfs-blockchain-watcher will only send receipts that contain logs which have that topic0.
-- `contracts` is a string array which can be filled with contract addresses we want to filter for, if it contains any contract addresses the watcher will
+- `contracts` is a string array which can be filled with contract addresses to filter for, if it contains any contract addresses the watcher will
 only send receipts that correspond to one of those contracts. 
 - `matchTrxs` is a bool which when set to true any receipts that correspond to filtered for transactions will be sent by the watcher, regardless of whether or not the receipt satisfies the `topics` or `contracts` filters.
 
 `ethSubscription.stateFilter` has three sub-options: `off`, `addresses`, and `intermediateNodes`. 
 
 - Setting `off` to true tells ipfs-blockchain-watcher to not send any state data to the subscriber
-- `addresses` is a string array which can be filled with ETH addresses we want to filter state for,
+- `addresses` is a string array which can be filled with ETH addresses to filter state for,
 if it has any addresses then ipfs-blockchain-watcher will only send state leafs (accounts) corresponding to those account addresses. 
-- By default ipfs-blockchain-watcher only sends along state leafs, if we want to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
+- By default ipfs-blockchain-watcher only sends along state leafs, to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
 
 `ethSubscription.storageFilter` has four sub-options: `off`, `addresses`, `storageKeys`, and `intermediateNodes`. 
 
 - Setting `off` to true tells ipfs-blockchain-watcher to not send any storage data to the subscriber
-- `addresses` is a string array which can be filled with ETH addresses we want to filter storage for,
+- `addresses` is a string array which can be filled with ETH addresses to filter storage for,
 if it has any addresses then ipfs-blockchain-watcher will only send storage nodes from the storage tries at those state addresses.
-- `storageKeys` is another string array that can be filled with storage keys we want to filter storage data for. It is important to note that the storage keys need to be the actual keccak256 hashes, whereas
+- `storageKeys` is another string array that can be filled with storage keys to filter storage data for. It is important to note that the storage keys need to be the actual keccak256 hashes, whereas
 the addresses in the `addresses` fields are pre-hashed ETH addresses.
-- By default ipfs-blockchain-watcher only sends along storage leafs, if we want to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
+- By default ipfs-blockchain-watcher only sends along storage leafs, to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
 
 ### Bitcoin RPC Subscription:
 An example of how to subscribe to a real-time Bitcoin data feed from ipfs-blockchain-watcher using the `Stream` RPC method is provided below
@@ -210,7 +210,7 @@ The .toml file being used to fill the Bitcoin subscription config would look som
 
 These configuration parameters are broken down as follows:
 
-`btcSubscription.wsPath` is used to define the SuperNode ws url OR ipc endpoint we subscribe to
+`btcSubscription.wsPath` is used to define the SuperNode ws url OR ipc endpoint to subscribe to
 
 `btcSubscription.historicalData` specifies whether or not ipfs-blockchain-watcher should look up historical data in its cache and
 send that to the subscriber, if this is set to `false` then ipfs-blockchain-watcher only streams newly synced/incoming data
@@ -218,10 +218,10 @@ send that to the subscriber, if this is set to `false` then ipfs-blockchain-watc
 `btcSubscription.historicalDataOnly` will tell ipfs-blockchain-watcher to only send historical data with the specified range and
 not stream forward syncing data
 
-`btcSubscription.startingBlock` is the starting block number for the range we want to receive data in
+`btcSubscription.startingBlock` is the starting block number for the range to receive data in
 
-`btcSubscription.endingBlock` is the ending block number for the range we want to receive data in;
-setting to 0 means there is no end/we will continue streaming indefinitely.
+`btcSubscription.endingBlock` is the ending block number for the range to receive data in;
+setting to 0 means the process will continue streaming indefinitely.
 
 `btcSubscription.headerFilter` has one sub-option: `off`. 
 
