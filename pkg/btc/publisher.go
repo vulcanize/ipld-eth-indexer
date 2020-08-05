@@ -62,8 +62,10 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	if err != nil {
 		return nil, err
 	}
+	mhKey, _ := shared.MultihashKeyFromCIDString(headerCid)
 	header := HeaderModel{
 		CID:         headerCid,
+		MhKey:       mhKey,
 		ParentHash:  ipldPayload.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(ipldPayload.BlockPayload.BlockHeight)),
 		BlockHash:   ipldPayload.Header.BlockHash().String(),
@@ -97,8 +99,10 @@ func (pub *IPLDPublisher) publishTransactions(transactions []*ipld.BtcTx, txTrie
 		if err != nil {
 			return nil, err
 		}
+		mhKey, _ := shared.MultihashKeyFromCIDString(cid)
 		txCids[i] = TxModelWithInsAndOuts{
 			CID:         cid,
+			MhKey:       mhKey,
 			Index:       trxMeta[i].Index,
 			TxHash:      trxMeta[i].TxHash,
 			SegWit:      trxMeta[i].SegWit,

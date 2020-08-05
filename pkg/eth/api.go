@@ -29,10 +29,10 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// APIName is the namespace for the super node's eth api
+// APIName is the namespace for the watcher's eth api
 const APIName = "eth"
 
-// APIVersion is the version of the super node's eth api
+// APIVersion is the version of the watcher's eth api
 const APIVersion = "0.0.1"
 
 type PublicEthAPI struct {
@@ -181,7 +181,7 @@ func (pea *PublicEthAPI) GetBlockByHash(ctx context.Context, hash common.Hash, f
 }
 
 // GetTransactionByHash returns the transaction for the given hash
-// SuperNode cannot currently handle pending/tx_pool txs
+// eth ipfs-blockchain-watcher cannot currently handle pending/tx_pool txs
 func (pea *PublicEthAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) (*RPCTransaction, error) {
 	// Try to return an already finalized transaction
 	tx, blockHash, blockNumber, index, err := pea.B.GetTransaction(ctx, hash)

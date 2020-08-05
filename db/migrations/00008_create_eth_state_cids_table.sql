@@ -1,0 +1,15 @@
+-- +goose Up
+CREATE TABLE eth.state_cids (
+  id                    SERIAL PRIMARY KEY,
+  header_id             INTEGER NOT NULL REFERENCES eth.header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  state_leaf_key        VARCHAR(66),
+  cid                   TEXT NOT NULL,
+  mh_key                TEXT NOT NULL REFERENCES public.blocks (key) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  state_path            BYTEA,
+  node_type             INTEGER,
+  diff                  BOOLEAN NOT NULL DEFAULT FALSE,
+  UNIQUE (header_id, state_path, diff)
+);
+
+-- +goose Down
+DROP TABLE eth.state_cids;

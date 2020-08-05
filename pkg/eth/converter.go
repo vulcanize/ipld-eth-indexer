@@ -72,8 +72,8 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			return nil, err
 		}
 		txMeta := TxModel{
-			Dst:    shared.HandleNullAddrPointer(trx.To()),
-			Src:    shared.HandleNullAddr(from),
+			Dst:    shared.HandleZeroAddrPointer(trx.To()),
+			Src:    shared.HandleZeroAddr(from),
 			TxHash: trx.Hash().String(),
 			Index:  int64(i),
 		}
@@ -106,7 +106,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			logContracts = append(logContracts, addr)
 		}
 		// This is the contract address if this receipt is for a contract creation tx
-		contract := shared.HandleNullAddr(receipt.ContractAddress)
+		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
 		if contract != "" {
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()

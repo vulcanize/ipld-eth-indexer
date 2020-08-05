@@ -92,6 +92,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	reward := CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
 	header := HeaderModel{
 		CID:             headerNode.Cid().String(),
+		MhKey:           shared.MultihashKeyFromCID(headerNode.Cid()),
 		ParentHash:      ipldPayload.Block.ParentHash().String(),
 		BlockNumber:     ipldPayload.Block.Number().String(),
 		BlockHash:       ipldPayload.Block.Hash().String(),
@@ -117,6 +118,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 		uncleReward := CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncleNode.Number.Int64())
 		uncle := UncleModel{
 			CID:        uncleNode.Cid().String(),
+			MhKey:      shared.MultihashKeyFromCID(uncleNode.Cid()),
 			ParentHash: uncleNode.ParentHash.String(),
 			BlockHash:  uncleNode.Hash().String(),
 			Reward:     uncleReward.String(),
@@ -137,12 +139,14 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
+		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
 		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			return nil, err
 		}
 		rctModel := ipldPayload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
+		rctModel.MhKey = shared.MultihashKeyFromCID(rctNode.Cid())
 		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			return nil, err
 		}
@@ -162,10 +166,12 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 		if err != nil {
 			return err
 		}
+		mhKey, _ := shared.MultihashKeyFromCIDString(stateCIDStr)
 		stateModel := StateNodeModel{
 			Path:     stateNode.Path,
 			StateKey: stateNode.LeafKey.String(),
 			CID:      stateCIDStr,
+			MhKey:    mhKey,
 			NodeType: ResolveFromNodeType(stateNode.Type),
 		}
 		stateID, err := pub.indexer.indexStateCID(tx, stateModel, headerID)
@@ -199,10 +205,12 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 				if err != nil {
 					return err
 				}
+				mhKey, _ := shared.MultihashKeyFromCIDString(storageCIDStr)
 				storageModel := StorageNodeModel{
 					Path:       storageNode.Path,
 					StorageKey: storageNode.LeafKey.Hex(),
 					CID:        storageCIDStr,
+					MhKey:      mhKey,
 					NodeType:   ResolveFromNodeType(storageNode.Type),
 				}
 				if err := pub.indexer.indexStorageCID(tx, storageModel, stateID); err != nil {

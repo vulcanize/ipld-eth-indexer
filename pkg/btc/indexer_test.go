@@ -28,14 +28,20 @@ import (
 
 var _ = Describe("Indexer", func() {
 	var (
-		db   *postgres.DB
-		err  error
-		repo *btc.CIDIndexer
+		db       *postgres.DB
+		err      error
+		repo     *btc.CIDIndexer
+		mockData = []byte{1, 2, 3}
 	)
 	BeforeEach(func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = btc.NewCIDIndexer(db)
+		// need entries in the public.blocks with the mhkeys or the FK constraint will fail
+		shared.PublishMockIPLD(db, mocks.MockHeaderMhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.MockTrxMhKey1, mockData)
+		shared.PublishMockIPLD(db, mocks.MockTrxMhKey2, mockData)
+		shared.PublishMockIPLD(db, mocks.MockTrxMhKey3, mockData)
 	})
 	AfterEach(func() {
 		btc.TearDownDB(db)
@@ -43,6 +49,7 @@ var _ = Describe("Indexer", func() {
 
 	Describe("Index", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
+
 			err = repo.Index(&mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
 			pgStr := `SELECT * FROM btc.header_cids
@@ -72,13 +79,13 @@ var _ = Describe("Indexer", func() {
 				Expect(tx.WitnessHash).To(Equal(""))
 				switch tx.Index {
 				case 0:
-					Expect(tx.CID).To(Equal("mockTrxCID1"))
+					Expect(tx.CID).To(Equal(mocks.MockTrxCID1.String()))
 					Expect(tx.TxHash).To(Equal(mocks.MockBlock.Transactions[0].TxHash().String()))
 				case 1:
-					Expect(tx.CID).To(Equal("mockTrxCID2"))
+					Expect(tx.CID).To(Equal(mocks.MockTrxCID2.String()))
 					Expect(tx.TxHash).To(Equal(mocks.MockBlock.Transactions[1].TxHash().String()))
 				case 2:
-					Expect(tx.CID).To(Equal("mockTrxCID3"))
+					Expect(tx.CID).To(Equal(mocks.MockTrxCID3.String()))
 					Expect(tx.TxHash).To(Equal(mocks.MockBlock.Transactions[2].TxHash().String()))
 				}
 			}

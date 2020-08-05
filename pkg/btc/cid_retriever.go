@@ -130,7 +130,7 @@ func (bcr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 	results := make([]TxModel, 0)
 	id := 1
 	pgStr := fmt.Sprintf(`SELECT transaction_cids.id, transaction_cids.header_id,
- 			transaction_cids.tx_hash, transaction_cids.cid,
+ 			transaction_cids.tx_hash, transaction_cids.cid, transaction_cids.mh_key,
  			transaction_cids.segwit, transaction_cids.witness_hash, transaction_cids.index
  			FROM btc.transaction_cids, btc.header_cids, btc.tx_inputs, btc.tx_outputs
 			WHERE transaction_cids.header_id = header_cids.id
@@ -169,7 +169,7 @@ func (bcr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
 func (bcr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
-	log.Info("searching for gaps in the btc super node database")
+	log.Info("searching for gaps in the btc ipfs watcher database")
 	startingBlock, err := bcr.RetrieveFirstBlockNumber()
 	if err != nil {
 		return nil, fmt.Errorf("btc CIDRetriever RetrieveFirstBlockNumber error: %v", err)

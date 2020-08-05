@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
@@ -55,15 +55,15 @@ type Config struct {
 	IPFSMode shared.IPFSMode
 
 	HTTPClient  interface{}   // Note this client is expected to support the retrieval of the specified data type(s)
-	NodeInfo    core.Node     // Info for the associated node
+	NodeInfo    node.Node     // Info for the associated node
 	Ranges      [][2]uint64   // The block height ranges to resync
 	BatchSize   uint64        // BatchSize for the resync http calls (client has to support batch sizing)
 	Timeout     time.Duration // HTTP connection timeout in seconds
 	BatchNumber uint64
 }
 
-// NewReSyncConfig fills and returns a resync config from toml parameters
-func NewReSyncConfig() (*Config, error) {
+// NewConfig fills and returns a resync config from toml parameters
+func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 

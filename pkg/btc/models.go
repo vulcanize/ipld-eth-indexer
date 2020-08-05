@@ -25,6 +25,7 @@ type HeaderModel struct {
 	BlockHash      string `db:"block_hash"`
 	ParentHash     string `db:"parent_hash"`
 	CID            string `db:"cid"`
+	MhKey          string `db:"mh_key"`
 	Timestamp      int64  `db:"timestamp"`
 	Bits           uint32 `db:"bits"`
 	NodeID         int64  `db:"node_id"`
@@ -38,6 +39,7 @@ type TxModel struct {
 	Index       int64  `db:"index"`
 	TxHash      string `db:"tx_hash"`
 	CID         string `db:"cid"`
+	MhKey       string `db:"mh_key"`
 	SegWit      bool   `db:"segwit"`
 	WitnessHash string `db:"witness_hash"`
 }
@@ -49,6 +51,7 @@ type TxModelWithInsAndOuts struct {
 	Index       int64  `db:"index"`
 	TxHash      string `db:"tx_hash"`
 	CID         string `db:"cid"`
+	MhKey       string `db:"mh_key"`
 	SegWit      bool   `db:"segwit"`
 	WitnessHash string `db:"witness_hash"`
 	TxInputs    []TxInput

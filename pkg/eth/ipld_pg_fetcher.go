@@ -102,7 +102,7 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 // FetchHeaders fetches headers
 func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
 	log.Debug("fetching header ipld")
-	headerBytes, err := shared.FetchIPLD(tx, c.CID)
+	headerBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 	if err != nil {
 		return ipfs.BlockModel{}, err
 	}
@@ -117,7 +117,7 @@ func (f *IPLDPGFetcher) FetchUncles(tx *sqlx.Tx, cids []UncleModel) ([]ipfs.Bloc
 	log.Debug("fetching uncle iplds")
 	uncleIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		uncleBytes, err := shared.FetchIPLD(tx, c.CID)
+		uncleBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockMode
 	log.Debug("fetching transaction iplds")
 	trxIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		txBytes, err := shared.FetchIPLD(tx, c.CID)
+		txBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +151,7 @@ func (f *IPLDPGFetcher) FetchRcts(tx *sqlx.Tx, cids []ReceiptModel) ([]ipfs.Bloc
 	log.Debug("fetching receipt iplds")
 	rctIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		rctBytes, err := shared.FetchIPLD(tx, c.CID)
+		rctBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func (f *IPLDPGFetcher) FetchState(tx *sqlx.Tx, cids []StateNodeModel) ([]StateN
 		if stateNode.CID == "" {
 			continue
 		}
-		stateBytes, err := shared.FetchIPLD(tx, stateNode.CID)
+		stateBytes, err := shared.FetchIPLDByMhKey(tx, stateNode.MhKey)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +196,7 @@ func (f *IPLDPGFetcher) FetchStorage(tx *sqlx.Tx, cids []StorageNodeWithStateKey
 		if storageNode.CID == "" || storageNode.StateKey == "" {
 			continue
 		}
-		storageBytes, err := shared.FetchIPLD(tx, storageNode.CID)
+		storageBytes, err := shared.FetchIPLDByMhKey(tx, storageNode.MhKey)
 		if err != nil {
 			return nil, err
 		}

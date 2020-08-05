@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// SubscriptionSettings config is used by a subscriber to specify what bitcoin data to stream from the super node
+// SubscriptionSettings config is used by a subscriber to specify what bitcoin data to stream from the watcher
 type SubscriptionSettings struct {
 	BackFill     bool
 	BackFillOnly bool
@@ -55,36 +55,36 @@ type TxFilter struct {
 func NewBtcSubscriptionConfig() (*SubscriptionSettings, error) {
 	sc := new(SubscriptionSettings)
 	// Below default to false, which means we do not backfill by default
-	sc.BackFill = viper.GetBool("superNode.btcSubscription.historicalData")
-	sc.BackFillOnly = viper.GetBool("superNode.btcSubscription.historicalDataOnly")
+	sc.BackFill = viper.GetBool("watcher.btcSubscription.historicalData")
+	sc.BackFillOnly = viper.GetBool("watcher.btcSubscription.historicalDataOnly")
 	// Below default to 0
 	// 0 start means we start at the beginning and 0 end means we continue indefinitely
-	sc.Start = big.NewInt(viper.GetInt64("superNode.btcSubscription.startingBlock"))
-	sc.End = big.NewInt(viper.GetInt64("superNode.btcSubscription.endingBlock"))
+	sc.Start = big.NewInt(viper.GetInt64("watcher.btcSubscription.startingBlock"))
+	sc.End = big.NewInt(viper.GetInt64("watcher.btcSubscription.endingBlock"))
 	// Below default to false, which means we get all headers by default
 	sc.HeaderFilter = HeaderFilter{
-		Off: viper.GetBool("superNode.btcSubscription.headerFilter.off"),
+		Off: viper.GetBool("watcher.btcSubscription.headerFilter.off"),
 	}
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default
-	pksc := viper.Get("superNode.btcSubscription.txFilter.pkScriptClass")
+	pksc := viper.Get("watcher.btcSubscription.txFilter.pkScriptClass")
 	pkScriptClasses, ok := pksc.([]uint8)
 	if !ok {
-		return nil, errors.New("superNode.btcSubscription.txFilter.pkScriptClass needs to be an array of uint8s")
+		return nil, errors.New("watcher.btcSubscription.txFilter.pkScriptClass needs to be an array of uint8s")
 	}
-	is := viper.Get("superNode.btcSubscription.txFilter.indexes")
+	is := viper.Get("watcher.btcSubscription.txFilter.indexes")
 	indexes, ok := is.([]int64)
 	if !ok {
-		return nil, errors.New("superNode.btcSubscription.txFilter.indexes needs to be an array of int64s")
+		return nil, errors.New("watcher.btcSubscription.txFilter.indexes needs to be an array of int64s")
 	}
 	sc.TxFilter = TxFilter{
-		Off:             viper.GetBool("superNode.btcSubscription.txFilter.off"),
-		Segwit:          viper.GetBool("superNode.btcSubscription.txFilter.segwit"),
-		WitnessHashes:   viper.GetStringSlice("superNode.btcSubscription.txFilter.witnessHashes"),
+		Off:             viper.GetBool("watcher.btcSubscription.txFilter.off"),
+		Segwit:          viper.GetBool("watcher.btcSubscription.txFilter.segwit"),
+		WitnessHashes:   viper.GetStringSlice("watcher.btcSubscription.txFilter.witnessHashes"),
 		PkScriptClasses: pkScriptClasses,
 		Indexes:         indexes,
-		MultiSig:        viper.GetBool("superNode.btcSubscription.txFilter.multiSig"),
-		Addresses:       viper.GetStringSlice("superNode.btcSubscription.txFilter.addresses"),
+		MultiSig:        viper.GetBool("watcher.btcSubscription.txFilter.multiSig"),
+		Addresses:       viper.GetStringSlice("watcher.btcSubscription.txFilter.addresses"),
 	}
 	return sc, nil
 }

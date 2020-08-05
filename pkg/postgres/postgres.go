@@ -22,16 +22,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 )
 
 type DB struct {
 	*sqlx.DB
-	Node   core.Node
+	Node   node.Node
 	NodeID int64
 }
 
-func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
+func NewDB(databaseConfig config.Database, node node.Node) (*DB, error) {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, connectErr := sqlx.Connect("postgres", connectString)
 	if connectErr != nil {
@@ -55,7 +55,7 @@ func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	return &pg, nil
 }
 
-func (db *DB) CreateNode(node *core.Node) error {
+func (db *DB) CreateNode(node *node.Node) error {
 	var nodeID int64
 	err := db.QueryRow(
 		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)

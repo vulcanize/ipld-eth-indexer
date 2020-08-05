@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// SubscriptionSettings config is used by a subscriber to specify what eth data to stream from the super node
+// SubscriptionSettings config is used by a subscriber to specify what eth data to stream from the watcher
 type SubscriptionSettings struct {
 	BackFill      bool
 	BackFillOnly  bool
@@ -78,50 +78,50 @@ type StorageFilter struct {
 func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 	sc := new(SubscriptionSettings)
 	// Below default to false, which means we do not backfill by default
-	sc.BackFill = viper.GetBool("superNode.ethSubscription.historicalData")
-	sc.BackFillOnly = viper.GetBool("superNode.ethSubscription.historicalDataOnly")
+	sc.BackFill = viper.GetBool("watcher.ethSubscription.historicalData")
+	sc.BackFillOnly = viper.GetBool("watcher.ethSubscription.historicalDataOnly")
 	// Below default to 0
 	// 0 start means we start at the beginning and 0 end means we continue indefinitely
-	sc.Start = big.NewInt(viper.GetInt64("superNode.ethSubscription.startingBlock"))
-	sc.End = big.NewInt(viper.GetInt64("superNode.ethSubscription.endingBlock"))
+	sc.Start = big.NewInt(viper.GetInt64("watcher.ethSubscription.startingBlock"))
+	sc.End = big.NewInt(viper.GetInt64("watcher.ethSubscription.endingBlock"))
 	// Below default to false, which means we get all headers and no uncles by default
 	sc.HeaderFilter = HeaderFilter{
-		Off:    viper.GetBool("superNode.ethSubscription.headerFilter.off"),
-		Uncles: viper.GetBool("superNode.ethSubscription.headerFilter.uncles"),
+		Off:    viper.GetBool("watcher.ethSubscription.headerFilter.off"),
+		Uncles: viper.GetBool("watcher.ethSubscription.headerFilter.uncles"),
 	}
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default
 	sc.TxFilter = TxFilter{
-		Off: viper.GetBool("superNode.ethSubscription.txFilter.off"),
-		Src: viper.GetStringSlice("superNode.ethSubscription.txFilter.src"),
-		Dst: viper.GetStringSlice("superNode.ethSubscription.txFilter.dst"),
+		Off: viper.GetBool("watcher.ethSubscription.txFilter.off"),
+		Src: viper.GetStringSlice("watcher.ethSubscription.txFilter.src"),
+		Dst: viper.GetStringSlice("watcher.ethSubscription.txFilter.dst"),
 	}
 	// By default all of the topic slices will be empty => match on any/all topics
 	topics := make([][]string, 4)
-	topics[0] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic0s")
-	topics[1] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic1s")
-	topics[2] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic2s")
-	topics[3] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic3s")
+	topics[0] = viper.GetStringSlice("watcher.ethSubscription.receiptFilter.topic0s")
+	topics[1] = viper.GetStringSlice("watcher.ethSubscription.receiptFilter.topic1s")
+	topics[2] = viper.GetStringSlice("watcher.ethSubscription.receiptFilter.topic2s")
+	topics[3] = viper.GetStringSlice("watcher.ethSubscription.receiptFilter.topic3s")
 	sc.ReceiptFilter = ReceiptFilter{
-		Off:          viper.GetBool("superNode.ethSubscription.receiptFilter.off"),
-		MatchTxs:     viper.GetBool("superNode.ethSubscription.receiptFilter.matchTxs"),
-		LogAddresses: viper.GetStringSlice("superNode.ethSubscription.receiptFilter.contracts"),
+		Off:          viper.GetBool("watcher.ethSubscription.receiptFilter.off"),
+		MatchTxs:     viper.GetBool("watcher.ethSubscription.receiptFilter.matchTxs"),
+		LogAddresses: viper.GetStringSlice("watcher.ethSubscription.receiptFilter.contracts"),
 		Topics:       topics,
 	}
 	// Below defaults to two false, and a slice of length 0
 	// Which means we get all state leafs by default, but no intermediate nodes
 	sc.StateFilter = StateFilter{
-		Off:               viper.GetBool("superNode.ethSubscription.stateFilter.off"),
-		IntermediateNodes: viper.GetBool("superNode.ethSubscription.stateFilter.intermediateNodes"),
-		Addresses:         viper.GetStringSlice("superNode.ethSubscription.stateFilter.addresses"),
+		Off:               viper.GetBool("watcher.ethSubscription.stateFilter.off"),
+		IntermediateNodes: viper.GetBool("watcher.ethSubscription.stateFilter.intermediateNodes"),
+		Addresses:         viper.GetStringSlice("watcher.ethSubscription.stateFilter.addresses"),
 	}
 	// Below defaults to two false, and two slices of length 0
 	// Which means we get all storage leafs by default, but no intermediate nodes
 	sc.StorageFilter = StorageFilter{
-		Off:               viper.GetBool("superNode.ethSubscription.storageFilter.off"),
-		IntermediateNodes: viper.GetBool("superNode.ethSubscription.storageFilter.intermediateNodes"),
-		Addresses:         viper.GetStringSlice("superNode.ethSubscription.storageFilter.addresses"),
-		StorageKeys:       viper.GetStringSlice("superNode.ethSubscription.storageFilter.storageKeys"),
+		Off:               viper.GetBool("watcher.ethSubscription.storageFilter.off"),
+		IntermediateNodes: viper.GetBool("watcher.ethSubscription.storageFilter.intermediateNodes"),
+		Addresses:         viper.GetStringSlice("watcher.ethSubscription.storageFilter.addresses"),
+		StorageKeys:       viper.GetStringSlice("watcher.ethSubscription.storageFilter.storageKeys"),
 	}
 	return sc, nil
 }

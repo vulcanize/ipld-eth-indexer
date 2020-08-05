@@ -20,42 +20,31 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
 )
 
 var (
 	cfgFile        string
-	databaseConfig config.Database
-	ipc            string
 	subCommand     string
 	logWithCommand log.Entry
 )
 
-const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
-)
-
 var rootCmd = &cobra.Command{
-	Use:              "vulcanizedb",
+	Use:              "ipfs-blockchain-watcher",
 	PersistentPreRun: initFuncs,
 }
 
 func Execute() {
-	log.Info("----- Starting vDB -----")
+	log.Info("----- Starting IPFS blockchain watcher -----")
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func initFuncs(cmd *cobra.Command, args []string) {
-	setViperConfigs()
 	logfile := viper.GetString("logfile")
 	if logfile != "" {
 		file, err := os.OpenFile(logfile,
@@ -75,18 +64,6 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	}
 }
 
-func setViperConfigs() {
-	ipc = viper.GetString("client.ipcpath")
-	databaseConfig = config.Database{
-		Name:     viper.GetString("database.name"),
-		Hostname: viper.GetString("database.hostname"),
-		Port:     viper.GetInt("database.port"),
-		User:     viper.GetString("database.user"),
-		Password: viper.GetString("database.password"),
-	}
-	viper.Set("database.config", databaseConfig)
-}
-
 func logLevel() error {
 	lvl, err := log.ParseLevel(viper.GetString("log.level"))
 	if err != nil {
@@ -102,7 +79,6 @@ func logLevel() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	// When searching for env variables, replace dots in config keys with underscores
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
@@ -122,7 +98,6 @@ func init() {
 	viper.BindPFlag("database.hostname", rootCmd.PersistentFlags().Lookup("database-hostname"))
 	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("database-user"))
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
-	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 }
 

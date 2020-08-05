@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestBTCSuperNode(t *testing.T) {
+func TestBTCWatcher(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Super Node BTC Suite Test")
+	RunSpecs(t, "BTC IPFS Watcher Suite Test")
 }
 
 var _ = BeforeSuite(func() {

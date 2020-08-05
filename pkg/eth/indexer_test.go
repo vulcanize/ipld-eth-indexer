@@ -37,6 +37,17 @@ var _ = Describe("Indexer", func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth.NewCIDIndexer(db)
+		// need entries in the public.blocks with the mhkeys or the FK constraint will fail
+		shared.PublishMockIPLD(db, mocks.HeaderMhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Trx1MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Trx2MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Trx3MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Rct1MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Rct2MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.Rct3MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.State1MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.State2MhKey, mockData)
+		shared.PublishMockIPLD(db, mocks.StorageMhKey, mockData)
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)

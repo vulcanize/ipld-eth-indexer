@@ -186,7 +186,7 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 	results := make([]TxModel, 0)
 	id := 1
 	pgStr := fmt.Sprintf(`SELECT transaction_cids.id, transaction_cids.header_id,
- 			transaction_cids.tx_hash, transaction_cids.cid,
+ 			transaction_cids.tx_hash, transaction_cids.cid, transaction_cids.mh_key,
  			transaction_cids.dst, transaction_cids.src, transaction_cids.index
  			FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
 			WHERE header_cids.id = $%d`, id)
@@ -210,8 +210,8 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 func (ecr *CIDRetriever) RetrieveRctCIDsByHeaderID(tx *sqlx.Tx, rctFilter ReceiptFilter, headerID int64, trxIds []int64) ([]ReceiptModel, error) {
 	log.Debug("retrieving receipt cids for header id ", headerID)
 	args := make([]interface{}, 0, 4)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
- 			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.mh_key,
+ 			receipt_cids.contract, receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -290,8 +290,8 @@ func (ecr *CIDRetriever) RetrieveRctCIDsByHeaderID(tx *sqlx.Tx, rctFilter Receip
 func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, blockNumber int64, blockHash *common.Hash, trxIds []int64) ([]ReceiptModel, error) {
 	log.Debug("retrieving receipt cids for block ", blockNumber)
 	args := make([]interface{}, 0, 5)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
- 			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.mh_key,
+ 			receipt_cids.contract, receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -387,7 +387,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 	log.Debug("retrieving state cids for header id ", headerID)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.id, state_cids.header_id,
-			state_cids.state_leaf_key, state_cids.node_type, state_cids.cid, state_cids.state_path
+			state_cids.state_leaf_key, state_cids.node_type, state_cids.cid, state_cids.mh_key, state_cids.state_path
 			FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.id = $1`
 	args = append(args, headerID)
@@ -411,8 +411,8 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageFilter, headerID int64) ([]StorageNodeWithStateKeyModel, error) {
 	log.Debug("retrieving storage cids for header id ", headerID)
 	args := make([]interface{}, 0, 3)
-	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_leaf_key,
- 			storage_cids.node_type, storage_cids.cid, storage_cids.storage_path, state_cids.state_leaf_key
+	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_leaf_key, storage_cids.node_type,
+ 			storage_cids.cid, storage_cids.mh_key, storage_cids.storage_path, state_cids.state_leaf_key
  			FROM eth.storage_cids, eth.state_cids, eth.header_cids
 			WHERE storage_cids.state_id = state_cids.id 
 			AND state_cids.header_id = header_cids.id
@@ -443,7 +443,7 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
 // it finds the union of heights where no data exists and where the times_validated is lower than the validation level
 func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
-	log.Info("searching for gaps in the eth super node database")
+	log.Info("searching for gaps in the eth ipfs watcher database")
 	startingBlock, err := ecr.RetrieveFirstBlockNumber()
 	if err != nil {
 		return nil, fmt.Errorf("eth CIDRetriever RetrieveFirstBlockNumber error: %v", err)
@@ -607,8 +607,8 @@ func (ecr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) (
 // RetrieveReceiptCIDsByTxIDs retrieves receipt CIDs by their associated tx IDs
 func (ecr *CIDRetriever) RetrieveReceiptCIDsByTxIDs(tx *sqlx.Tx, txIDs []int64) ([]ReceiptModel, error) {
 	log.Debugf("retrieving receipt cids for tx ids %v", txIDs)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
- 			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.mh_key,
+ 			receipt_cids.contract, receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
 			FROM eth.receipt_cids, eth.transaction_cids
 			WHERE tx_id = ANY($1::INTEGER[])

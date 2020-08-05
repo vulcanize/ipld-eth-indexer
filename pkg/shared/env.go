@@ -24,7 +24,7 @@ import (
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/core"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 )
 
 // Env variables
@@ -51,7 +51,7 @@ const (
 )
 
 // GetEthNodeAndClient returns eth node info and client from path url
-func GetEthNodeAndClient(path string) (core.Node, *rpc.Client, error) {
+func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
 	viper.BindEnv("ethereum.nodeID", ETH_NODE_ID)
 	viper.BindEnv("ethereum.clientName", ETH_CLIENT_NAME)
 	viper.BindEnv("ethereum.genesisBlock", ETH_GENESIS_BLOCK)
@@ -59,9 +59,9 @@ func GetEthNodeAndClient(path string) (core.Node, *rpc.Client, error) {
 
 	rpcClient, err := rpc.Dial(path)
 	if err != nil {
-		return core.Node{}, nil, err
+		return node.Node{}, nil, err
 	}
-	return core.Node{
+	return node.Node{
 		ID:           viper.GetString("ethereum.nodeID"),
 		ClientName:   viper.GetString("ethereum.clientName"),
 		GenesisBlock: viper.GetString("ethereum.genesisBlock"),
@@ -94,7 +94,7 @@ func GetIPFSMode() (IPFSMode, error) {
 }
 
 // GetBtcNodeAndClient returns btc node info from path url
-func GetBtcNodeAndClient(path string) (core.Node, *rpcclient.ConnConfig) {
+func GetBtcNodeAndClient(path string) (node.Node, *rpcclient.ConnConfig) {
 	viper.BindEnv("bitcoin.nodeID", BTC_NODE_ID)
 	viper.BindEnv("bitcoin.clientName", BTC_CLIENT_NAME)
 	viper.BindEnv("bitcoin.genesisBlock", BTC_GENESIS_BLOCK)
@@ -103,7 +103,7 @@ func GetBtcNodeAndClient(path string) (core.Node, *rpcclient.ConnConfig) {
 	viper.BindEnv("bitcoin.user", BTC_NODE_USER)
 
 	// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
-	return core.Node{
+	return node.Node{
 			ID:           viper.GetString("bitcoin.nodeID"),
 			ClientName:   viper.GetString("bitcoin.clientName"),
 			GenesisBlock: viper.GetString("bitcoin.genesisBlock"),

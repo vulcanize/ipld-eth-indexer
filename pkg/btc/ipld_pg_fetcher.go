@@ -79,7 +79,7 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 // FetchHeaders fetches headers
 func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
 	log.Debug("fetching header ipld")
-	headerBytes, err := shared.FetchIPLD(tx, c.CID)
+	headerBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 	if err != nil {
 		return ipfs.BlockModel{}, err
 	}
@@ -94,7 +94,7 @@ func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockMode
 	log.Debug("fetching transaction iplds")
 	trxIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		trxBytes, err := shared.FetchIPLD(tx, c.CID)
+		trxBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}

@@ -25,6 +25,7 @@ type HeaderModel struct {
 	BlockHash       string `db:"block_hash"`
 	ParentHash      string `db:"parent_hash"`
 	CID             string `db:"cid"`
+	MhKey           string `db:"mh_key"`
 	TotalDifficulty string `db:"td"`
 	NodeID          int64  `db:"node_id"`
 	Reward          string `db:"reward"`
@@ -44,6 +45,7 @@ type UncleModel struct {
 	BlockHash  string `db:"block_hash"`
 	ParentHash string `db:"parent_hash"`
 	CID        string `db:"cid"`
+	MhKey      string `db:"mh_key"`
 	Reward     string `db:"reward"`
 }
 
@@ -54,6 +56,7 @@ type TxModel struct {
 	Index    int64  `db:"index"`
 	TxHash   string `db:"tx_hash"`
 	CID      string `db:"cid"`
+	MhKey    string `db:"mh_key"`
 	Dst      string `db:"dst"`
 	Src      string `db:"src"`
 }
@@ -63,6 +66,7 @@ type ReceiptModel struct {
 	ID           int64          `db:"id"`
 	TxID         int64          `db:"tx_id"`
 	CID          string         `db:"cid"`
+	MhKey        string         `db:"mh_key"`
 	Contract     string         `db:"contract"`
 	ContractHash string         `db:"contract_hash"`
 	LogContracts pq.StringArray `db:"log_contracts"`
@@ -80,6 +84,8 @@ type StateNodeModel struct {
 	StateKey string `db:"state_leaf_key"`
 	NodeType int    `db:"node_type"`
 	CID      string `db:"cid"`
+	MhKey    string `db:"mh_key"`
+	Diff     bool   `db:"diff"`
 }
 
 // StorageNodeModel is the db model for eth.storage_cids
@@ -90,6 +96,8 @@ type StorageNodeModel struct {
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+	MhKey      string `db:"mh_key"`
+	Diff       bool   `db:"diff"`
 }
 
 // StorageNodeWithStateKeyModel is a db model for eth.storage_cids + eth.state_cids.state_key
@@ -101,6 +109,8 @@ type StorageNodeWithStateKeyModel struct {
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+	MhKey      string `db:"mh_key"`
+	Diff       bool   `db:"diff"`
 }
 
 // StateAccountModel is a db model for an eth state account (decoded value of state leaf node)

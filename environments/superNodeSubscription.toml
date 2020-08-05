@@ -1,29 +1,29 @@
-[superNode]
-    [superNode.ethSubscription]
+[watcher]
+    [watcher.ethSubscription]
         historicalData = false
         historicalDataOnly = false
         startingBlock = 0
         endingBlock = 0
         wsPath = "ws://127.0.0.1:8080"
-        [superNode.ethSubscription.headerFilter]
+        [watcher.ethSubscription.headerFilter]
             off = false
             uncles = false
-        [superNode.ethSubscription.txFilter]
+        [watcher.ethSubscription.txFilter]
             off = false
             src = []
             dst = []
-        [superNode.ethSubscription.receiptFilter]
+        [watcher.ethSubscription.receiptFilter]
             off = false
             contracts = []
             topic0s = []
             topic1s = []
             topic2s = []
             topic3s = []
-        [superNode.ethSubscription.stateFilter]
+        [watcher.ethSubscription.stateFilter]
             off = false
             addresses = []
            intermediateNodes = false
-        [superNode.ethSubscription.storageFilter]
+        [watcher.ethSubscription.storageFilter]
             off = true
             addresses = []
             storageKeys = []

@@ -158,7 +158,7 @@ func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log
 }
 
 // BlockByNumber returns the requested canonical block.
-// Since the SuperNode can contain forked blocks, it is recommended to fetch BlockByHash as
+// Since the ipfs-blockchain-watcher database can contain forked blocks, it is recommended to fetch BlockByHash as
 // fetching by number can return non-deterministic results (returns the first block found at that height)
 func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber) (*types.Block, error) {
 	var err error
@@ -326,12 +326,12 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 // GetTransaction retrieves a tx by hash
 // It also returns the blockhash, blocknumber, and tx index associated with the transaction
 func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*types.Transaction, common.Hash, uint64, uint64, error) {
-	pgStr := `SELECT transaction_cids.cid, transaction_cids.index, header_cids.block_hash, header_cids.block_number
+	pgStr := `SELECT transaction_cids.mh_key, transaction_cids.index, header_cids.block_hash, header_cids.block_number
 			FROM eth.transaction_cids, eth.header_cids
 			WHERE transaction_cids.header_id = header_cids.id
 			AND transaction_cids.tx_hash = $1`
 	var txCIDWithHeaderInfo struct {
-		CID         string `db:"cid"`
+		MhKey       string `db:"mh_key"`
 		Index       int64  `db:"index"`
 		BlockHash   string `db:"block_hash"`
 		BlockNumber int64  `db:"block_number"`
@@ -356,7 +356,7 @@ func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*type
 		}
 	}()
 
-	txIPLD, err := b.Fetcher.FetchTrxs(tx, []TxModel{{CID: txCIDWithHeaderInfo.CID}})
+	txIPLD, err := b.Fetcher.FetchTrxs(tx, []TxModel{{MhKey: txCIDWithHeaderInfo.MhKey}})
 	if err != nil {
 		return nil, common.Hash{}, 0, 0, err
 	}

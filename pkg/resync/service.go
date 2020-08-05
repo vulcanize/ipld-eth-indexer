@@ -21,8 +21,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/builders"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watcher"
 	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
@@ -63,37 +63,37 @@ type Service struct {
 
 // NewResyncService creates and returns a resync service from the provided settings
 func NewResyncService(settings *Config) (Resync, error) {
-	publisher, err := watcher.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
+	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	indexer, err := watcher.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
+	indexer, err := builders.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	converter, err := watcher.NewPayloadConverter(settings.Chain)
+	converter, err := builders.NewPayloadConverter(settings.Chain)
 	if err != nil {
 		return nil, err
 	}
-	retriever, err := watcher.NewCIDRetriever(settings.Chain, settings.DB)
+	retriever, err := builders.NewCIDRetriever(settings.Chain, settings.DB)
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := watcher.NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
+	fetcher, err := builders.NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
 	if err != nil {
 		return nil, err
 	}
-	cleaner, err := watcher.NewCleaner(settings.Chain, settings.DB)
+	cleaner, err := builders.NewCleaner(settings.Chain, settings.DB)
 	if err != nil {
 		return nil, err
 	}
 	batchSize := settings.BatchSize
 	if batchSize == 0 {
-		batchSize = watcher.DefaultMaxBatchSize
+		batchSize = shared.DefaultMaxBatchSize
 	}
 	batchNumber := int64(settings.BatchNumber)
 	if batchNumber == 0 {
-		batchNumber = watcher.DefaultMaxBatchNumber
+		batchNumber = shared.DefaultMaxBatchNumber
 	}
 	return &Service{
 		Indexer:         indexer,

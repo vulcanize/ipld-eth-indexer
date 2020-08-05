@@ -33,25 +33,30 @@ var (
 	// header variables
 	blockHash1   = crypto.Keccak256Hash([]byte{00, 02})
 	blocKNumber1 = big.NewInt(0)
-	headerCid1   = "mockHeader1CID"
+	headerCid1   = shared.TestCID([]byte("mockHeader1CID"))
+	headerMhKey1 = shared.MultihashKeyFromCID(headerCid1)
 	parentHash   = crypto.Keccak256Hash([]byte{00, 01})
 	headerModel1 = btc.HeaderModel{
 		BlockHash:   blockHash1.String(),
 		BlockNumber: blocKNumber1.String(),
 		ParentHash:  parentHash.String(),
-		CID:         headerCid1,
+		CID:         headerCid1.String(),
+		MhKey:       headerMhKey1,
 	}
 
 	// tx variables
-	tx1CID    = "mockTx1CID"
-	tx2CID    = "mockTx2CID"
+	tx1CID    = shared.TestCID([]byte("mockTx1CID"))
+	tx1MhKey  = shared.MultihashKeyFromCID(tx1CID)
+	tx2CID    = shared.TestCID([]byte("mockTx2CID"))
+	tx2MhKey  = shared.MultihashKeyFromCID(tx2CID)
 	tx1Hash   = crypto.Keccak256Hash([]byte{01, 01})
 	tx2Hash   = crypto.Keccak256Hash([]byte{01, 02})
 	opHash    = crypto.Keccak256Hash([]byte{02, 01})
 	txModels1 = []btc.TxModelWithInsAndOuts{
 		{
 			Index:  0,
-			CID:    tx1CID,
+			CID:    tx1CID.String(),
+			MhKey:  tx1MhKey,
 			TxHash: tx1Hash.String(),
 			SegWit: true,
 			TxInputs: []btc.TxInput{
@@ -75,7 +80,8 @@ var (
 		},
 		{
 			Index:  1,
-			CID:    tx2CID,
+			CID:    tx2CID.String(),
+			MhKey:  tx2MhKey,
 			TxHash: tx2Hash.String(),
 			SegWit: true,
 		},
@@ -89,21 +95,25 @@ var (
 	// header variables
 	blockHash2   = crypto.Keccak256Hash([]byte{00, 03})
 	blocKNumber2 = big.NewInt(1)
-	headerCid2   = "mockHeaderCID2"
+	headerCid2   = shared.TestCID([]byte("mockHeaderCID2"))
+	headerMhKey2 = shared.MultihashKeyFromCID(headerCid2)
 	headerModel2 = btc.HeaderModel{
 		BlockNumber: blocKNumber2.String(),
 		BlockHash:   blockHash2.String(),
 		ParentHash:  blockHash1.String(),
-		CID:         headerCid2,
+		CID:         headerCid2.String(),
+		MhKey:       headerMhKey2,
 	}
 
 	// tx variables
-	tx3CID    = "mockTx3CID"
+	tx3CID    = shared.TestCID([]byte("mockTx3CID"))
+	tx3MhKey  = shared.MultihashKeyFromCID(tx3CID)
 	tx3Hash   = crypto.Keccak256Hash([]byte{01, 03})
 	txModels2 = []btc.TxModelWithInsAndOuts{
 		{
 			Index:  0,
-			CID:    tx3CID,
+			CID:    tx3CID.String(),
+			MhKey:  tx3MhKey,
 			TxHash: tx3Hash.String(),
 			SegWit: true,
 		},
@@ -112,13 +122,13 @@ var (
 		HeaderCID:       headerModel2,
 		TransactionCIDs: txModels2,
 	}
-	rngs = [][2]uint64{{0, 1}}
-	cids = []string{
-		headerCid1,
-		headerCid2,
-		tx1CID,
-		tx2CID,
-		tx3CID,
+	rngs   = [][2]uint64{{0, 1}}
+	mhKeys = []string{
+		headerMhKey1,
+		headerMhKey2,
+		tx1MhKey,
+		tx2MhKey,
+		tx3MhKey,
 	}
 	mockData = []byte{'\x01'}
 )
@@ -139,15 +149,14 @@ var _ = Describe("Cleaner", func() {
 
 	Describe("Clean", func() {
 		BeforeEach(func() {
+			for _, key := range mhKeys {
+				_, err := db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, key, mockData)
+				Expect(err).ToNot(HaveOccurred())
+			}
 			err := repo.Index(mockCIDPayload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(mockCIDPayload2)
 			Expect(err).ToNot(HaveOccurred())
-
-			for _, cid := range cids {
-				_, err = db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, cid, mockData)
-				Expect(err).ToNot(HaveOccurred())
-			}
 
 			tx, err := db.Beginx()
 			Expect(err).ToNot(HaveOccurred())
@@ -286,6 +295,11 @@ var _ = Describe("Cleaner", func() {
 
 	Describe("ResetValidation", func() {
 		BeforeEach(func() {
+			for _, key := range mhKeys {
+				_, err := db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, key, mockData)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
 			err := repo.Index(mockCIDPayload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(mockCIDPayload2)

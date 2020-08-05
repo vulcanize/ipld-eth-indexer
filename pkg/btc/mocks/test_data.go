@@ -25,11 +25,19 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 var (
+	MockHeaderCID         = shared.TestCID([]byte("MockHeaderCID"))
+	MockTrxCID1           = shared.TestCID([]byte("MockTrxCID1"))
+	MockTrxCID2           = shared.TestCID([]byte("MockTrxCID2"))
+	MockTrxCID3           = shared.TestCID([]byte("MockTrxCID3"))
+	MockHeaderMhKey       = shared.MultihashKeyFromCID(MockHeaderCID)
+	MockTrxMhKey1         = shared.MultihashKeyFromCID(MockTrxCID1)
+	MockTrxMhKey2         = shared.MultihashKeyFromCID(MockTrxCID2)
+	MockTrxMhKey3         = shared.MultihashKeyFromCID(MockTrxCID3)
 	MockBlockHeight int64 = 1337
 	MockBlock             = wire.MsgBlock{
 		Header: wire.BlockHeader{
@@ -479,7 +487,8 @@ var (
 	}
 	MockTxsMetaDataPostPublish = []btc.TxModelWithInsAndOuts{
 		{
-			CID:    "mockTrxCID1",
+			CID:    MockTrxCID1.String(),
+			MhKey:  MockTrxMhKey1,
 			TxHash: MockBlock.Transactions[0].TxHash().String(),
 			Index:  0,
 			SegWit: MockBlock.Transactions[0].HasWitness(),
@@ -517,7 +526,8 @@ var (
 			},
 		},
 		{
-			CID:    "mockTrxCID2",
+			CID:    MockTrxCID2.String(),
+			MhKey:  MockTrxMhKey2,
 			TxHash: MockBlock.Transactions[1].TxHash().String(),
 			Index:  1,
 			SegWit: MockBlock.Transactions[1].HasWitness(),
@@ -594,7 +604,8 @@ var (
 			},
 		},
 		{
-			CID:    "mockTrxCID3",
+			CID:    MockTrxCID3.String(),
+			MhKey:  MockTrxMhKey3,
 			TxHash: MockBlock.Transactions[2].TxHash().String(),
 			Index:  2,
 			SegWit: MockBlock.Transactions[2].HasWitness(),
@@ -671,7 +682,8 @@ var (
 		},
 	}
 	MockHeaderMetaData = btc.HeaderModel{
-		CID:         "mockHeaderCID",
+		CID:         MockHeaderCID.String(),
+		MhKey:       MockHeaderMhKey,
 		ParentHash:  MockBlock.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(MockBlockHeight)),
 		BlockHash:   MockBlock.Header.BlockHash().String(),
@@ -685,53 +697,6 @@ var (
 	MockCIDPayload = btc.CIDPayload{
 		HeaderCID:       MockHeaderMetaData,
 		TransactionCIDs: MockTxsMetaDataPostPublish,
-	}
-	DummyCIDPayloadForFKReference = btc.CIDPayload{
-		HeaderCID: btc.HeaderModel{
-			CID:         "dummyHeader",
-			ParentHash:  "",
-			BlockHash:   "",
-			BlockNumber: "1336",
-			Bits:        1,
-			Timestamp:   1000000000,
-		},
-		TransactionCIDs: []btc.TxModelWithInsAndOuts{
-			{
-				TxHash: "87a157f3fd88ac7907c05fc55e271dc4acdc5605d187d646604ca8c0e9382e03",
-				CID:    "dummyTx1",
-				Index:  0,
-				TxOutputs: []btc.TxOutput{
-					{
-						Index:        0,
-						RequiredSigs: 0,
-						Value:        0,
-						PkScript:     []byte{},
-						ScriptClass:  0,
-					},
-				},
-			},
-			{
-				TxHash: "cf4e2978d0611ce46592e02d7e7daf8627a316ab69759a9f3df109a7f2bf3ec3",
-				CID:    "dummyTx2",
-				Index:  1,
-				TxOutputs: []btc.TxOutput{
-					{
-						Index:        0,
-						RequiredSigs: 0,
-						Value:        0,
-						PkScript:     []byte{},
-						ScriptClass:  0,
-					},
-					{
-						Index:        1,
-						RequiredSigs: 0,
-						Value:        0,
-						PkScript:     []byte{},
-						ScriptClass:  0,
-					},
-				},
-			},
-		},
 	}
 )
 

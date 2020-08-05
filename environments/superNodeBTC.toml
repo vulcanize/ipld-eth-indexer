@@ -20,7 +20,7 @@
     clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
     resetValidation = true # $RESYNC_RESET_VALIDATION
 
-[superNode]
+[watcher]
     chain = "bitcoin" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
     ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
