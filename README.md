@@ -130,6 +130,8 @@ Then, build the binary:
 
 `make build`
 
+Note: go modules needs to be turned on `export GO111MODULE=on`
+
 ## Usage
 After building the binary, run as
 
@@ -200,7 +202,7 @@ For Ethereum:
 A number of different APIs for remote access to ipfs-blockchain-watcher data can be exposed, these are discussed in more detail [here](./documentation/apis.md)
 
 ### Testing
-`make test` will run the unit tests
+`make test` will run the unit tests  
 `make test` setups a clean `vulcanize_testing` db
 
 ## Contributing

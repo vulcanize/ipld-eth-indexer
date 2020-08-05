@@ -774,11 +774,11 @@ ALTER TABLE ONLY eth.state_accounts
 
 
 --
--- Name: state_cids state_cids_header_id_state_path_diff_key; Type: CONSTRAINT; Schema: eth; Owner: -
+-- Name: state_cids state_cids_header_id_state_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.state_cids
-    ADD CONSTRAINT state_cids_header_id_state_path_diff_key UNIQUE (header_id, state_path, diff);
+    ADD CONSTRAINT state_cids_header_id_state_path_key UNIQUE (header_id, state_path);
 
 
 --
@@ -798,11 +798,11 @@ ALTER TABLE ONLY eth.storage_cids
 
 
 --
--- Name: storage_cids storage_cids_state_id_storage_path_diff_key; Type: CONSTRAINT; Schema: eth; Owner: -
+-- Name: storage_cids storage_cids_state_id_storage_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.storage_cids
-    ADD CONSTRAINT storage_cids_state_id_storage_path_diff_key UNIQUE (state_id, storage_path, diff);
+    ADD CONSTRAINT storage_cids_state_id_storage_path_key UNIQUE (state_id, storage_path);
 
 
 --

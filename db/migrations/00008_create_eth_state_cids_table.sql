@@ -8,7 +8,7 @@ CREATE TABLE eth.state_cids (
   state_path            BYTEA,
   node_type             INTEGER,
   diff                  BOOLEAN NOT NULL DEFAULT FALSE,
-  UNIQUE (header_id, state_path, diff)
+  UNIQUE (header_id, state_path)
 );
 
 -- +goose Down
