@@ -17,8 +17,6 @@
 package shared
 
 import (
-	"bytes"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs-blockstore"
@@ -26,51 +24,19 @@ import (
 	node "github.com/ipfs/go-ipld-format"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 )
 
-// ListContainsString used to check if a list of strings contains a particular string
-func ListContainsString(sss []string, s string) bool {
-	for _, str := range sss {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
-// IPLDsContainBytes used to check if a list of strings contains a particular string
-func IPLDsContainBytes(iplds []ipfs.BlockModel, b []byte) bool {
-	for _, ipld := range iplds {
-		if bytes.Equal(ipld.Data, b) {
-			return true
-		}
-	}
-	return false
-}
-
-// ListContainsGap used to check if a list of Gaps contains a particular Gap
-func ListContainsGap(gapList []Gap, gap Gap) bool {
-	for _, listGap := range gapList {
-		if listGap == gap {
-			return true
-		}
-	}
-	return false
-}
-
-// HandleNullAddrPointer will return an emtpy string for a nil address pointer
-func HandleNullAddrPointer(to *common.Address) string {
+// HandleZeroAddrPointer will return an emtpy string for a nil address pointer
+func HandleZeroAddrPointer(to *common.Address) string {
 	if to == nil {
 		return ""
 	}
 	return to.Hex()
 }
 
-// HandleNullAddr will return an empty string for a a null address
-func HandleNullAddr(to common.Address) string {
+// HandleZeroAddr will return an empty string for a 0 value address
+func HandleZeroAddr(to common.Address) string {
 	if to.Hex() == "0x0000000000000000000000000000000000000000" {
 		return ""
 	}
@@ -93,7 +59,7 @@ func PublishIPLD(tx *sqlx.Tx, i node.Node) error {
 	return err
 }
 
-// FetchIPLD is used to retrieve an ipld from Postgres blockstore with the provided tx
+// FetchIPLD is used to retrieve an ipld from Postgres blockstore with the provided tx and cid string
 func FetchIPLD(tx *sqlx.Tx, cid string) ([]byte, error) {
 	mhKey, err := MultihashKeyFromCIDString(cid)
 	if err != nil {
@@ -102,6 +68,19 @@ func FetchIPLD(tx *sqlx.Tx, cid string) ([]byte, error) {
 	pgStr := `SELECT data FROM public.blocks WHERE key = $1`
 	var block []byte
 	return block, tx.Get(&block, pgStr, mhKey)
+}
+
+// FetchIPLDByMhKey is used to retrieve an ipld from Postgres blockstore with the provided tx and mhkey string
+func FetchIPLDByMhKey(tx *sqlx.Tx, mhKey string) ([]byte, error) {
+	pgStr := `SELECT data FROM public.blocks WHERE key = $1`
+	var block []byte
+	return block, tx.Get(&block, pgStr, mhKey)
+}
+
+// MultihashKeyFromCID converts a cid into a blockstore-prefixed multihash db key string
+func MultihashKeyFromCID(c cid.Cid) string {
+	dbKey := dshelp.MultihashToDsKey(c.Hash())
+	return blockstore.BlockPrefix.String() + dbKey.String()
 }
 
 // MultihashKeyFromCIDString converts a cid string into a blockstore-prefixed multihash db key string

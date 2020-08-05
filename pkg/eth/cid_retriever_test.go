@@ -19,6 +19,8 @@ package eth_test
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/onsi/ginkgo"
@@ -209,14 +211,14 @@ var (
 var _ = Describe("Retriever", func() {
 	var (
 		db        *postgres.DB
-		repo      *eth2.CIDIndexer
+		repo      *eth2.IPLDPublisherAndIndexer
 		retriever *eth2.CIDRetriever
 	)
 	BeforeEach(func() {
 		var err error
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = eth2.NewCIDIndexer(db)
+		repo = eth2.NewIPLDPublisherAndIndexer(db)
 		retriever = eth2.NewCIDRetriever(db)
 	})
 	AfterEach(func() {
@@ -225,7 +227,7 @@ var _ = Describe("Retriever", func() {
 
 	Describe("Retrieve", func() {
 		BeforeEach(func() {
-			err := repo.Index(mocks.MockCIDPayload)
+			_, err := repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("Retrieves all CIDs for the given blocknumber when provided an open filter", func() {
@@ -395,6 +397,7 @@ var _ = Describe("Retriever", func() {
 				NodeType: 2,
 				StateKey: common.BytesToHash(mocks.AccountLeafKey).Hex(),
 				CID:      mocks.State2CID.String(),
+				MhKey:    mocks.State2MhKey,
 				Path:     []byte{'\x0c'},
 			}))
 
@@ -405,8 +408,12 @@ var _ = Describe("Retriever", func() {
 	})
 
 	Describe("RetrieveFirstBlockNumber", func() {
+		It("Throws an error if there are no blocks in the database", func() {
+			_, err := retriever.RetrieveFirstBlockNumber()
+			Expect(err).To(HaveOccurred())
+		})
 		It("Gets the number of the first block that has data in the database", func() {
-			err := repo.Index(mocks.MockCIDPayload)
+			_, err := repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveFirstBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -414,9 +421,9 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Gets the number of the first block that has data in the database", func() {
-			payload := *mocks.MockCIDPayload
-			payload.HeaderCID.BlockNumber = "1010101"
-			err := repo.Index(&payload)
+			payload := mocks.MockConvertedPayload
+			payload.Block = newMockBlock(1010101)
+			_, err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveFirstBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -424,13 +431,13 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Gets the number of the first block that has data in the database", func() {
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1010101"
+			payload1 := mocks.MockConvertedPayload
+			payload1.Block = newMockBlock(1010101)
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "5"
-			err := repo.Index(&payload1)
+			payload2.Block = newMockBlock(5)
+			_, err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveFirstBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -439,8 +446,12 @@ var _ = Describe("Retriever", func() {
 	})
 
 	Describe("RetrieveLastBlockNumber", func() {
+		It("Throws an error if there are no blocks in the database", func() {
+			_, err := retriever.RetrieveLastBlockNumber()
+			Expect(err).To(HaveOccurred())
+		})
 		It("Gets the number of the latest block that has data in the database", func() {
-			err := repo.Index(mocks.MockCIDPayload)
+			_, err := repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveLastBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -448,9 +459,9 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Gets the number of the latest block that has data in the database", func() {
-			payload := *mocks.MockCIDPayload
-			payload.HeaderCID.BlockNumber = "1010101"
-			err := repo.Index(&payload)
+			payload := mocks.MockConvertedPayload
+			payload.Block = newMockBlock(1010101)
+			_, err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveLastBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -458,13 +469,13 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Gets the number of the latest block that has data in the database", func() {
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1010101"
+			payload1 := mocks.MockConvertedPayload
+			payload1.Block = newMockBlock(1010101)
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "5"
-			err := repo.Index(&payload1)
+			payload2.Block = newMockBlock(5)
+			_, err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveLastBlockNumber()
 			Expect(err).ToNot(HaveOccurred())
@@ -474,21 +485,20 @@ var _ = Describe("Retriever", func() {
 
 	Describe("RetrieveGapsInData", func() {
 		It("Doesn't return gaps if there are none", func() {
-			payload0 := *mocks.MockCIDPayload
-			payload0.HeaderCID.BlockNumber = "0"
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1"
+			payload0 := mocks.MockConvertedPayload
+			payload0.Block = newMockBlock(0)
+			payload1 := mocks.MockConvertedPayload
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "2"
+			payload2.Block = newMockBlock(2)
 			payload3 := payload2
-			payload3.HeaderCID.BlockNumber = "3"
-			err := repo.Index(&payload0)
+			payload3.Block = newMockBlock(3)
+			_, err := repo.Publish(payload0)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload1)
+			_, err = repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload3)
+			_, err = repo.Publish(payload3)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
@@ -496,9 +506,9 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Returns the gap from 0 to the earliest block", func() {
-			payload := *mocks.MockCIDPayload
-			payload.HeaderCID.BlockNumber = "5"
-			err := repo.Index(&payload)
+			payload := mocks.MockConvertedPayload
+			payload.Block = newMockBlock(5)
+			_, err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
@@ -508,17 +518,16 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Can handle single block gaps", func() {
-			payload0 := *mocks.MockCIDPayload
-			payload0.HeaderCID.BlockNumber = "0"
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1"
+			payload0 := mocks.MockConvertedPayload
+			payload0.Block = newMockBlock(0)
+			payload1 := mocks.MockConvertedPayload
 			payload3 := payload1
-			payload3.HeaderCID.BlockNumber = "3"
-			err := repo.Index(&payload0)
+			payload3.Block = newMockBlock(3)
+			_, err := repo.Publish(payload0)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload1)
+			_, err = repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload3)
+			_, err = repo.Publish(payload3)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
@@ -528,13 +537,13 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Finds gap between two entries", func() {
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1010101"
+			payload1 := mocks.MockConvertedPayload
+			payload1.Block = newMockBlock(1010101)
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "0"
-			err := repo.Index(&payload1)
+			payload2.Block = newMockBlock(0)
+			_, err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
@@ -544,49 +553,50 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Finds gaps between multiple entries", func() {
-			payload := *mocks.MockCIDPayload
-			payload.HeaderCID.BlockNumber = "1010101"
-			payload1 := payload
-			payload1.HeaderCID.BlockNumber = "1"
-			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "5"
-			payload3 := payload2
-			payload3.HeaderCID.BlockNumber = "100"
-			payload4 := payload3
-			payload4.HeaderCID.BlockNumber = "101"
-			payload5 := payload4
-			payload5.HeaderCID.BlockNumber = "102"
-			payload6 := payload4
-			payload6.HeaderCID.BlockNumber = "103"
-			payload7 := payload4
-			payload7.HeaderCID.BlockNumber = "104"
-			payload8 := payload4
-			payload8.HeaderCID.BlockNumber = "105"
-			payload9 := payload4
-			payload9.HeaderCID.BlockNumber = "106"
-			payload10 := payload5
-			payload10.HeaderCID.BlockNumber = "1000"
-			err := repo.Index(&payload)
+			payload1 := mocks.MockConvertedPayload
+			payload1.Block = newMockBlock(1010101)
+			payload2 := mocks.MockConvertedPayload
+			payload2.Block = newMockBlock(1)
+			payload3 := mocks.MockConvertedPayload
+			payload3.Block = newMockBlock(5)
+			payload4 := mocks.MockConvertedPayload
+			payload4.Block = newMockBlock(100)
+			payload5 := mocks.MockConvertedPayload
+			payload5.Block = newMockBlock(101)
+			payload6 := mocks.MockConvertedPayload
+			payload6.Block = newMockBlock(102)
+			payload7 := mocks.MockConvertedPayload
+			payload7.Block = newMockBlock(103)
+			payload8 := mocks.MockConvertedPayload
+			payload8.Block = newMockBlock(104)
+			payload9 := mocks.MockConvertedPayload
+			payload9.Block = newMockBlock(105)
+			payload10 := mocks.MockConvertedPayload
+			payload10.Block = newMockBlock(106)
+			payload11 := mocks.MockConvertedPayload
+			payload11.Block = newMockBlock(1000)
+
+			_, err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload1)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload3)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload3)
+			_, err = repo.Publish(payload4)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload4)
+			_, err = repo.Publish(payload5)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload5)
+			_, err = repo.Publish(payload6)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload6)
+			_, err = repo.Publish(payload7)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload7)
+			_, err = repo.Publish(payload8)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload8)
+			_, err = repo.Publish(payload9)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload9)
+			_, err = repo.Publish(payload10)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload10)
+			_, err = repo.Publish(payload11)
 			Expect(err).ToNot(HaveOccurred())
 
 			gaps, err := retriever.RetrieveGapsInData(1)
@@ -600,61 +610,63 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Finds validation level gaps", func() {
-			payload := *mocks.MockCIDPayload
-			payload.HeaderCID.BlockNumber = "1010101"
-			payload1 := payload
-			payload1.HeaderCID.BlockNumber = "1"
-			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "5"
-			payload3 := payload2
-			payload3.HeaderCID.BlockNumber = "100"
-			payload4 := payload3
-			payload4.HeaderCID.BlockNumber = "101"
-			payload5 := payload4
-			payload5.HeaderCID.BlockNumber = "102"
-			payload6 := payload4
-			payload6.HeaderCID.BlockNumber = "103"
-			payload7 := payload4
-			payload7.HeaderCID.BlockNumber = "104"
-			payload8 := payload4
-			payload8.HeaderCID.BlockNumber = "105"
-			payload9 := payload4
-			payload9.HeaderCID.BlockNumber = "106"
-			payload10 := payload4
-			payload10.HeaderCID.BlockNumber = "107"
-			payload11 := payload4
-			payload11.HeaderCID.BlockNumber = "108"
-			payload12 := payload4
-			payload12.HeaderCID.BlockNumber = "109"
-			payload13 := payload5
-			payload13.HeaderCID.BlockNumber = "1000"
-			err := repo.Index(&payload)
+
+			payload1 := mocks.MockConvertedPayload
+			payload1.Block = newMockBlock(1010101)
+			payload2 := mocks.MockConvertedPayload
+			payload2.Block = newMockBlock(1)
+			payload3 := mocks.MockConvertedPayload
+			payload3.Block = newMockBlock(5)
+			payload4 := mocks.MockConvertedPayload
+			payload4.Block = newMockBlock(100)
+			payload5 := mocks.MockConvertedPayload
+			payload5.Block = newMockBlock(101)
+			payload6 := mocks.MockConvertedPayload
+			payload6.Block = newMockBlock(102)
+			payload7 := mocks.MockConvertedPayload
+			payload7.Block = newMockBlock(103)
+			payload8 := mocks.MockConvertedPayload
+			payload8.Block = newMockBlock(104)
+			payload9 := mocks.MockConvertedPayload
+			payload9.Block = newMockBlock(105)
+			payload10 := mocks.MockConvertedPayload
+			payload10.Block = newMockBlock(106)
+			payload11 := mocks.MockConvertedPayload
+			payload11.Block = newMockBlock(107)
+			payload12 := mocks.MockConvertedPayload
+			payload12.Block = newMockBlock(108)
+			payload13 := mocks.MockConvertedPayload
+			payload13.Block = newMockBlock(109)
+			payload14 := mocks.MockConvertedPayload
+			payload14.Block = newMockBlock(1000)
+
+			_, err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload1)
+			_, err = repo.Publish(payload2)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			_, err = repo.Publish(payload3)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload3)
+			_, err = repo.Publish(payload4)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload4)
+			_, err = repo.Publish(payload5)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload5)
+			_, err = repo.Publish(payload6)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload6)
+			_, err = repo.Publish(payload7)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload7)
+			_, err = repo.Publish(payload8)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload8)
+			_, err = repo.Publish(payload9)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload9)
+			_, err = repo.Publish(payload10)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload10)
+			_, err = repo.Publish(payload11)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload11)
+			_, err = repo.Publish(payload12)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload12)
+			_, err = repo.Publish(payload13)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload13)
+			_, err = repo.Publish(payload14)
 			Expect(err).ToNot(HaveOccurred())
 
 			cleaner := eth.NewCleaner(db)
@@ -675,3 +687,9 @@ var _ = Describe("Retriever", func() {
 		})
 	})
 })
+
+func newMockBlock(blockNumber uint64) *types.Block {
+	header := mocks.MockHeader
+	header.Number.SetUint64(blockNumber)
+	return types.NewBlock(&mocks.MockHeader, mocks.MockTransactions, nil, mocks.MockReceipts)
+}

@@ -243,7 +243,7 @@ func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanStorageIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.storage_cids B, eth.state_cids C, eth.header_cids D
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.state_id = C.id
 			AND C.header_id = D.id
 			AND D.block_number BETWEEN $1 AND $2`
@@ -264,7 +264,7 @@ func (c *Cleaner) cleanStorageMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanStateIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.state_cids B, eth.header_cids C
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.header_id = C.id
 			AND C.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
@@ -283,7 +283,7 @@ func (c *Cleaner) cleanStateMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanReceiptIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.receipt_cids B, eth.transaction_cids C, eth.header_cids D
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.tx_id = C.id
 			AND C.header_id = D.id
 			AND D.block_number BETWEEN $1 AND $2`
@@ -304,7 +304,7 @@ func (c *Cleaner) cleanReceiptMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.transaction_cids B, eth.header_cids C
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.header_id = C.id
 			AND C.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
@@ -323,7 +323,7 @@ func (c *Cleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanUncleIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.uncle_cids B, eth.header_cids C
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.header_id = C.id
 			AND C.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
@@ -342,7 +342,7 @@ func (c *Cleaner) cleanUncleMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanHeaderIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.header_cids B
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
 	return err

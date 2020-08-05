@@ -34,47 +34,55 @@ var (
 	// header variables
 	blockHash1      = crypto.Keccak256Hash([]byte{00, 02})
 	blocKNumber1    = big.NewInt(0)
-	headerCID1      = "mockHeader1CID"
+	headerCID1      = shared.TestCID([]byte("mockHeader1CID"))
+	headerMhKey1    = shared.MultihashKeyFromCID(headerCID1)
 	parentHash      = crypto.Keccak256Hash([]byte{00, 01})
 	totalDifficulty = "50000000000000000000"
 	reward          = "5000000000000000000"
 	headerModel     = eth.HeaderModel{
 		BlockHash:       blockHash1.String(),
 		BlockNumber:     blocKNumber1.String(),
-		CID:             headerCID1,
+		CID:             headerCID1.String(),
+		MhKey:           headerMhKey1,
 		ParentHash:      parentHash.String(),
 		TotalDifficulty: totalDifficulty,
 		Reward:          reward,
 	}
 
 	// tx variables
-	tx1CID    = "mockTx1CID"
-	tx2CID    = "mockTx2CID"
+	tx1CID    = shared.TestCID([]byte("mockTx1CID"))
+	tx1MhKey  = shared.MultihashKeyFromCID(tx1CID)
+	tx2CID    = shared.TestCID([]byte("mockTx2CID"))
+	tx2MhKey  = shared.MultihashKeyFromCID(tx2CID)
 	tx1Hash   = crypto.Keccak256Hash([]byte{01, 01})
 	tx2Hash   = crypto.Keccak256Hash([]byte{01, 02})
 	txSrc     = common.HexToAddress("0x010a")
 	txDst     = common.HexToAddress("0x020a")
 	txModels1 = []eth.TxModel{
 		{
-			CID:    tx1CID,
+			CID:    tx1CID.String(),
+			MhKey:  tx1MhKey,
 			TxHash: tx1Hash.String(),
 			Index:  0,
 		},
 		{
-			CID:    tx2CID,
+			CID:    tx2CID.String(),
+			MhKey:  tx2MhKey,
 			TxHash: tx2Hash.String(),
 			Index:  1,
 		},
 	}
 
 	// uncle variables
-	uncleCID        = "mockUncle1CID"
+	uncleCID        = shared.TestCID([]byte("mockUncle1CID"))
+	uncleMhKey      = shared.MultihashKeyFromCID(uncleCID)
 	uncleHash       = crypto.Keccak256Hash([]byte{02, 02})
 	uncleParentHash = crypto.Keccak256Hash([]byte{02, 01})
 	uncleReward     = "1000000000000000000"
 	uncleModels1    = []eth.UncleModel{
 		{
-			CID:        uncleCID,
+			CID:        uncleCID.String(),
+			MhKey:      uncleMhKey,
 			Reward:     uncleReward,
 			BlockHash:  uncleHash.String(),
 			ParentHash: uncleParentHash.String(),
@@ -82,37 +90,45 @@ var (
 	}
 
 	// receipt variables
-	rct1CID        = "mockRct1CID"
-	rct2CID        = "mockRct2CID"
+	rct1CID        = shared.TestCID([]byte("mockRct1CID"))
+	rct1MhKey      = shared.MultihashKeyFromCID(rct1CID)
+	rct2CID        = shared.TestCID([]byte("mockRct2CID"))
+	rct2MhKey      = shared.MultihashKeyFromCID(rct2CID)
 	rct1Contract   = common.Address{}
 	rct2Contract   = common.HexToAddress("0x010c")
 	receiptModels1 = map[common.Hash]eth.ReceiptModel{
 		tx1Hash: {
-			CID:          rct1CID,
+			CID:          rct1CID.String(),
+			MhKey:        rct1MhKey,
 			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 		tx2Hash: {
-			CID:          rct2CID,
+			CID:          rct2CID.String(),
+			MhKey:        rct2MhKey,
 			ContractHash: crypto.Keccak256Hash(rct2Contract.Bytes()).String(),
 		},
 	}
 
 	// state variables
-	state1CID1   = "mockState1CID1"
+	state1CID1   = shared.TestCID([]byte("mockState1CID1"))
+	state1MhKey1 = shared.MultihashKeyFromCID(state1CID1)
 	state1Path   = []byte{'\x01'}
 	state1Key    = crypto.Keccak256Hash(txSrc.Bytes())
-	state2CID1   = "mockState2CID1"
+	state2CID1   = shared.TestCID([]byte("mockState2CID1"))
+	state2MhKey1 = shared.MultihashKeyFromCID(state2CID1)
 	state2Path   = []byte{'\x02'}
 	state2Key    = crypto.Keccak256Hash(txDst.Bytes())
 	stateModels1 = []eth.StateNodeModel{
 		{
-			CID:      state1CID1,
+			CID:      state1CID1.String(),
+			MhKey:    state1MhKey1,
 			Path:     state1Path,
 			NodeType: 2,
 			StateKey: state1Key.String(),
 		},
 		{
-			CID:      state2CID1,
+			CID:      state2CID1.String(),
+			MhKey:    state2MhKey1,
 			Path:     state2Path,
 			NodeType: 2,
 			StateKey: state2Key.String(),
@@ -120,13 +136,15 @@ var (
 	}
 
 	// storage variables
-	storageCID     = "mockStorageCID1"
+	storageCID     = shared.TestCID([]byte("mockStorageCID1"))
+	storageMhKey   = shared.MultihashKeyFromCID(storageCID)
 	storagePath    = []byte{'\x01'}
 	storageKey     = crypto.Keccak256Hash(common.Hex2Bytes("0x0000000000000000000000000000000000000000000000000000000000000000"))
 	storageModels1 = map[string][]eth.StorageNodeModel{
 		common.Bytes2Hex(state1Path): {
 			{
-				CID:        storageCID,
+				CID:        storageCID.String(),
+				MhKey:      storageMhKey,
 				StorageKey: storageKey.String(),
 				Path:       storagePath,
 				NodeType:   2,
@@ -146,39 +164,47 @@ var (
 	// header variables
 	blockHash2   = crypto.Keccak256Hash([]byte{00, 03})
 	blocKNumber2 = big.NewInt(1)
-	headerCID2   = "mockHeaderCID2"
+	headerCID2   = shared.TestCID([]byte("mockHeaderCID2"))
+	headerMhKey2 = shared.MultihashKeyFromCID(headerCID2)
 	headerModel2 = eth.HeaderModel{
 		BlockHash:       blockHash2.String(),
 		BlockNumber:     blocKNumber2.String(),
-		CID:             headerCID2,
+		CID:             headerCID2.String(),
+		MhKey:           headerMhKey2,
 		ParentHash:      blockHash1.String(),
 		TotalDifficulty: totalDifficulty,
 		Reward:          reward,
 	}
 	// tx variables
-	tx3CID    = "mockTx3CID"
+	tx3CID    = shared.TestCID([]byte("mockTx3CID"))
+	tx3MhKey  = shared.MultihashKeyFromCID(tx3CID)
 	tx3Hash   = crypto.Keccak256Hash([]byte{01, 03})
 	txModels2 = []eth.TxModel{
 		{
-			CID:    tx3CID,
+			CID:    tx3CID.String(),
+			MhKey:  tx3MhKey,
 			TxHash: tx3Hash.String(),
 			Index:  0,
 		},
 	}
 	// receipt variables
-	rct3CID        = "mockRct3CID"
+	rct3CID        = shared.TestCID([]byte("mockRct3CID"))
+	rct3MhKey      = shared.MultihashKeyFromCID(rct3CID)
 	receiptModels2 = map[common.Hash]eth.ReceiptModel{
 		tx3Hash: {
-			CID:          rct3CID,
+			CID:          rct3CID.String(),
+			MhKey:        rct3MhKey,
 			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 	}
 
 	// state variables
-	state1CID2   = "mockState1CID2"
+	state1CID2   = shared.TestCID([]byte("mockState1CID2"))
+	state1MhKey2 = shared.MultihashKeyFromCID(state1CID2)
 	stateModels2 = []eth.StateNodeModel{
 		{
-			CID:      state1CID2,
+			CID:      state1CID2.String(),
+			MhKey:    state1MhKey2,
 			Path:     state1Path,
 			NodeType: 2,
 			StateKey: state1Key.String(),
@@ -190,21 +216,21 @@ var (
 		ReceiptCIDs:     receiptModels2,
 		StateNodeCIDs:   stateModels2,
 	}
-	rngs = [][2]uint64{{0, 1}}
-	cids = []string{
-		headerCID1,
-		headerCID2,
-		uncleCID,
-		tx1CID,
-		tx2CID,
-		tx3CID,
-		rct1CID,
-		rct2CID,
-		rct3CID,
-		state1CID1,
-		state2CID1,
-		state1CID2,
-		storageCID,
+	rngs   = [][2]uint64{{0, 1}}
+	mhKeys = []string{
+		headerMhKey1,
+		headerMhKey2,
+		uncleMhKey,
+		tx1MhKey,
+		tx2MhKey,
+		tx3MhKey,
+		rct1MhKey,
+		rct2MhKey,
+		rct3MhKey,
+		state1MhKey1,
+		state2MhKey1,
+		state1MhKey2,
+		storageMhKey,
 	}
 	mockData = []byte{'\x01'}
 )
@@ -224,15 +250,15 @@ var _ = Describe("Cleaner", func() {
 	})
 	Describe("Clean", func() {
 		BeforeEach(func() {
+			for _, key := range mhKeys {
+				_, err := db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, key, mockData)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
 			err := repo.Index(mockCIDPayload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(mockCIDPayload2)
 			Expect(err).ToNot(HaveOccurred())
-
-			for _, cid := range cids {
-				_, err = db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, cid, mockData)
-				Expect(err).ToNot(HaveOccurred())
-			}
 
 			tx, err := db.Beginx()
 			Expect(err).ToNot(HaveOccurred())
@@ -613,6 +639,11 @@ var _ = Describe("Cleaner", func() {
 
 	Describe("ResetValidation", func() {
 		BeforeEach(func() {
+			for _, key := range mhKeys {
+				_, err := db.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2)`, key, mockData)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
 			err := repo.Index(mockCIDPayload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(mockCIDPayload2)

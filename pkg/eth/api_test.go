@@ -124,7 +124,7 @@ var _ = Describe("API", func() {
 	})
 
 	Describe("GetTransactionByHash", func() {
-		It("Retrieves the head block number", func() {
+		It("Retrieves a transaction by hash", func() {
 			hash := mocks.MockTransactions[0].Hash()
 			tx, err := api.GetTransactionByHash(context.Background(), hash)
 			Expect(err).ToNot(HaveOccurred())

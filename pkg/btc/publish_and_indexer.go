@@ -80,6 +80,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	}
 	header := HeaderModel{
 		CID:         headerNode.Cid().String(),
+		MhKey:       shared.MultihashKeyFromCID(headerNode.Cid()),
 		ParentHash:  ipldPayload.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(ipldPayload.BlockPayload.BlockHeight)),
 		BlockHash:   ipldPayload.Header.BlockHash().String(),
@@ -98,6 +99,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
+		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
 		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			return nil, err

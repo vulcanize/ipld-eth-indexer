@@ -74,11 +74,11 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits, node_id, times_validated)
-							VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits, node_id, times_validated) = ($3, $4, $5, $6, $7, btc.header_cids.times_validated + 1)
+	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits, node_id, mh_key, times_validated)
+							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits, node_id, mh_key, times_validated) = ($3, $4, $5, $6, $7, $8, btc.header_cids.times_validated + 1)
 							RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, in.db.NodeID, 1).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, in.db.NodeID, header.MhKey, 1).Scan(&headerID)
 	return headerID, err
 }
 
@@ -107,11 +107,11 @@ func (in *CIDIndexer) indexTransactionCIDs(tx *sqlx.Tx, transactions []TxModelWi
 
 func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModelWithInsAndOuts, headerID int64) (int64, error) {
 	var txID int64
-	err := tx.QueryRowx(`INSERT INTO btc.transaction_cids (header_id, tx_hash, index, cid, segwit, witness_hash)
-							VALUES ($1, $2, $3, $4, $5, $6)
-							ON CONFLICT (tx_hash) DO UPDATE SET (header_id, index, cid, segwit, witness_hash) = ($1, $3, $4, $5, $6)
+	err := tx.QueryRowx(`INSERT INTO btc.transaction_cids (header_id, tx_hash, index, cid, segwit, witness_hash, mh_key)
+							VALUES ($1, $2, $3, $4, $5, $6, $7)
+							ON CONFLICT (tx_hash) DO UPDATE SET (header_id, index, cid, segwit, witness_hash, mh_key) = ($1, $3, $4, $5, $6, $7)
 							RETURNING id`,
-		headerID, transaction.TxHash, transaction.Index, transaction.CID, transaction.SegWit, transaction.WitnessHash).Scan(&txID)
+		headerID, transaction.TxHash, transaction.Index, transaction.CID, transaction.SegWit, transaction.WitnessHash, transaction.MhKey).Scan(&txID)
 	return txID, err
 }
 

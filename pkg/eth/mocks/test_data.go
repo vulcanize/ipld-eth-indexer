@@ -22,6 +22,8 @@ import (
 	"crypto/rand"
 	"math/big"
 
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -76,18 +78,29 @@ var (
 		Data:    []byte{},
 	}
 	HeaderCID, _  = ipld.RawdataToCid(ipld.MEthHeader, MockHeaderRlp, multihash.KECCAK_256)
+	HeaderMhKey   = shared.MultihashKeyFromCID(HeaderCID)
 	Trx1CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(0), multihash.KECCAK_256)
+	Trx1MhKey     = shared.MultihashKeyFromCID(Trx1CID)
 	Trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(1), multihash.KECCAK_256)
+	Trx2MhKey     = shared.MultihashKeyFromCID(Trx2CID)
 	Trx3CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(2), multihash.KECCAK_256)
+	Trx3MhKey     = shared.MultihashKeyFromCID(Trx3CID)
 	Rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(0), multihash.KECCAK_256)
+	Rct1MhKey     = shared.MultihashKeyFromCID(Rct1CID)
 	Rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(1), multihash.KECCAK_256)
+	Rct2MhKey     = shared.MultihashKeyFromCID(Rct2CID)
 	Rct3CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(2), multihash.KECCAK_256)
+	Rct3MhKey     = shared.MultihashKeyFromCID(Rct3CID)
 	State1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ContractLeafNode, multihash.KECCAK_256)
+	State1MhKey   = shared.MultihashKeyFromCID(State1CID)
 	State2CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, AccountLeafNode, multihash.KECCAK_256)
+	State2MhKey   = shared.MultihashKeyFromCID(State2CID)
 	StorageCID, _ = ipld.RawdataToCid(ipld.MEthStorageTrie, StorageLeafNode, multihash.KECCAK_256)
+	StorageMhKey  = shared.MultihashKeyFromCID(StorageCID)
 	MockTrxMeta   = []eth.TxModel{
 		{
 			CID:    "", // This is empty until we go to publish to ipfs
+			MhKey:  "",
 			Src:    SenderAddr.Hex(),
 			Dst:    Address.String(),
 			Index:  0,
@@ -95,6 +108,7 @@ var (
 		},
 		{
 			CID:    "",
+			MhKey:  "",
 			Src:    SenderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
 			Index:  1,
@@ -102,6 +116,7 @@ var (
 		},
 		{
 			CID:    "",
+			MhKey:  "",
 			Src:    SenderAddr.Hex(),
 			Dst:    "",
 			Index:  2,
@@ -111,6 +126,7 @@ var (
 	MockTrxMetaPostPublsh = []eth.TxModel{
 		{
 			CID:    Trx1CID.String(), // This is empty until we go to publish to ipfs
+			MhKey:  Trx1MhKey,
 			Src:    SenderAddr.Hex(),
 			Dst:    Address.String(),
 			Index:  0,
@@ -118,6 +134,7 @@ var (
 		},
 		{
 			CID:    Trx2CID.String(),
+			MhKey:  Trx2MhKey,
 			Src:    SenderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
 			Index:  1,
@@ -125,6 +142,7 @@ var (
 		},
 		{
 			CID:    Trx3CID.String(),
+			MhKey:  Trx3MhKey,
 			Src:    SenderAddr.Hex(),
 			Dst:    "",
 			Index:  2,
@@ -133,7 +151,8 @@ var (
 	}
 	MockRctMeta = []eth.ReceiptModel{
 		{
-			CID: "",
+			CID:   "",
+			MhKey: "",
 			Topic0s: []string{
 				mockTopic11.String(),
 			},
@@ -147,7 +166,8 @@ var (
 			},
 		},
 		{
-			CID: "",
+			CID:   "",
+			MhKey: "",
 			Topic0s: []string{
 				mockTopic21.String(),
 			},
@@ -162,6 +182,7 @@ var (
 		},
 		{
 			CID:          "",
+			MhKey:        "",
 			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
@@ -169,7 +190,8 @@ var (
 	}
 	MockRctMetaPostPublish = []eth.ReceiptModel{
 		{
-			CID: Rct1CID.String(),
+			CID:   Rct1CID.String(),
+			MhKey: Rct1MhKey,
 			Topic0s: []string{
 				mockTopic11.String(),
 			},
@@ -183,7 +205,8 @@ var (
 			},
 		},
 		{
-			CID: Rct2CID.String(),
+			CID:   Rct2CID.String(),
+			MhKey: Rct2MhKey,
 			Topic0s: []string{
 				mockTopic21.String(),
 			},
@@ -198,6 +221,7 @@ var (
 		},
 		{
 			CID:          Rct3CID.String(),
+			MhKey:        Rct3MhKey,
 			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
@@ -296,12 +320,14 @@ var (
 	MockStateMetaPostPublish = []eth.StateNodeModel{
 		{
 			CID:      State1CID.String(),
+			MhKey:    State1MhKey,
 			Path:     []byte{'\x06'},
 			NodeType: 2,
 			StateKey: common.BytesToHash(ContractLeafKey).Hex(),
 		},
 		{
 			CID:      State2CID.String(),
+			MhKey:    State2MhKey,
 			Path:     []byte{'\x0c'},
 			NodeType: 2,
 			StateKey: common.BytesToHash(AccountLeafKey).Hex(),
@@ -341,6 +367,7 @@ var (
 			BlockHash:       MockBlock.Hash().String(),
 			BlockNumber:     MockBlock.Number().String(),
 			CID:             HeaderCID.String(),
+			MhKey:           HeaderMhKey,
 			ParentHash:      MockBlock.ParentHash().String(),
 			TotalDifficulty: MockBlock.Difficulty().String(),
 			Reward:          "5000000000000000000",
@@ -363,6 +390,7 @@ var (
 			contractPath: {
 				{
 					CID:        StorageCID.String(),
+					MhKey:      StorageMhKey,
 					Path:       []byte{},
 					StorageKey: common.BytesToHash(StorageLeafKey).Hex(),
 					NodeType:   2,
@@ -392,6 +420,7 @@ var (
 			BlockHash:       MockBlock.Hash().String(),
 			ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
 			CID:             HeaderCID.String(),
+			MhKey:           HeaderMhKey,
 			TotalDifficulty: MockBlock.Difficulty().String(),
 			Reward:          "5000000000000000000",
 			StateRoot:       MockBlock.Root().String(),
@@ -410,6 +439,7 @@ var (
 			{
 				Path:       []byte{},
 				CID:        StorageCID.String(),
+				MhKey:      StorageMhKey,
 				NodeType:   2,
 				StateKey:   common.BytesToHash(ContractLeafKey).Hex(),
 				StorageKey: common.BytesToHash(StorageLeafKey).Hex(),

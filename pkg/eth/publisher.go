@@ -79,6 +79,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	reward := CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
 	header := HeaderModel{
 		CID:             headerCid,
+		MhKey:           shared.MultihashKeyFromCID(headerNode.Cid()),
 		ParentHash:      ipldPayload.Block.ParentHash().String(),
 		BlockNumber:     ipldPayload.Block.Number().String(),
 		BlockHash:       ipldPayload.Block.Hash().String(),
@@ -102,6 +103,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		uncleReward := CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncle.Number.Int64())
 		uncleCids[i] = UncleModel{
 			CID:        uncleCid,
+			MhKey:      shared.MultihashKeyFromCID(uncle.Cid()),
 			ParentHash: uncle.ParentHash.String(),
 			BlockHash:  uncle.Hash().String(),
 			Reward:     uncleReward.String(),
@@ -162,6 +164,7 @@ func (pub *IPLDPublisher) publishTransactions(transactions []*ipld.EthTx, txTrie
 		}
 		trxCids[i] = TxModel{
 			CID:    cid,
+			MhKey:  shared.MultihashKeyFromCID(tx.Cid()),
 			Index:  trxMeta[i].Index,
 			TxHash: trxMeta[i].TxHash,
 			Src:    trxMeta[i].Src,
@@ -186,6 +189,7 @@ func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTr
 		}
 		rctCids[rct.TxHash] = ReceiptModel{
 			CID:          cid,
+			MhKey:        shared.MultihashKeyFromCID(rct.Cid()),
 			Contract:     receiptMeta[i].Contract,
 			ContractHash: receiptMeta[i].ContractHash,
 			Topic0s:      receiptMeta[i].Topic0s,
@@ -220,6 +224,7 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 			Path:     stateNode.Path,
 			StateKey: stateNode.LeafKey.String(),
 			CID:      cid,
+			MhKey:    shared.MultihashKeyFromCID(node.Cid()),
 			NodeType: ResolveFromNodeType(stateNode.Type),
 		})
 		// If we have a leaf, decode the account to extract additional metadata for indexing
@@ -266,6 +271,7 @@ func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[string][]TrieNode
 				Path:       storageNode.Path,
 				StorageKey: storageNode.LeafKey.Hex(),
 				CID:        cid,
+				MhKey:      shared.MultihashKeyFromCID(node.Cid()),
 				NodeType:   ResolveFromNodeType(storageNode.Type),
 			})
 		}

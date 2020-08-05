@@ -160,7 +160,7 @@ func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING btc.transaction_cids B, btc.header_cids C
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.header_id = C.id
 			AND C.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
@@ -179,7 +179,7 @@ func (c *Cleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 func (c *Cleaner) cleanHeaderIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING btc.header_cids B
-			WHERE A.key = B.cid
+			WHERE A.key = B.mh_key
 			AND B.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
 	return err

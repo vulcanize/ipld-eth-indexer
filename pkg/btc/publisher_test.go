@@ -57,12 +57,12 @@ var _ = Describe("Publisher", func() {
 			Expect(err).ToNot(HaveOccurred())
 			tx3Bytes := by.Bytes()
 			mockHeaderDagPutter.CIDsToReturn = map[common.Hash]string{
-				common.BytesToHash(headerBytes): "mockHeaderCID",
+				common.BytesToHash(headerBytes): mocks.MockHeaderCID.String(),
 			}
 			mockTrxDagPutter.CIDsToReturn = map[common.Hash]string{
-				common.BytesToHash(tx1Bytes): "mockTrxCID1",
-				common.BytesToHash(tx2Bytes): "mockTrxCID2",
-				common.BytesToHash(tx3Bytes): "mockTrxCID3",
+				common.BytesToHash(tx1Bytes): mocks.MockTrxCID1.String(),
+				common.BytesToHash(tx2Bytes): mocks.MockTrxCID2.String(),
+				common.BytesToHash(tx3Bytes): mocks.MockTrxCID3.String(),
 			}
 			publisher := btc.IPLDPublisher{
 				HeaderPutter:          mockHeaderDagPutter,
