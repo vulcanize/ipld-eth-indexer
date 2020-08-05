@@ -46,7 +46,7 @@ func (c IPFSMode) String() string {
 
 func NewIPFSMode(name string) (IPFSMode, error) {
 	switch strings.ToLower(name) {
-	case "local", "interface", "minimal":
+	case "local", "interface":
 		return LocalInterface, nil
 	case "remote", "client":
 		return RemoteClient, errors.New("remote IPFS client mode is not currently supported")

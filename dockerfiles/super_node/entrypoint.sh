@@ -36,7 +36,7 @@ echo "Beginning the vulcanizedb process"
 VDB_CONFIG_FILE=${VDB_CONFIG_FILE:-config.toml}
 DEFAULT_OPTIONS="--config=$VDB_CONFIG_FILE"
 VDB_FULL_CL=${VDB_FULL_CL:-$VDB_COMMAND $DEFAULT_OPTIONS}
-echo running: ./vulcanizedb $VDB_FULL_CL $@
+echo running: ./ipfs-blockchain-watcher $VDB_FULL_CL $@
 
 case "$1" in
   "/bin/sh" )
@@ -50,8 +50,8 @@ if [[ -z "$vdb_args" ]]; then
   vdb_args="--config=config.toml"
 fi
 
-echo running: ./vulcanizedb $vdb_args
-./vulcanizedb $vdb_args
+echo running: ./ipfs-blockchain-watcher $vdb_args
+./ipfs-blockchain-watcher $vdb_args
 rv=$?
 
 if [ $rv != 0 ]; then

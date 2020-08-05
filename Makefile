@@ -105,7 +105,7 @@ rollback: $(GOOSE) checkdbvars
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
 
-## Rollbackt to a select migration (id/timestamp)
+## Rollback to a select migration (id/timestamp)
 .PHONY: rollback_to
 rollback_to: $(GOOSE) checkmigration checkdbvars
 	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
@@ -137,26 +137,3 @@ version_migrations:
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
-
-
-# Docker actions
-## Rinkeby docker environment
-RINKEBY_COMPOSE_FILE=dockerfiles/rinkeby/docker-compose.yml
-
-.PHONY: rinkeby_env_up
-rinkeby_env_up:
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d geth
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) up --build migrations
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d --build vulcanizedb
-
-.PHONY: rinkeby_env_deploy
-rinkeby_env_deploy:
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d --build vulcanizedb
-
-.PHONY: dev_env_migrate
-rinkeby_env_migrate:
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) up --build migrations
-
-.PHONY: rinkeby_env_down
-rinkeby_env_down:
-	docker-compose -f $(RINKEBY_COMPOSE_FILE) down

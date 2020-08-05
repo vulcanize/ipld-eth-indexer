@@ -7,7 +7,7 @@ RUN apk add busybox-extras
 # this is probably a noob move, but I want apk from alpine for the above but need to avoid Go 1.13 below as this error still occurs https://github.com/ipfs/go-ipfs/issues/6603
 FROM golang:1.12.4 as builder
 
-# Get and build vulcanizedb
+# Get and build ipfs-blockchain-watcher
 ADD . /go/src/github.com/vulcanize/ipfs-blockchain-watcher
 
 # Build migration tool

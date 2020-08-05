@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
 
-> Tool for extracting and indexing blockchain data on PG-IPFS
+>  ipfs-blockchain-watcher is used to extract, transform, and load all eth or btc data into an IPFS-backing Postgres datastore while generating useful secondary indexes around the data in other Postgres tables
 
 ## Table of Contents
 1. [Background](#background)
@@ -22,11 +22,15 @@ Currently the service supports complete processing of all Bitcoin and Ethereum d
 More details on the design of ipfs-blockchain-watcher can be found in [here](./documentation/architecture.md)
 
 ## Install
-1. [Postgres](#postgres)
 1. [Goose](#goose)
+1. [Postgres](#postgres)
 1. [IPFS](#ipfs)
 1. [Blockchain](#blockchain)
 1. [Watcher](#watcher)
+
+### Goose
+[goose](https://github.com/pressly/goose) is used for migration management. While it is not necessary to use `goose` for manual setup, it
+is required for running the automated tests and is used by the `make migrate` command.
 
 ### Postgres
 1. [Install Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
@@ -46,75 +50,30 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
 
 (It should be noted that trusted auth should only be enabled on systems without sensitive data in them: development and local test databases)
 
-### Goose
-We use [goose](https://github.com/pressly/goose) as our migration management tool. While it is not necessary to use `goose` for manual setup, it
-is required for running the automated tests.
-
 ### IPFS
-We use IPFS to store IPLD objects for each type of data we extract from on chain.
+Data is stored in an [IPFS-backing Postgres datastore](https://github.com/ipfs/go-ds-sql).
+By default data is written directly to the ipfs blockstore in Postgres; the public.blocks table.
+In this case no further IPFS configuration is needed at this time.
 
-To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs):
+Optionally, ipfs-blockchain-watcher can be configured to function through an internal ipfs node interface using the flag: `-ipfs-mode=interface`.
+Operating through the ipfs interface provides the option to configure a block exchange that can search remotely for IPLD data found missing in the local datastore.
+This option is irrelevant in most cases and this mode has some disadvantages, namely:
 
-`go get github.com/ipfs/go-ipfs`
+1. Environment must have IPFS configured
+1. Process will contend with the lockfile at `$IPFS_PATH`
+1. Publishing and indexing of data must occur in separate db transactions
 
-`cd $GOPATH/src/github.com/ipfs/go-ipfs`
-
-`make install`
-
-If we want to use Postgres as our backing datastore, we need to use the vulcanize fork of go-ipfs.
-
-Start by adding the fork and switching over to it:
-
-`git remote add vulcanize https://github.com/vulcanize/go-ipfs.git`
-
-`git fetch vulcanize`
-
-`git checkout -b postgres_update vulcanize/postgres_update`
-
-Now install this fork of ipfs, first be sure to remove any previous installation:
-
-`make install`
-
-Check that is installed properly by running:
-
-`ipfs`
-
-You should see the CLI info/help output.
-
-And now we initialize with the `postgresds` profile.
-If ipfs was previously initialized we will need to remove the old profile first.
-We also need to provide env variables for the postgres connection:
-
-We can either set these manually, e.g.
-```bash
-export IPFS_PGHOST=
-export IPFS_PGUSER=
-export IPFS_PGDATABASE=
-export IPFS_PGPORT=
-export IPFS_PGPASSWORD=
-```
-
-And then run the ipfs command:
-
-`ipfs init --profile=postgresds`
-
-Or we can use the pre-made script at `GOPATH/src/github.com/ipfs/go-ipfs/misc/utility/ipfs_postgres.sh`
-which has usage:
-
-`./ipfs_postgres.sh <IPFS_PGHOST> <IPFS_PGPORT> <IPFS_PGUSER> <IPFS_PGDATABASE>"`
-
-and will ask us to enter the password, avoiding storing it to an ENV variable.
-
-Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes.
+More information for configuring Postgres-IPFS can be found [here](./documentation/ipfs.md)
 
 ### Blockchain
 This section describes how to setup an Ethereum or Bitcoin node to serve as a data source for ipfs-blockchain-watcher
 
 #### Ethereum
-For Ethereum, we currently *require* [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11). This can be setup as follows.
-Skip this steps if you already have access to a node that displays the statediffing endpoints.
+For Ethereum, [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11) is currently *requirde*.
+This can be setup as follows.
+Skip this step if you already have access to a node that displays the statediffing endpoints.
 
-Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch:
+Begin by downloading geth and switching to the statediffing branch:
 
 `go get github.com/ethereum/go-ethereum`
 
@@ -134,33 +93,34 @@ And run the output binary with statediffing turned on:
 
 `cd $GOPATH/src/github.com/ethereum/go-ethereum/build/bin`
 
-`./geth --statediff --statediff.streamblock --ws --syncmode=full`
+`./geth --syncmode=full --statediff --ws`
 
-Note: if you wish to access historical data (perform `backFill`) then the node will need to operate as an archival node (`--gcmode=archive`)
+Note: to access historical data (perform `backFill`) the node will need to operate as an archival node (`--gcmode=archive`) with rpc endpoints
+exposed (`--rpc --rpcapi=eth,statediff,net`)
 
-Note: other CLI options- statediff specific ones included- can be explored with `./geth help`
+Warning: There is a good chance even a fully synced archive node has incomplete historical state data to some degree
 
 The output from geth should mention that it is `Starting statediff service` and block synchronization should begin shortly thereafter.
 Note that until it receives a subscriber, the statediffing process does nothing but wait for one. Once a subscription is received, this
-will be indicated in the output and node will begin processing and sending statediffs.
+will be indicated in the output and the node will begin processing and sending statediffs.
 
-Also in the output will be the endpoints that we will use to interface with the node.
+Also in the output will be the endpoints that will be used to interface with the node.
 The default ws url is "127.0.0.1:8546" and the default http url is "127.0.0.1:8545".
 These values will be used as the `ethereum.wsPath` and `ethereum.httpPath` in the config, respectively.
 
 #### Bitcoin
 For Bitcoin, ipfs-blockchain-watcher is able to operate entirely through the universally exposed JSON-RPC interfaces.
-This means we can use any of the standard full nodes (e.g. bitcoind, btcd) as our data source.
+This means any of the standard full nodes can be used (e.g. bitcoind, btcd) as the data source.
 
 Point at a remote node or set one up locally using the instructions for [bitcoind](https://github.com/bitcoin/bitcoin) and [btcd](https://github.com/btcsuite/btcd).
 
 The default http url is "127.0.0.1:8332". We will use the http endpoint as both the `bitcoin.wsPath` and `bitcoin.httpPath`
-(bitcoind does not support websocket endpoints, we are currently using a "subscription" wrapper around the http endpoints)
+(bitcoind does not support websocket endpoints, the watcher currently uses a "subscription" wrapper around the http endpoints)
 
 ### Watcher
-Finally, we can setup the watcher process itself.
+Finally, setup the watcher process itself.
 
-Start by downloading vulcanizedb and moving into the repo:
+Start by downloading ipfs-blockchain-watcher and moving into the repo:
 
 `go get github.com/vulcanize/ipfs-blockchain-watcher`
 
@@ -237,7 +197,7 @@ For Ethereum:
 ```
 
 ### Exposing the data
-We can expose a number of different APIs for remote access to ipfs-blockchain-watcher data, these are dicussed in more detail [here](./documentation/apis.md)
+A number of different APIs for remote access to ipfs-blockchain-watcher data can be exposed, these are discussed in more detail [here](./documentation/apis.md)
 
 ### Testing
 `make test` will run the unit tests
