@@ -102,7 +102,7 @@ For Ethereum:
 
 ## Database
 
-Currently, ipfs-blockchain-watcher persists all data to a single Postgres database. The migrations for this DB can be found [here](../../db/migrations).
+Currently, ipfs-blockchain-watcher persists all data to a single Postgres database. The migrations for this DB can be found [here](../db/migrations).
 Chain-specific data is populated under a chain-specific schema (e.g. `eth` and `btc`) while shared data- such as the IPFS blocks table- is populated under the `public` schema.
 Subsequent watchers which act on the raw chain data should build and populate their own schemas or separate databases entirely.
 

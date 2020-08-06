@@ -13,13 +13,26 @@
 1. [License](#license)
 
 ## Background
-ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, and store in Postgres-IPFS
-all chain data. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
+ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, store, and index
+all blockchain data in Postgres-IPFS. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
 
 Currently the service supports complete processing of all Bitcoin and Ethereum data.
 
 ## Architecture
 More details on the design of ipfs-blockchain-watcher can be found in [here](./documentation/architecture.md)
+
+## Dependencies
+Minimal build dependencies
+* Go (1.13)
+* Git
+* GCC compiler
+* This repository
+
+Potential external dependencies
+* Goose
+* Postgres
+* Statediffing go-ethereum
+* Bitcoin node
 
 ## Install
 1. [Goose](#goose)

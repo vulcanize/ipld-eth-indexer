@@ -117,7 +117,7 @@ func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 		for {
 			select {
 			case <-bfs.QuitChan:
-				log.Infof("quiting %s FillGapsInSuperNode process", bfs.chain.String())
+				log.Infof("quiting %s BackFill process", bfs.chain.String())
 				return
 			case <-ticker.C:
 				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)

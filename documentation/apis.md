@@ -42,18 +42,16 @@ An example of how to subscribe to a real-time Ethereum data feed from ipfs-block
     	
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-        "github.com/vulcanize/ipfs-blockchain-watcher/pkg/streamer"
         "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
     )
 
     config, _ := eth.NewEthSubscriptionConfig()
     rlpConfig, _ := rlp.EncodeToBytes(config)
     vulcPath := viper.GetString("watcher.ethSubscription.path")
-    rawRPCClient, _ := rpc.Dial(vulcPath)
-    rpcClient := client.NewRPCClient(rawRPCClient, vulcPath)
-    stream := streamer.NewSuperNodeStreamer(rpcClient)
-    payloadChan := make(chan watcher.SubscriptionPayload, 20000)
-    subscription, _ := stream.Stream(payloadChan, rlpConfig)
+    rpcClient, _ := rpc.Dial(vulcPath)
+    subClient := client.NewClient(rpcClient)
+    payloadChan := make(chan watch.SubscriptionPayload, 20000)
+    subscription, _ := subClient.Stream(payloadChan, rlpConfig)
     for {
         select {
         case payload := <- payloadChan:
@@ -162,20 +160,18 @@ An example of how to subscribe to a real-time Bitcoin data feed from ipfs-blockc
     	"github.com/ethereum/go-ethereum/rpc"
     	"github.com/spf13/viper"
     	
-    	"github.com/vulcanize/ipfs-blockchain-watcher/libraries/shared/streamer"
-    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/client"
-    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/super_node"
-    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/super_node/btc"
+    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
+    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/client"
+    	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
     )
 
     config, _ := btc.NewBtcSubscriptionConfig()
     rlpConfig, _ := rlp.EncodeToBytes(config)
     vulcPath := viper.GetString("watcher.btcSubscription.path")
-    rawRPCClient, _ := rpc.Dial(vulcPath)
-    rpcClient := client.NewRPCClient(rawRPCClient, vulcPath)
-    stream := streamer.NewSuperNodeStreamer(rpcClient)
-    payloadChan := make(chan super_node.SubscriptionPayload, 20000)
-    subscription, _ := stream.Stream(payloadChan, rlpConfig)
+    rpcClient, _ := rpc.Dial(vulcPath)
+    subClient := client.NewClient(rpcClient)
+    payloadChan := make(chan watch.SubscriptionPayload, 20000)
+    subscription, _ := subClient.Stream(payloadChan, rlpConfig)
     for {
         select {
         case payload := <- payloadChan:
@@ -210,7 +206,7 @@ The .toml file being used to fill the Bitcoin subscription config would look som
 
 These configuration parameters are broken down as follows:
 
-`btcSubscription.wsPath` is used to define the SuperNode ws url OR ipc endpoint to subscribe to
+`btcSubscription.wsPath` is used to define the ipfs-blockchain-watcher ws url OR ipc endpoint to subscribe to
 
 `btcSubscription.historicalData` specifies whether or not ipfs-blockchain-watcher should look up historical data in its cache and
 send that to the subscriber, if this is set to `false` then ipfs-blockchain-watcher only streams newly synced/incoming data

@@ -64,8 +64,8 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
-	viper.BindEnv("superNode.chain", SUPERNODE_CHAIN)
-	chain := viper.GetString("superNode.chain")
+	viper.BindEnv("watcher.chain", SUPERNODE_CHAIN)
+	chain := viper.GetString("watcher.chain")
 	c.Chain, err = shared.NewChainType(chain)
 	if err != nil {
 		return nil, err
@@ -96,13 +96,13 @@ func (c *Config) init() error {
 
 	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
 	viper.BindEnv("bitcoin.httpPath", shared.BTC_HTTP_PATH)
-	viper.BindEnv("superNode.frequency", SUPERNODE_FREQUENCY)
-	viper.BindEnv("superNode.batchSize", SUPERNODE_BATCH_SIZE)
-	viper.BindEnv("superNode.batchNumber", SUPERNODE_BATCH_NUMBER)
-	viper.BindEnv("superNode.validationLevel", SUPERNODE_VALIDATION_LEVEL)
-	viper.BindEnv("superNode.timeout", shared.HTTP_TIMEOUT)
+	viper.BindEnv("watcher.frequency", SUPERNODE_FREQUENCY)
+	viper.BindEnv("watcher.batchSize", SUPERNODE_BATCH_SIZE)
+	viper.BindEnv("watcher.batchNumber", SUPERNODE_BATCH_NUMBER)
+	viper.BindEnv("watcher.validationLevel", SUPERNODE_VALIDATION_LEVEL)
+	viper.BindEnv("watcher.timeout", shared.HTTP_TIMEOUT)
 
-	timeout := viper.GetInt("superNode.timeout")
+	timeout := viper.GetInt("watcher.timeout")
 	if timeout < 15 {
 		timeout = 15
 	}
@@ -120,7 +120,7 @@ func (c *Config) init() error {
 		c.NodeInfo, c.HTTPClient = shared.GetBtcNodeAndClient(btcHTTP)
 	}
 
-	freq := viper.GetInt("superNode.frequency")
+	freq := viper.GetInt("watcher.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
 		frequency = time.Second * 30
@@ -128,9 +128,9 @@ func (c *Config) init() error {
 		frequency = time.Second * time.Duration(freq)
 	}
 	c.Frequency = frequency
-	c.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
-	c.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
-	c.ValidationLevel = viper.GetInt("superNode.validationLevel")
+	c.BatchSize = uint64(viper.GetInt64("watcher.batchSize"))
+	c.BatchNumber = uint64(viper.GetInt64("watcher.batchNumber"))
+	c.ValidationLevel = viper.GetInt("watcher.validationLevel")
 
 	dbConn := overrideDBConnConfig(c.DBConfig)
 	db := utils.LoadPostgres(dbConn, c.NodeInfo)
