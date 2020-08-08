@@ -76,7 +76,7 @@ integrationtest: | $(GINKGO) $(LINT)
 
 build:
 	go fmt ./...
-	go build
+	GO111MODULE=on go build
 
 # Parameter checks
 ## Check that DB variables are provided

@@ -88,7 +88,7 @@ Skip this step if you already have access to a node that displays the statediffi
 
 Begin by downloading geth and switching to the statediffing branch:
 
-`go get github.com/ethereum/go-ethereum`
+`GO111MODULE=off go get -d github.com/ethereum/go-ethereum`
 
 `cd $GOPATH/src/github.com/ethereum/go-ethereum`
 
@@ -135,15 +135,13 @@ Finally, setup the watcher process itself.
 
 Start by downloading ipfs-blockchain-watcher and moving into the repo:
 
-`go get github.com/vulcanize/ipfs-blockchain-watcher`
+`GO111MODULE=off go get -d github.com/vulcanize/ipfs-blockchain-watcher`
 
 `cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
 
 Then, build the binary:
 
 `make build`
-
-Note: go modules needs to be turned on `export GO111MODULE=on`
 
 ## Usage
 After building the binary, run as
