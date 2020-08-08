@@ -78,19 +78,19 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
-	viper.BindEnv("superNode.chain", SUPERNODE_CHAIN)
-	viper.BindEnv("superNode.sync", SUPERNODE_SYNC)
-	viper.BindEnv("superNode.workers", SUPERNODE_WORKERS)
+	viper.BindEnv("watcher.chain", SUPERNODE_CHAIN)
+	viper.BindEnv("watcher.sync", SUPERNODE_SYNC)
+	viper.BindEnv("watcher.workers", SUPERNODE_WORKERS)
 	viper.BindEnv("ethereum.wsPath", shared.ETH_WS_PATH)
 	viper.BindEnv("bitcoin.wsPath", shared.BTC_WS_PATH)
-	viper.BindEnv("superNode.server", SUPERNODE_SERVER)
-	viper.BindEnv("superNode.wsPath", SUPERNODE_WS_PATH)
-	viper.BindEnv("superNode.ipcPath", SUPERNODE_IPC_PATH)
-	viper.BindEnv("superNode.httpPath", SUPERNODE_HTTP_PATH)
-	viper.BindEnv("superNode.backFill", SUPERNODE_BACKFILL)
+	viper.BindEnv("watcher.server", SUPERNODE_SERVER)
+	viper.BindEnv("watcher.wsPath", SUPERNODE_WS_PATH)
+	viper.BindEnv("watcher.ipcPath", SUPERNODE_IPC_PATH)
+	viper.BindEnv("watcher.httpPath", SUPERNODE_HTTP_PATH)
+	viper.BindEnv("watcher.backFill", SUPERNODE_BACKFILL)
 
-	c.Historical = viper.GetBool("superNode.backFill")
-	chain := viper.GetString("superNode.chain")
+	c.Historical = viper.GetBool("watcher.backFill")
+	chain := viper.GetString("watcher.chain")
 	c.Chain, err = shared.NewChainType(chain)
 	if err != nil {
 		return nil, err
@@ -109,9 +109,9 @@ func NewConfig() (*Config, error) {
 
 	c.DBConfig.Init()
 
-	c.Sync = viper.GetBool("superNode.sync")
+	c.Sync = viper.GetBool("watcher.sync")
 	if c.Sync {
-		workers := viper.GetInt("superNode.workers")
+		workers := viper.GetInt("watcher.workers")
 		if workers < 1 {
 			workers = 1
 		}
@@ -132,14 +132,14 @@ func NewConfig() (*Config, error) {
 		c.SyncDBConn = &syncDB
 	}
 
-	c.Serve = viper.GetBool("superNode.server")
+	c.Serve = viper.GetBool("watcher.server")
 	if c.Serve {
-		wsPath := viper.GetString("superNode.wsPath")
+		wsPath := viper.GetString("watcher.wsPath")
 		if wsPath == "" {
 			wsPath = "127.0.0.1:8080"
 		}
 		c.WSEndpoint = wsPath
-		ipcPath := viper.GetString("superNode.ipcPath")
+		ipcPath := viper.GetString("watcher.ipcPath")
 		if ipcPath == "" {
 			home, err := os.UserHomeDir()
 			if err != nil {
@@ -148,7 +148,7 @@ func NewConfig() (*Config, error) {
 			ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
 		}
 		c.IPCEndpoint = ipcPath
-		httpPath := viper.GetString("superNode.httpPath")
+		httpPath := viper.GetString("watcher.httpPath")
 		if httpPath == "" {
 			httpPath = "127.0.0.1:8081"
 		}

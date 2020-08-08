@@ -66,7 +66,7 @@ func (api *PublicWatcherAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc
 		}
 		params = &btcParams
 	default:
-		panic("SuperNode is not configured for a specific chain type")
+		panic("ipfs-blockchain-watcher is not configured for a specific chain type")
 	}
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
@@ -136,7 +136,7 @@ func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
 	return &p2p.NodeInfo{
 		// TODO: formalize this
 		ID:   "vulcanizeDB",
-		Name: "superNode",
+		Name: "ipfs-blockchain-watcher",
 	}
 }
 

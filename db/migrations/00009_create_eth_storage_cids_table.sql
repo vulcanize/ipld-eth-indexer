@@ -8,7 +8,7 @@ CREATE TABLE eth.storage_cids (
   storage_path          BYTEA,
   node_type             INTEGER NOT NULL,
   diff                  BOOLEAN NOT NULL DEFAULT FALSE,
-  UNIQUE (state_id, storage_path, diff)
+  UNIQUE (state_id, storage_path)
 );
 
 -- +goose Down

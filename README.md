@@ -13,13 +13,26 @@
 1. [License](#license)
 
 ## Background
-ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, and store in Postgres-IPFS
-all chain data. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
+ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, store, and index
+all blockchain data in Postgres-IPFS. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
 
 Currently the service supports complete processing of all Bitcoin and Ethereum data.
 
 ## Architecture
 More details on the design of ipfs-blockchain-watcher can be found in [here](./documentation/architecture.md)
+
+## Dependencies
+Minimal build dependencies
+* Go (1.13)
+* Git
+* GCC compiler
+* This repository
+
+Potential external dependencies
+* Goose
+* Postgres
+* Statediffing go-ethereum
+* Bitcoin node
 
 ## Install
 1. [Goose](#goose)
@@ -75,7 +88,7 @@ Skip this step if you already have access to a node that displays the statediffi
 
 Begin by downloading geth and switching to the statediffing branch:
 
-`go get github.com/ethereum/go-ethereum`
+`GO111MODULE=off go get -d github.com/ethereum/go-ethereum`
 
 `cd $GOPATH/src/github.com/ethereum/go-ethereum`
 
@@ -122,7 +135,7 @@ Finally, setup the watcher process itself.
 
 Start by downloading ipfs-blockchain-watcher and moving into the repo:
 
-`go get github.com/vulcanize/ipfs-blockchain-watcher`
+`GO111MODULE=off go get -d github.com/vulcanize/ipfs-blockchain-watcher`
 
 `cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
 
@@ -200,7 +213,7 @@ For Ethereum:
 A number of different APIs for remote access to ipfs-blockchain-watcher data can be exposed, these are discussed in more detail [here](./documentation/apis.md)
 
 ### Testing
-`make test` will run the unit tests
+`make test` will run the unit tests  
 `make test` setups a clean `vulcanize_testing` db
 
 ## Contributing

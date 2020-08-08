@@ -55,7 +55,7 @@ and fill in gaps in the data
 }
 
 func watch() {
-	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
 
 	var forwardPayloadChan chan shared.ConvertedData
 	wg := new(s.WaitGroup)

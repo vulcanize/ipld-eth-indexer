@@ -39,7 +39,7 @@ var resyncCmd = &cobra.Command{
 }
 
 func rsyncCmdCommand() {
-	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
 	logWithCommand.Debug("loading resync configuration variables")
 	rConfig, err := resync.NewConfig()
 	if err != nil {
