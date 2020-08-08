@@ -146,7 +146,7 @@ Then, build the binary:
 ## Usage
 After building the binary, run as
 
-`./ipfs-blockchain-watcher watch --config=<config_file.toml`
+`./ipfs-blockchain-watcher watch --config=config_file.toml`
 
 ### Configuration
 
