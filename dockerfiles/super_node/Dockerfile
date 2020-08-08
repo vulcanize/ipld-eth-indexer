@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine as builder
+FROM golang:1.13-alpine as builder
 
 RUN apk --update --no-cache add make git g++ linux-headers
 # DEBUG
@@ -10,6 +10,7 @@ WORKDIR /go/src/github.com/vulcanize/ipfs-blockchain-watcher
 RUN GO111MODULE=on GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o ipfs-blockchain-watcher .
 
 # Build migration tool
+WORKDIR /
 RUN go get -u -d github.com/pressly/goose/cmd/goose
 WORKDIR /go/src/github.com/pressly/goose/cmd/goose
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -tags='no_mysql no_sqlite' -o goose .
@@ -45,4 +46,4 @@ COPY --from=builder /go/src/github.com/vulcanize/ipfs-blockchain-watcher/environ
 EXPOSE $EXPOSE_PORT_1
 EXPOSE $EXPOSE_PORT_2
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/startup_script.sh"]
