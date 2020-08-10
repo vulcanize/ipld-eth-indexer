@@ -17,139 +17,49 @@
 package eth_test
 
 import (
-	"bytes"
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/ipfs/go-block-format"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 var (
-	mockHeaderData    = []byte{0, 1, 2, 3, 4}
-	mockUncleData     = []byte{1, 2, 3, 4, 5}
-	mockTrxData       = []byte{2, 3, 4, 5, 6}
-	mockReceiptData   = []byte{3, 4, 5, 6, 7}
-	mockStateData     = []byte{4, 5, 6, 7, 8}
-	mockStorageData   = []byte{5, 6, 7, 8, 9}
-	mockStorageData2  = []byte{6, 7, 8, 9, 1}
-	mockHeaderBlock   = blocks.NewBlock(mockHeaderData)
-	mockUncleBlock    = blocks.NewBlock(mockUncleData)
-	mockTrxBlock      = blocks.NewBlock(mockTrxData)
-	mockReceiptBlock  = blocks.NewBlock(mockReceiptData)
-	mockStateBlock    = blocks.NewBlock(mockStateData)
-	mockStorageBlock1 = blocks.NewBlock(mockStorageData)
-	mockStorageBlock2 = blocks.NewBlock(mockStorageData2)
-	mockBlocks        = []blocks.Block{mockHeaderBlock, mockUncleBlock, mockTrxBlock, mockReceiptBlock, mockStateBlock, mockStorageBlock1, mockStorageBlock2}
-	mockBlockService  *mocks.MockIPFSBlockService
-	mockCIDWrapper    = &eth.CIDWrapper{
-		BlockNumber: big.NewInt(9000),
-		Header: eth.HeaderModel{
-			TotalDifficulty: "1337",
-			CID:             mockHeaderBlock.Cid().String(),
-		},
-		Uncles: []eth.UncleModel{
-			{
-				CID: mockUncleBlock.Cid().String(),
-			},
-		},
-		Transactions: []eth.TxModel{
-			{
-				CID: mockTrxBlock.Cid().String(),
-			},
-		},
-		Receipts: []eth.ReceiptModel{
-			{
-				CID: mockReceiptBlock.Cid().String(),
-			},
-		},
-		StateNodes: []eth.StateNodeModel{{
-			CID:      mockStateBlock.Cid().String(),
-			NodeType: 2,
-			StateKey: "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-		}},
-		StorageNodes: []eth.StorageNodeWithStateKeyModel{{
-			CID:        mockStorageBlock1.Cid().String(),
-			NodeType:   2,
-			StateKey:   "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-			StorageKey: "0000000000000000000000000000000000000000000000000000000000000001",
-		},
-			{
-				CID:        mockStorageBlock2.Cid().String(),
-				NodeType:   2,
-				StateKey:   "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-				StorageKey: "0000000000000000000000000000000000000000000000000000000000000002",
-			}},
-	}
+	db            *postgres.DB
+	pubAndIndexer *eth.IPLDPublisherAndIndexer
+	fetcher       *eth.IPLDPGFetcher
 )
 
-var _ = Describe("IPLDFetcher", func() {
+var _ = Describe("IPLDPGFetcher", func() {
 	Describe("Fetch", func() {
 		BeforeEach(func() {
-			mockBlockService = new(mocks.MockIPFSBlockService)
-			err := mockBlockService.AddBlocks(mockBlocks)
+			var err error
+			db, err = shared.SetupDB()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(mockBlockService.Blocks)).To(Equal(7))
+			pubAndIndexer = eth.NewIPLDPublisherAndIndexer(db)
+			_, err = pubAndIndexer.Publish(mocks.MockConvertedPayload)
+			Expect(err).ToNot(HaveOccurred())
+			fetcher = eth.NewIPLDPGFetcher(db)
+		})
+		AfterEach(func() {
+			eth.TearDownDB(db)
 		})
 
 		It("Fetches and returns IPLDs for the CIDs provided in the CIDWrapper", func() {
-			fetcher := new(eth.IPLDFetcher)
-			fetcher.BlockService = mockBlockService
-			i, err := fetcher.Fetch(mockCIDWrapper)
+			i, err := fetcher.Fetch(mocks.MockCIDWrapper)
 			Expect(err).ToNot(HaveOccurred())
 			iplds, ok := i.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(iplds.TotalDifficulty).To(Equal(big.NewInt(1337)))
-			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
-			Expect(iplds.Header).To(Equal(ipfs.BlockModel{
-				Data: mockHeaderBlock.RawData(),
-				CID:  mockHeaderBlock.Cid().String(),
-			}))
-			Expect(len(iplds.Uncles)).To(Equal(1))
-			Expect(iplds.Uncles[0]).To(Equal(ipfs.BlockModel{
-				Data: mockUncleBlock.RawData(),
-				CID:  mockUncleBlock.Cid().String(),
-			}))
-			Expect(len(iplds.Transactions)).To(Equal(1))
-			Expect(iplds.Transactions[0]).To(Equal(ipfs.BlockModel{
-				Data: mockTrxBlock.RawData(),
-				CID:  mockTrxBlock.Cid().String(),
-			}))
-			Expect(len(iplds.Receipts)).To(Equal(1))
-			Expect(iplds.Receipts[0]).To(Equal(ipfs.BlockModel{
-				Data: mockReceiptBlock.RawData(),
-				CID:  mockReceiptBlock.Cid().String(),
-			}))
-			Expect(len(iplds.StateNodes)).To(Equal(1))
-			Expect(iplds.StateNodes[0].StateLeafKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
-			Expect(iplds.StateNodes[0].Type).To(Equal(statediff.Leaf))
-			Expect(iplds.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
-				Data: mockStateBlock.RawData(),
-				CID:  mockStateBlock.Cid().String(),
-			}))
-			Expect(len(iplds.StorageNodes)).To(Equal(2))
-			for _, storage := range iplds.StorageNodes {
-				Expect(storage.Type).To(Equal(statediff.Leaf))
-				Expect(storage.StateLeafKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
-				if bytes.Equal(storage.StorageLeafKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()) {
-					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
-						Data: mockStorageBlock1.RawData(),
-						CID:  mockStorageBlock1.Cid().String(),
-					}))
-				}
-				if bytes.Equal(storage.StorageLeafKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002").Bytes()) {
-					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
-						Data: mockStorageBlock2.RawData(),
-						CID:  mockStorageBlock2.Cid().String(),
-					}))
-				}
-			}
+			Expect(iplds.TotalDifficulty).To(Equal(mocks.MockConvertedPayload.TotalDifficulty))
+			Expect(iplds.BlockNumber).To(Equal(mocks.MockConvertedPayload.Block.Number()))
+			Expect(iplds.Header).To(Equal(mocks.MockIPLDs.Header))
+			Expect(len(iplds.Uncles)).To(Equal(0))
+			Expect(iplds.Transactions).To(Equal(mocks.MockIPLDs.Transactions))
+			Expect(iplds.Receipts).To(Equal(mocks.MockIPLDs.Receipts))
+			Expect(iplds.StateNodes).To(Equal(mocks.MockIPLDs.StateNodes))
+			Expect(iplds.StorageNodes).To(Equal(mocks.MockIPLDs.StorageNodes))
 		})
 	})
 })

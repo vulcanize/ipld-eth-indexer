@@ -59,6 +59,8 @@ type TxModel struct {
 	MhKey    string `db:"mh_key"`
 	Dst      string `db:"dst"`
 	Src      string `db:"src"`
+	Data 	 []byte `db:"data"`
+	Deployment bool `db:"deployment"`
 }
 
 // ReceiptModel is the db model for eth.receipt_cids

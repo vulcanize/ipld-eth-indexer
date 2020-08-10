@@ -19,63 +19,103 @@ package btc_test
 import (
 	"bytes"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-ipfs-blockstore"
+	"github.com/ipfs/go-ipfs-ds-help"
+	"github.com/multiformats/go-multihash"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc/mocks"
-	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/mocks"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-var (
-	mockHeaderDagPutter  *mocks2.MappedDagPutter
-	mockTrxDagPutter     *mocks2.MappedDagPutter
-	mockTrxTrieDagPutter *mocks2.DagPutter
-)
-
-var _ = Describe("Publisher", func() {
+var _ = Describe("PublishAndIndexer", func() {
+	var (
+		db        *postgres.DB
+		err       error
+		repo      *btc.IPLDPublisherAndIndexer
+		ipfsPgGet = `SELECT data FROM public.blocks
+					WHERE key = $1`
+	)
 	BeforeEach(func() {
-		mockHeaderDagPutter = new(mocks2.MappedDagPutter)
-		mockTrxDagPutter = new(mocks2.MappedDagPutter)
-		mockTrxTrieDagPutter = new(mocks2.DagPutter)
+		db, err = shared.SetupDB()
+		Expect(err).ToNot(HaveOccurred())
+		repo = btc.NewIPLDPublisherAndIndexer(db)
+	})
+	AfterEach(func() {
+		btc.TearDownDB(db)
 	})
 
 	Describe("Publish", func() {
-		It("Publishes the passed IPLDPayload objects to IPFS and returns a CIDPayload for indexing", func() {
-			by := new(bytes.Buffer)
-			err := mocks.MockConvertedPayload.BlockPayload.Header.Serialize(by)
+		It("Published and indexes header and transaction IPLDs in a single tx", func() {
+			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
+			Expect(emptyReturn).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
-			headerBytes := by.Bytes()
-			err = mocks.MockTransactions[0].MsgTx().Serialize(by)
+			pgStr := `SELECT * FROM btc.header_cids
+				WHERE block_number = $1`
+			// check header was properly indexed
+			buf := bytes.NewBuffer(make([]byte, 0, 80))
+			err = mocks.MockBlock.Header.Serialize(buf)
 			Expect(err).ToNot(HaveOccurred())
-			tx1Bytes := by.Bytes()
-			err = mocks.MockTransactions[1].MsgTx().Serialize(by)
+			headerBytes := buf.Bytes()
+			c, _ := ipld.RawdataToCid(ipld.MBitcoinHeader, headerBytes, multihash.DBL_SHA2_256)
+			header := new(btc.HeaderModel)
+			err = db.Get(header, pgStr, mocks.MockHeaderMetaData.BlockNumber)
 			Expect(err).ToNot(HaveOccurred())
-			tx2Bytes := by.Bytes()
-			err = mocks.MockTransactions[2].MsgTx().Serialize(by)
+			Expect(header.CID).To(Equal(c.String()))
+			Expect(header.BlockNumber).To(Equal(mocks.MockHeaderMetaData.BlockNumber))
+			Expect(header.Bits).To(Equal(mocks.MockHeaderMetaData.Bits))
+			Expect(header.Timestamp).To(Equal(mocks.MockHeaderMetaData.Timestamp))
+			Expect(header.BlockHash).To(Equal(mocks.MockHeaderMetaData.BlockHash))
+			Expect(header.ParentHash).To(Equal(mocks.MockHeaderMetaData.ParentHash))
+			dc, err := cid.Decode(header.CID)
 			Expect(err).ToNot(HaveOccurred())
-			tx3Bytes := by.Bytes()
-			mockHeaderDagPutter.CIDsToReturn = map[common.Hash]string{
-				common.BytesToHash(headerBytes): mocks.MockHeaderCID.String(),
+			mhKey := dshelp.MultihashToDsKey(dc.Hash())
+			prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
+			var data []byte
+			err = db.Get(&data, ipfsPgGet, prefixedKey)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data).To(Equal(headerBytes))
+
+			// check that txs were properly indexed
+			trxs := make([]btc.TxModel, 0)
+			pgStr = `SELECT transaction_cids.id, transaction_cids.header_id, transaction_cids.index,
+				transaction_cids.tx_hash, transaction_cids.cid, transaction_cids.segwit, transaction_cids.witness_hash
+				FROM btc.transaction_cids INNER JOIN btc.header_cids ON (transaction_cids.header_id = header_cids.id)
+				WHERE header_cids.block_number = $1`
+			err = db.Select(&trxs, pgStr, mocks.MockHeaderMetaData.BlockNumber)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(trxs)).To(Equal(3))
+			txData := make([][]byte, len(mocks.MockTransactions))
+			txCIDs := make([]string, len(mocks.MockTransactions))
+			for i, m := range mocks.MockTransactions {
+				buf := bytes.NewBuffer(make([]byte, 0))
+				err = m.MsgTx().Serialize(buf)
+				Expect(err).ToNot(HaveOccurred())
+				tx := buf.Bytes()
+				txData[i] = tx
+				c, _ := ipld.RawdataToCid(ipld.MBitcoinTx, tx, multihash.DBL_SHA2_256)
+				txCIDs[i] = c.String()
 			}
-			mockTrxDagPutter.CIDsToReturn = map[common.Hash]string{
-				common.BytesToHash(tx1Bytes): mocks.MockTrxCID1.String(),
-				common.BytesToHash(tx2Bytes): mocks.MockTrxCID2.String(),
-				common.BytesToHash(tx3Bytes): mocks.MockTrxCID3.String(),
+			for _, tx := range trxs {
+				Expect(tx.SegWit).To(Equal(false))
+				Expect(tx.HeaderID).To(Equal(header.ID))
+				Expect(tx.WitnessHash).To(Equal(""))
+				Expect(tx.CID).To(Equal(txCIDs[tx.Index]))
+				Expect(tx.TxHash).To(Equal(mocks.MockBlock.Transactions[tx.Index].TxHash().String()))
+				dc, err := cid.Decode(tx.CID)
+				Expect(err).ToNot(HaveOccurred())
+				mhKey := dshelp.MultihashToDsKey(dc.Hash())
+				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
+				var data []byte
+				err = db.Get(&data, ipfsPgGet, prefixedKey)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(Equal(txData[tx.Index]))
 			}
-			publisher := btc.IPLDPublisher{
-				HeaderPutter:          mockHeaderDagPutter,
-				TransactionPutter:     mockTrxDagPutter,
-				TransactionTriePutter: mockTrxTrieDagPutter,
-			}
-			payload, err := publisher.Publish(mocks.MockConvertedPayload)
-			Expect(err).ToNot(HaveOccurred())
-			cidPayload, ok := payload.(*btc.CIDPayload)
-			Expect(ok).To(BeTrue())
-			Expect(cidPayload).To(Equal(&mocks.MockCIDPayload))
-			Expect(cidPayload.HeaderCID).To(Equal(mocks.MockHeaderMetaData))
-			Expect(cidPayload.TransactionCIDs).To(Equal(mocks.MockTxsMetaDataPostPublish))
 		})
 	})
 })

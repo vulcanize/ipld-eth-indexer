@@ -71,11 +71,13 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		if err != nil {
 			return nil, err
 		}
+
 		txMeta := TxModel{
 			Dst:    shared.HandleZeroAddrPointer(trx.To()),
 			Src:    shared.HandleZeroAddr(from),
 			TxHash: trx.Hash().String(),
 			Index:  int64(i),
+			Data:   trx.Data(),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, txMeta)
@@ -90,7 +92,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 	if err := receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions()); err != nil {
 		return nil, err
 	}
-	for _, receipt := range receipts {
+	for i, receipt := range receipts {
 		// Extract topic and contract data from the receipt for indexing
 		topicSets := make([][]string, 4)
 		mappedContracts := make(map[string]bool) // use map to avoid duplicate addresses
@@ -109,6 +111,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
 		if contract != "" {
+			convertedPayload.TxMetaData[i].Deployment = true
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
 		}
 		rctMeta := ReceiptModel{

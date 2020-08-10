@@ -20,102 +20,107 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/dag_putters"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// IPLDPublisher satisfies the IPLDPublisher for ethereum
-type IPLDPublisher struct {
-	HeaderPutter          ipfs.DagPutter
-	TransactionPutter     ipfs.DagPutter
-	TransactionTriePutter ipfs.DagPutter
+// IPLDPublisherAndIndexer satisfies the IPLDPublisher interface for bitcoin
+// It interfaces directly with the public.blocks table of PG-IPFS rather than going through an ipfs intermediary
+// It publishes and indexes IPLDs together in a single sqlx.Tx
+type IPLDPublisherAndIndexer struct {
+	indexer *CIDIndexer
 }
 
-// NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
-func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
-	node, err := ipfs.InitIPFSNode(ipfsPath)
-	if err != nil {
-		return nil, err
+// NewIPLDPublisherAndIndexer creates a pointer to a new IPLDPublisherAndIndexer which satisfies the IPLDPublisher interface
+func NewIPLDPublisherAndIndexer(db *postgres.DB) *IPLDPublisherAndIndexer {
+	return &IPLDPublisherAndIndexer{
+		indexer: NewCIDIndexer(db),
 	}
-	return &IPLDPublisher{
-		HeaderPutter:          dag_putters.NewBtcHeaderDagPutter(node),
-		TransactionPutter:     dag_putters.NewBtcTxDagPutter(node),
-		TransactionTriePutter: dag_putters.NewBtcTxTrieDagPutter(node),
-	}, nil
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
 	ipldPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", &ConvertedPayload{}, payload)
+		return nil, fmt.Errorf("btc publisher expected payload type %T got %T", ConvertedPayload{}, payload)
 	}
-	// Generate nodes
+	// Generate the iplds
 	headerNode, txNodes, txTrieNodes, err := ipld.FromHeaderAndTxs(ipldPayload.Header, ipldPayload.Txs)
 	if err != nil {
 		return nil, err
 	}
-	// Process and publish headers
-	headerCid, err := pub.publishHeader(headerNode)
+
+	// Begin new db tx
+	tx, err := pub.indexer.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
-	mhKey, _ := shared.MultihashKeyFromCIDString(headerCid)
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// Publish trie nodes
+	for _, node := range txTrieNodes {
+		if err := shared.PublishIPLD(tx, node); err != nil {
+			return nil, err
+		}
+	}
+
+	// Publish and index header
+	if err := shared.PublishIPLD(tx, headerNode); err != nil {
+		return nil, err
+	}
 	header := HeaderModel{
-		CID:         headerCid,
-		MhKey:       mhKey,
+		CID:         headerNode.Cid().String(),
+		MhKey:       shared.MultihashKeyFromCID(headerNode.Cid()),
 		ParentHash:  ipldPayload.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(ipldPayload.BlockPayload.BlockHeight)),
 		BlockHash:   ipldPayload.Header.BlockHash().String(),
 		Timestamp:   ipldPayload.Header.Timestamp.UnixNano(),
 		Bits:        ipldPayload.Header.Bits,
 	}
-	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(txNodes, txTrieNodes, ipldPayload.TxMetaData)
+	headerID, err := pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
 		return nil, err
 	}
-	// Package CIDs and their metadata into a single struct
-	return &CIDPayload{
-		HeaderCID:       header,
-		TransactionCIDs: transactionCids,
-	}, nil
-}
 
-func (pub *IPLDPublisher) publishHeader(header *ipld.BtcHeader) (string, error) {
-	cid, err := pub.HeaderPutter.DagPut(header)
-	if err != nil {
-		return "", err
-	}
-	return cid, nil
-}
-
-func (pub *IPLDPublisher) publishTransactions(transactions []*ipld.BtcTx, txTrie []*ipld.BtcTxTrie, trxMeta []TxModelWithInsAndOuts) ([]TxModelWithInsAndOuts, error) {
-	txCids := make([]TxModelWithInsAndOuts, len(transactions))
-	for i, tx := range transactions {
-		cid, err := pub.TransactionPutter.DagPut(tx)
+	// Publish and index txs
+	for i, txNode := range txNodes {
+		if err := shared.PublishIPLD(tx, txNode); err != nil {
+			return nil, err
+		}
+		txModel := ipldPayload.TxMetaData[i]
+		txModel.CID = txNode.Cid().String()
+		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
+		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			return nil, err
 		}
-		mhKey, _ := shared.MultihashKeyFromCIDString(cid)
-		txCids[i] = TxModelWithInsAndOuts{
-			CID:         cid,
-			MhKey:       mhKey,
-			Index:       trxMeta[i].Index,
-			TxHash:      trxMeta[i].TxHash,
-			SegWit:      trxMeta[i].SegWit,
-			WitnessHash: trxMeta[i].WitnessHash,
-			TxInputs:    trxMeta[i].TxInputs,
-			TxOutputs:   trxMeta[i].TxOutputs,
+		for _, input := range txModel.TxInputs {
+			if err := pub.indexer.indexTxInput(tx, input, txID); err != nil {
+				return nil, err
+			}
+		}
+		for _, output := range txModel.TxOutputs {
+			if err := pub.indexer.indexTxOutput(tx, output, txID); err != nil {
+				return nil, err
+			}
 		}
 	}
-	for _, txNode := range txTrie {
-		// We don't do anything with the tx trie cids atm
-		if _, err := pub.TransactionTriePutter.DagPut(txNode); err != nil {
-			return nil, err
-		}
-	}
-	return txCids, nil
+
+	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
+	return nil, err
+}
+
+// Index satisfies the shared.CIDIndexer interface
+func (pub *IPLDPublisherAndIndexer) Index(cids shared.CIDsForIndexing) error {
+	return nil
 }

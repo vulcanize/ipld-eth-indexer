@@ -21,64 +21,77 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/jmoiron/sqlx"
+	"github.com/multiformats/go-multihash"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/dag_putters"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// IPLDPublisher satisfies the IPLDPublisher for ethereum
-type IPLDPublisher struct {
-	HeaderPutter          ipfs.DagPutter
-	TransactionPutter     ipfs.DagPutter
-	TransactionTriePutter ipfs.DagPutter
-	ReceiptPutter         ipfs.DagPutter
-	ReceiptTriePutter     ipfs.DagPutter
-	StatePutter           ipfs.DagPutter
-	StoragePutter         ipfs.DagPutter
+// IPLDPublisherAndIndexer satisfies the IPLDPublisher interface for ethereum
+// It interfaces directly with the public.blocks table of PG-IPFS rather than going through an ipfs intermediary
+// It publishes and indexes IPLDs together in a single sqlx.Tx
+type IPLDPublisherAndIndexer struct {
+	indexer *CIDIndexer
 }
 
-// NewIPLDPublisher creates a pointer to a new IPLDPublisher which satisfies the IPLDPublisher interface
-func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
-	node, err := ipfs.InitIPFSNode(ipfsPath)
-	if err != nil {
-		return nil, err
+// NewIPLDPublisherAndIndexer creates a pointer to a new IPLDPublisherAndIndexer which satisfies the IPLDPublisher interface
+func NewIPLDPublisherAndIndexer(db *postgres.DB) *IPLDPublisherAndIndexer {
+	return &IPLDPublisherAndIndexer{
+		indexer: NewCIDIndexer(db),
 	}
-	return &IPLDPublisher{
-		HeaderPutter:          dag_putters.NewEthBlockHeaderDagPutter(node),
-		TransactionPutter:     dag_putters.NewEthTxsDagPutter(node),
-		TransactionTriePutter: dag_putters.NewEthTxTrieDagPutter(node),
-		ReceiptPutter:         dag_putters.NewEthReceiptDagPutter(node),
-		ReceiptTriePutter:     dag_putters.NewEthRctTrieDagPutter(node),
-		StatePutter:           dag_putters.NewEthStateDagPutter(node),
-		StoragePutter:         dag_putters.NewEthStorageDagPutter(node),
-	}, nil
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
 	ipldPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", ConvertedPayload{}, payload)
+		return nil, fmt.Errorf("eth IPLDPublisherAndIndexer expected payload type %T got %T", ConvertedPayload{}, payload)
 	}
-	// Generate the nodes for publishing
+	// Generate the iplds
 	headerNode, uncleNodes, txNodes, txTrieNodes, rctNodes, rctTrieNodes, err := ipld.FromBlockAndReceipts(ipldPayload.Block, ipldPayload.Receipts)
 	if err != nil {
 		return nil, err
 	}
 
-	// Process and publish headers
-	headerCid, err := pub.publishHeader(headerNode)
+	// Begin new db tx
+	tx, err := pub.indexer.db.Beginx()
 	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// Publish trie nodes
+	for _, node := range txTrieNodes {
+		if err := shared.PublishIPLD(tx, node); err != nil {
+			return nil, err
+		}
+	}
+	for _, node := range rctTrieNodes {
+		if err := shared.PublishIPLD(tx, node); err != nil {
+			return nil, err
+		}
+	}
+
+	// Publish and index header
+	if err := shared.PublishIPLD(tx, headerNode); err != nil {
 		return nil, err
 	}
 	reward := CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
 	header := HeaderModel{
-		CID:             headerCid,
+		CID:             headerNode.Cid().String(),
 		MhKey:           shared.MultihashKeyFromCID(headerNode.Cid()),
 		ParentHash:      ipldPayload.Block.ParentHash().String(),
 		BlockNumber:     ipldPayload.Block.Number().String(),
@@ -92,189 +105,129 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		UncleRoot:       ipldPayload.Block.UncleHash().String(),
 		Timestamp:       ipldPayload.Block.Time(),
 	}
+	headerID, err := pub.indexer.indexHeaderCID(tx, header)
+	if err != nil {
+		return nil, err
+	}
 
-	// Process and publish uncles
-	uncleCids := make([]UncleModel, len(uncleNodes))
-	for i, uncle := range uncleNodes {
-		uncleCid, err := pub.publishHeader(uncle)
-		if err != nil {
+	// Publish and index uncles
+	for _, uncleNode := range uncleNodes {
+		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
 			return nil, err
 		}
-		uncleReward := CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncle.Number.Int64())
-		uncleCids[i] = UncleModel{
-			CID:        uncleCid,
-			MhKey:      shared.MultihashKeyFromCID(uncle.Cid()),
-			ParentHash: uncle.ParentHash.String(),
-			BlockHash:  uncle.Hash().String(),
+		uncleReward := CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncleNode.Number.Int64())
+		uncle := UncleModel{
+			CID:        uncleNode.Cid().String(),
+			MhKey:      shared.MultihashKeyFromCID(uncleNode.Cid()),
+			ParentHash: uncleNode.ParentHash.String(),
+			BlockHash:  uncleNode.Hash().String(),
 			Reward:     uncleReward.String(),
 		}
-	}
-
-	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(txNodes, txTrieNodes, ipldPayload.TxMetaData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Process and publish receipts
-	receiptsCids, err := pub.publishReceipts(rctNodes, rctTrieNodes, ipldPayload.ReceiptMetaData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Process and publish state leafs
-	stateNodeCids, stateAccounts, err := pub.publishStateNodes(ipldPayload.StateNodes)
-	if err != nil {
-		return nil, err
-	}
-
-	// Process and publish storage leafs
-	storageNodeCids, err := pub.publishStorageNodes(ipldPayload.StorageNodes)
-	if err != nil {
-		return nil, err
-	}
-
-	// Package CIDs and their metadata into a single struct
-	return &CIDPayload{
-		HeaderCID:       header,
-		UncleCIDs:       uncleCids,
-		TransactionCIDs: transactionCids,
-		ReceiptCIDs:     receiptsCids,
-		StateNodeCIDs:   stateNodeCids,
-		StorageNodeCIDs: storageNodeCids,
-		StateAccounts:   stateAccounts,
-	}, nil
-}
-
-func (pub *IPLDPublisher) generateBlockNodes(body *types.Block, receipts types.Receipts) (*ipld.EthHeader,
-	[]*ipld.EthHeader, []*ipld.EthTx, []*ipld.EthTxTrie, []*ipld.EthReceipt, []*ipld.EthRctTrie, error) {
-	return ipld.FromBlockAndReceipts(body, receipts)
-}
-
-func (pub *IPLDPublisher) publishHeader(header *ipld.EthHeader) (string, error) {
-	return pub.HeaderPutter.DagPut(header)
-}
-
-func (pub *IPLDPublisher) publishTransactions(transactions []*ipld.EthTx, txTrie []*ipld.EthTxTrie, trxMeta []TxModel) ([]TxModel, error) {
-	trxCids := make([]TxModel, len(transactions))
-	for i, tx := range transactions {
-		cid, err := pub.TransactionPutter.DagPut(tx)
-		if err != nil {
-			return nil, err
-		}
-		trxCids[i] = TxModel{
-			CID:    cid,
-			MhKey:  shared.MultihashKeyFromCID(tx.Cid()),
-			Index:  trxMeta[i].Index,
-			TxHash: trxMeta[i].TxHash,
-			Src:    trxMeta[i].Src,
-			Dst:    trxMeta[i].Dst,
-		}
-	}
-	for _, txNode := range txTrie {
-		// We don't do anything with the tx trie cids atm
-		if _, err := pub.TransactionTriePutter.DagPut(txNode); err != nil {
+		if err := pub.indexer.indexUncleCID(tx, uncle, headerID); err != nil {
 			return nil, err
 		}
 	}
-	return trxCids, nil
-}
 
-func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTrie []*ipld.EthRctTrie, receiptMeta []ReceiptModel) (map[common.Hash]ReceiptModel, error) {
-	rctCids := make(map[common.Hash]ReceiptModel)
-	for i, rct := range receipts {
-		cid, err := pub.ReceiptPutter.DagPut(rct)
+	// Publish and index txs and receipts
+	for i, txNode := range txNodes {
+		if err := shared.PublishIPLD(tx, txNode); err != nil {
+			return nil, err
+		}
+		rctNode := rctNodes[i]
+		if err := shared.PublishIPLD(tx, rctNode); err != nil {
+			return nil, err
+		}
+		txModel := ipldPayload.TxMetaData[i]
+		txModel.CID = txNode.Cid().String()
+		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
+		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			return nil, err
 		}
-		rctCids[rct.TxHash] = ReceiptModel{
-			CID:          cid,
-			MhKey:        shared.MultihashKeyFromCID(rct.Cid()),
-			Contract:     receiptMeta[i].Contract,
-			ContractHash: receiptMeta[i].ContractHash,
-			Topic0s:      receiptMeta[i].Topic0s,
-			Topic1s:      receiptMeta[i].Topic1s,
-			Topic2s:      receiptMeta[i].Topic2s,
-			Topic3s:      receiptMeta[i].Topic3s,
-			LogContracts: receiptMeta[i].LogContracts,
+		if txModel.Deployment {
+			if _, err = shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, txModel.Data); err != nil {
+				return nil, err
+			}
 		}
-	}
-	for _, rctNode := range receiptTrie {
-		// We don't do anything with the rct trie cids atm
-		if _, err := pub.ReceiptTriePutter.DagPut(rctNode); err != nil {
+		rctModel := ipldPayload.ReceiptMetaData[i]
+		rctModel.CID = rctNode.Cid().String()
+		rctModel.MhKey = shared.MultihashKeyFromCID(rctNode.Cid())
+		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			return nil, err
 		}
 	}
-	return rctCids, nil
+
+	// Publish and index state and storage
+	err = pub.publishAndIndexStateAndStorage(tx, ipldPayload, headerID)
+
+	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
+	return nil, err // return err variable explicitly so that we return the err = tx.Commit() assignment in the defer
 }
 
-func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, map[string]StateAccountModel, error) {
-	stateNodeCids := make([]StateNodeModel, 0, len(stateNodes))
-	stateAccounts := make(map[string]StateAccountModel)
-	for _, stateNode := range stateNodes {
-		node, err := ipld.FromStateTrieRLP(stateNode.Value)
+func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {
+	// Publish and index state and storage
+	for _, stateNode := range ipldPayload.StateNodes {
+		stateCIDStr, err := shared.PublishRaw(tx, ipld.MEthStateTrie, multihash.KECCAK_256, stateNode.Value)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
-		cid, err := pub.StatePutter.DagPut(node)
-		if err != nil {
-			return nil, nil, err
-		}
-		stateNodeCids = append(stateNodeCids, StateNodeModel{
+		mhKey, _ := shared.MultihashKeyFromCIDString(stateCIDStr)
+		stateModel := StateNodeModel{
 			Path:     stateNode.Path,
 			StateKey: stateNode.LeafKey.String(),
-			CID:      cid,
-			MhKey:    shared.MultihashKeyFromCID(node.Cid()),
+			CID:      stateCIDStr,
+			MhKey:    mhKey,
 			NodeType: ResolveFromNodeType(stateNode.Type),
-		})
-		// If we have a leaf, decode the account to extract additional metadata for indexing
+		}
+		stateID, err := pub.indexer.indexStateCID(tx, stateModel, headerID)
+		if err != nil {
+			return err
+		}
+		// If we have a leaf, decode and index the account data and any associated storage diffs
 		if stateNode.Type == statediff.Leaf {
 			var i []interface{}
 			if err := rlp.DecodeBytes(stateNode.Value, &i); err != nil {
-				return nil, nil, err
+				return err
 			}
 			if len(i) != 2 {
-				return nil, nil, fmt.Errorf("IPLDPublisher expected state leaf node rlp to decode into two elements")
+				return fmt.Errorf("eth IPLDPublisherAndIndexer expected state leaf node rlp to decode into two elements")
 			}
 			var account state.Account
 			if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
-				return nil, nil, err
+				return err
 			}
-			// Map state account to the state path hash
-			statePath := common.Bytes2Hex(stateNode.Path)
-			stateAccounts[statePath] = StateAccountModel{
+			accountModel := StateAccountModel{
 				Balance:     account.Balance.String(),
 				Nonce:       account.Nonce,
 				CodeHash:    account.CodeHash,
 				StorageRoot: account.Root.String(),
 			}
+			if err := pub.indexer.indexStateAccount(tx, accountModel, stateID); err != nil {
+				return err
+			}
+			for _, storageNode := range ipldPayload.StorageNodes[common.Bytes2Hex(stateNode.Path)] {
+				storageCIDStr, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, storageNode.Value)
+				if err != nil {
+					return err
+				}
+				mhKey, _ := shared.MultihashKeyFromCIDString(storageCIDStr)
+				storageModel := StorageNodeModel{
+					Path:       storageNode.Path,
+					StorageKey: storageNode.LeafKey.Hex(),
+					CID:        storageCIDStr,
+					MhKey:      mhKey,
+					NodeType:   ResolveFromNodeType(storageNode.Type),
+				}
+				if err := pub.indexer.indexStorageCID(tx, storageModel, stateID); err != nil {
+					return err
+				}
+			}
 		}
 	}
-	return stateNodeCids, stateAccounts, nil
+	return nil
 }
 
-func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[string][]TrieNode) (map[string][]StorageNodeModel, error) {
-	storageLeafCids := make(map[string][]StorageNodeModel)
-	for path, storageTrie := range storageNodes {
-		storageLeafCids[path] = make([]StorageNodeModel, 0, len(storageTrie))
-		for _, storageNode := range storageTrie {
-			node, err := ipld.FromStorageTrieRLP(storageNode.Value)
-			if err != nil {
-				return nil, err
-			}
-			cid, err := pub.StoragePutter.DagPut(node)
-			if err != nil {
-				return nil, err
-			}
-			// Map storage node cids to the state path hash
-			storageLeafCids[path] = append(storageLeafCids[path], StorageNodeModel{
-				Path:       storageNode.Path,
-				StorageKey: storageNode.LeafKey.Hex(),
-				CID:        cid,
-				MhKey:      shared.MultihashKeyFromCID(node.Cid()),
-				NodeType:   ResolveFromNodeType(storageNode.Type),
-			})
-		}
-	}
-	return storageLeafCids, nil
+// Index satisfies the shared.CIDIndexer interface
+func (pub *IPLDPublisherAndIndexer) Index(cids shared.CIDsForIndexing) error {
+	return nil
 }

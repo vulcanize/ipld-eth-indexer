@@ -109,10 +109,10 @@ func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle UncleModel, headerID int6
 func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
 	for _, trxCidMeta := range payload.TransactionCIDs {
 		var txID int64
-		err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index, mh_key) VALUES ($1, $2, $3, $4, $5, $6, $7)
-									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index, mh_key) = ($3, $4, $5, $6, $7)
+		err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index, mh_key, data, deployment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index, mh_key, data, deployment) = ($3, $4, $5, $6, $7, $8, $9)
 									RETURNING id`,
-			headerID, trxCidMeta.TxHash, trxCidMeta.CID, trxCidMeta.Dst, trxCidMeta.Src, trxCidMeta.Index, trxCidMeta.MhKey).Scan(&txID)
+			headerID, trxCidMeta.TxHash, trxCidMeta.CID, trxCidMeta.Dst, trxCidMeta.Src, trxCidMeta.Index, trxCidMeta.MhKey, trxCidMeta.Data, trxCidMeta.Deployment).Scan(&txID)
 		if err != nil {
 			return err
 		}
@@ -128,10 +128,10 @@ func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPa
 
 func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModel, headerID int64) (int64, error) {
 	var txID int64
-	err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index, mh_key) VALUES ($1, $2, $3, $4, $5, $6, $7)
-									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index, mh_key) = ($3, $4, $5, $6, $7)
+	err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index, mh_key, data, deployment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index, mh_key, data, deployment) = ($3, $4, $5, $6, $7, $8, $9)
 									RETURNING id`,
-		headerID, transaction.TxHash, transaction.CID, transaction.Dst, transaction.Src, transaction.Index, transaction.MhKey).Scan(&txID)
+		headerID, transaction.TxHash, transaction.CID, transaction.Dst, transaction.Src, transaction.Index, transaction.MhKey, transaction.Data, transaction.Deployment).Scan(&txID)
 	return txID, err
 }
 

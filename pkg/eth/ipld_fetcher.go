@@ -17,203 +17,168 @@
 package eth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ipfs/go-block-format"
-	"github.com/ipfs/go-blockservice"
-	"github.com/ipfs/go-cid"
+	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-var (
-	errUnexpectedNumberOfIPLDs = errors.New("ipfs batch fetch returned unexpected number of IPLDs")
-)
-
-// IPLDFetcher satisfies the IPLDFetcher interface for ethereum
-type IPLDFetcher struct {
-	BlockService blockservice.BlockService
+// IPLDPGFetcher satisfies the IPLDFetcher interface for ethereum
+// It interfaces directly with PG-IPFS
+type IPLDPGFetcher struct {
+	db *postgres.DB
 }
 
-// NewIPLDFetcher creates a pointer to a new IPLDFetcher
-func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
-	blockService, err := ipfs.InitIPFSBlockService(ipfsPath)
-	if err != nil {
-		return nil, err
+// NewIPLDPGFetcher creates a pointer to a new IPLDPGFetcher
+func NewIPLDPGFetcher(db *postgres.DB) *IPLDPGFetcher {
+	return &IPLDPGFetcher{
+		db: db,
 	}
-	return &IPLDFetcher{
-		BlockService: blockService,
-	}, nil
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
+func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
 	}
 	log.Debug("fetching iplds")
-	var err error
 	iplds := IPLDs{}
 	iplds.TotalDifficulty, ok = new(big.Int).SetString(cidWrapper.Header.TotalDifficulty, 10)
 	if !ok {
 		return nil, errors.New("eth fetcher: unable to set total difficulty")
 	}
 	iplds.BlockNumber = cidWrapper.BlockNumber
-	iplds.Header, err = f.FetchHeader(cidWrapper.Header)
+
+	tx, err := f.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
-	iplds.Uncles, err = f.FetchUncles(cidWrapper.Uncles)
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	iplds.Header, err = f.FetchHeader(tx, cidWrapper.Header)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("eth pg fetcher: header fetching error: %s", err.Error())
 	}
-	iplds.Transactions, err = f.FetchTrxs(cidWrapper.Transactions)
+	iplds.Uncles, err = f.FetchUncles(tx, cidWrapper.Uncles)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("eth pg fetcher: uncle fetching error: %s", err.Error())
 	}
-	iplds.Receipts, err = f.FetchRcts(cidWrapper.Receipts)
+	iplds.Transactions, err = f.FetchTrxs(tx, cidWrapper.Transactions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("eth pg fetcher: transaction fetching error: %s", err.Error())
 	}
-	iplds.StateNodes, err = f.FetchState(cidWrapper.StateNodes)
+	iplds.Receipts, err = f.FetchRcts(tx, cidWrapper.Receipts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("eth pg fetcher: receipt fetching error: %s", err.Error())
 	}
-	iplds.StorageNodes, err = f.FetchStorage(cidWrapper.StorageNodes)
+	iplds.StateNodes, err = f.FetchState(tx, cidWrapper.StateNodes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("eth pg fetcher: state fetching error: %s", err.Error())
 	}
-	return iplds, nil
+	iplds.StorageNodes, err = f.FetchStorage(tx, cidWrapper.StorageNodes)
+	if err != nil {
+		return nil, fmt.Errorf("eth pg fetcher: storage fetching error: %s", err.Error())
+	}
+	return iplds, err
 }
 
 // FetchHeaders fetches headers
-// It uses the f.fetch method
-func (f *IPLDFetcher) FetchHeader(c HeaderModel) (ipfs.BlockModel, error) {
+func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
 	log.Debug("fetching header ipld")
-	dc, err := cid.Decode(c.CID)
-	if err != nil {
-		return ipfs.BlockModel{}, err
-	}
-	header, err := f.fetch(dc)
+	headerBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 	if err != nil {
 		return ipfs.BlockModel{}, err
 	}
 	return ipfs.BlockModel{
-		Data: header.RawData(),
-		CID:  header.Cid().String(),
+		Data: headerBytes,
+		CID:  c.CID,
 	}, nil
 }
 
 // FetchUncles fetches uncles
-// It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDPGFetcher) FetchUncles(tx *sqlx.Tx, cids []UncleModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching uncle iplds")
-	uncleCids := make([]cid.Cid, len(cids))
+	uncleIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		dc, err := cid.Decode(c.CID)
+		uncleBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
-		uncleCids[i] = dc
-	}
-	uncles := f.fetchBatch(uncleCids)
-	uncleIPLDs := make([]ipfs.BlockModel, len(uncles))
-	for i, uncle := range uncles {
 		uncleIPLDs[i] = ipfs.BlockModel{
-			Data: uncle.RawData(),
-			CID:  uncle.Cid().String(),
+			Data: uncleBytes,
+			CID:  c.CID,
 		}
-	}
-	if len(uncleIPLDs) != len(uncleCids) {
-		log.Errorf("ipfs fetcher: number of uncle blocks returned (%d) does not match number expected (%d)", len(uncles), len(uncleCids))
-		return uncleIPLDs, errUnexpectedNumberOfIPLDs
 	}
 	return uncleIPLDs, nil
 }
 
 // FetchTrxs fetches transactions
-// It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching transaction iplds")
-	trxCids := make([]cid.Cid, len(cids))
+	trxIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		dc, err := cid.Decode(c.CID)
+		txBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
-		trxCids[i] = dc
-	}
-	trxs := f.fetchBatch(trxCids)
-	trxIPLDs := make([]ipfs.BlockModel, len(trxs))
-	for i, trx := range trxs {
 		trxIPLDs[i] = ipfs.BlockModel{
-			Data: trx.RawData(),
-			CID:  trx.Cid().String(),
+			Data: txBytes,
+			CID:  c.CID,
 		}
-	}
-	if len(trxIPLDs) != len(trxCids) {
-		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
-		return trxIPLDs, errUnexpectedNumberOfIPLDs
 	}
 	return trxIPLDs, nil
 }
 
 // FetchRcts fetches receipts
-// It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDPGFetcher) FetchRcts(tx *sqlx.Tx, cids []ReceiptModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching receipt iplds")
-	rctCids := make([]cid.Cid, len(cids))
+	rctIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
-		dc, err := cid.Decode(c.CID)
+		rctBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 		if err != nil {
 			return nil, err
 		}
-		rctCids[i] = dc
-	}
-	rcts := f.fetchBatch(rctCids)
-	rctIPLDs := make([]ipfs.BlockModel, len(rcts))
-	for i, rct := range rcts {
 		rctIPLDs[i] = ipfs.BlockModel{
-			Data: rct.RawData(),
-			CID:  rct.Cid().String(),
+			Data: rctBytes,
+			CID:  c.CID,
 		}
-	}
-	if len(rctIPLDs) != len(rctCids) {
-		log.Errorf("ipfs fetcher: number of receipt blocks returned (%d) does not match number expected (%d)", len(rcts), len(rctCids))
-		return rctIPLDs, errUnexpectedNumberOfIPLDs
 	}
 	return rctIPLDs, nil
 }
 
 // FetchState fetches state nodes
-// It uses the single f.fetch method instead of the batch fetch, because it
-// needs to maintain the data's relation to state keys
-func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
+func (f *IPLDPGFetcher) FetchState(tx *sqlx.Tx, cids []StateNodeModel) ([]StateNode, error) {
 	log.Debug("fetching state iplds")
 	stateNodes := make([]StateNode, 0, len(cids))
 	for _, stateNode := range cids {
 		if stateNode.CID == "" {
 			continue
 		}
-		dc, err := cid.Decode(stateNode.CID)
-		if err != nil {
-			return nil, err
-		}
-		state, err := f.fetch(dc)
+		stateBytes, err := shared.FetchIPLDByMhKey(tx, stateNode.MhKey)
 		if err != nil {
 			return nil, err
 		}
 		stateNodes = append(stateNodes, StateNode{
 			IPLD: ipfs.BlockModel{
-				Data: state.RawData(),
-				CID:  state.Cid().String(),
+				Data: stateBytes,
+				CID:  stateNode.CID,
 			},
 			StateLeafKey: common.HexToHash(stateNode.StateKey),
 			Type:         ResolveToNodeType(stateNode.NodeType),
@@ -224,27 +189,21 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 }
 
 // FetchStorage fetches storage nodes
-// It uses the single f.fetch method instead of the batch fetch, because it
-// needs to maintain the data's relation to state and storage keys
-func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
+func (f *IPLDPGFetcher) FetchStorage(tx *sqlx.Tx, cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
 	log.Debug("fetching storage iplds")
 	storageNodes := make([]StorageNode, 0, len(cids))
 	for _, storageNode := range cids {
 		if storageNode.CID == "" || storageNode.StateKey == "" {
 			continue
 		}
-		dc, err := cid.Decode(storageNode.CID)
-		if err != nil {
-			return nil, err
-		}
-		storage, err := f.fetch(dc)
+		storageBytes, err := shared.FetchIPLDByMhKey(tx, storageNode.MhKey)
 		if err != nil {
 			return nil, err
 		}
 		storageNodes = append(storageNodes, StorageNode{
 			IPLD: ipfs.BlockModel{
-				Data: storage.RawData(),
-				CID:  storage.Cid().String(),
+				Data: storageBytes,
+				CID:  storageNode.CID,
 			},
 			StateLeafKey:   common.HexToHash(storageNode.StateKey),
 			StorageLeafKey: common.HexToHash(storageNode.StorageKey),
@@ -253,21 +212,4 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]Stora
 		})
 	}
 	return storageNodes, nil
-}
-
-// fetch is used to fetch a single cid
-func (f *IPLDFetcher) fetch(cid cid.Cid) (blocks.Block, error) {
-	return f.BlockService.GetBlock(context.Background(), cid)
-}
-
-// fetchBatch is used to fetch a batch of IPFS data blocks by cid
-// There is no guarantee all are fetched, and no error in such a case, so
-// downstream we will need to confirm which CIDs were fetched in the result set
-func (f *IPLDFetcher) fetchBatch(cids []cid.Cid) []blocks.Block {
-	fetchedBlocks := make([]blocks.Block, 0, len(cids))
-	blockChan := f.BlockService.GetBlocks(context.Background(), cids)
-	for block := range blockChan {
-		fetchedBlocks = append(fetchedBlocks, block)
-	}
-	return fetchedBlocks
 }
