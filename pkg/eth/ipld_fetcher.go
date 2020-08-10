@@ -30,21 +30,21 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// IPLDPGFetcher satisfies the IPLDFetcher interface for ethereum
+// IPLDFetcher satisfies the IPLDFetcher interface for ethereum
 // It interfaces directly with PG-IPFS
-type IPLDPGFetcher struct {
+type IPLDFetcher struct {
 	db *postgres.DB
 }
 
-// NewIPLDPGFetcher creates a pointer to a new IPLDPGFetcher
-func NewIPLDPGFetcher(db *postgres.DB) *IPLDPGFetcher {
-	return &IPLDPGFetcher{
+// NewIPLDFetcher creates a pointer to a new IPLDFetcher
+func NewIPLDFetcher(db *postgres.DB) *IPLDFetcher {
+	return &IPLDFetcher{
 		db: db,
 	}
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
+func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
@@ -100,7 +100,7 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 }
 
 // FetchHeaders fetches headers
-func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
 	log.Debug("fetching header ipld")
 	headerBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 	if err != nil {
@@ -113,7 +113,7 @@ func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel
 }
 
 // FetchUncles fetches uncles
-func (f *IPLDPGFetcher) FetchUncles(tx *sqlx.Tx, cids []UncleModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchUncles(tx *sqlx.Tx, cids []UncleModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching uncle iplds")
 	uncleIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
@@ -130,7 +130,7 @@ func (f *IPLDPGFetcher) FetchUncles(tx *sqlx.Tx, cids []UncleModel) ([]ipfs.Bloc
 }
 
 // FetchTrxs fetches transactions
-func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching transaction iplds")
 	trxIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
@@ -147,7 +147,7 @@ func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockMode
 }
 
 // FetchRcts fetches receipts
-func (f *IPLDPGFetcher) FetchRcts(tx *sqlx.Tx, cids []ReceiptModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchRcts(tx *sqlx.Tx, cids []ReceiptModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching receipt iplds")
 	rctIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {
@@ -164,7 +164,7 @@ func (f *IPLDPGFetcher) FetchRcts(tx *sqlx.Tx, cids []ReceiptModel) ([]ipfs.Bloc
 }
 
 // FetchState fetches state nodes
-func (f *IPLDPGFetcher) FetchState(tx *sqlx.Tx, cids []StateNodeModel) ([]StateNode, error) {
+func (f *IPLDFetcher) FetchState(tx *sqlx.Tx, cids []StateNodeModel) ([]StateNode, error) {
 	log.Debug("fetching state iplds")
 	stateNodes := make([]StateNode, 0, len(cids))
 	for _, stateNode := range cids {
@@ -189,7 +189,7 @@ func (f *IPLDPGFetcher) FetchState(tx *sqlx.Tx, cids []StateNodeModel) ([]StateN
 }
 
 // FetchStorage fetches storage nodes
-func (f *IPLDPGFetcher) FetchStorage(tx *sqlx.Tx, cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
+func (f *IPLDFetcher) FetchStorage(tx *sqlx.Tx, cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
 	log.Debug("fetching storage iplds")
 	storageNodes := make([]StorageNode, 0, len(cids))
 	for _, storageNode := range cids {

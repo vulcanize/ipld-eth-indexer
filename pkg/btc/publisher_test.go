@@ -37,14 +37,14 @@ var _ = Describe("PublishAndIndexer", func() {
 	var (
 		db        *postgres.DB
 		err       error
-		repo      *btc.IPLDPublisherAndIndexer
+		repo      *btc.IPLDPublisher
 		ipfsPgGet = `SELECT data FROM public.blocks
 					WHERE key = $1`
 	)
 	BeforeEach(func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = btc.NewIPLDPublisherAndIndexer(db)
+		repo = btc.NewIPLDPublisher(db)
 	})
 	AfterEach(func() {
 		btc.TearDownDB(db)
@@ -52,8 +52,7 @@ var _ = Describe("PublishAndIndexer", func() {
 
 	Describe("Publish", func() {
 		It("Published and indexes header and transaction IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			pgStr := `SELECT * FROM btc.header_cids
 				WHERE block_number = $1`

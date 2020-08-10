@@ -32,13 +32,13 @@ type IPLDPublisher struct {
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) error {
 	ipldPayload, ok := payload.(eth.ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
+		return fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
 	}
 	pub.PassedIPLDPayload = ipldPayload
-	return pub.ReturnCIDPayload, pub.ReturnErr
+	return pub.ReturnErr
 }
 
 // IterativeIPLDPublisher is the underlying struct for the Publisher interface; used in testing
@@ -50,16 +50,12 @@ type IterativeIPLDPublisher struct {
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IterativeIPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+func (pub *IterativeIPLDPublisher) Publish(payload shared.ConvertedData) error {
 	ipldPayload, ok := payload.(eth.ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
+		return fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
 	}
 	pub.PassedIPLDPayload = append(pub.PassedIPLDPayload, ipldPayload)
-	if len(pub.ReturnCIDPayload) < pub.iteration+1 {
-		return nil, fmt.Errorf("IterativeIPLDPublisher does not have a payload to return at iteration %d", pub.iteration)
-	}
-	returnPayload := pub.ReturnCIDPayload[pub.iteration]
 	pub.iteration++
-	return returnPayload, pub.ReturnErr
+	return pub.ReturnErr
 }

@@ -31,36 +31,36 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// IPLDPublisherAndIndexer satisfies the IPLDPublisher interface for ethereum
+// IPLDPublisher satisfies the IPLDPublisher interface for ethereum
 // It interfaces directly with the public.blocks table of PG-IPFS rather than going through an ipfs intermediary
 // It publishes and indexes IPLDs together in a single sqlx.Tx
-type IPLDPublisherAndIndexer struct {
+type IPLDPublisher struct {
 	indexer *CIDIndexer
 }
 
-// NewIPLDPublisherAndIndexer creates a pointer to a new IPLDPublisherAndIndexer which satisfies the IPLDPublisher interface
-func NewIPLDPublisherAndIndexer(db *postgres.DB) *IPLDPublisherAndIndexer {
-	return &IPLDPublisherAndIndexer{
+// NewIPLDPublisher creates a pointer to a new IPLDPublisher which satisfies the IPLDPublisher interface
+func NewIPLDPublisher(db *postgres.DB) *IPLDPublisher {
+	return &IPLDPublisher{
 		indexer: NewCIDIndexer(db),
 	}
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) error {
 	ipldPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth IPLDPublisherAndIndexer expected payload type %T got %T", ConvertedPayload{}, payload)
+		return fmt.Errorf("eth IPLDPublisher expected payload type %T got %T", ConvertedPayload{}, payload)
 	}
 	// Generate the iplds
 	headerNode, uncleNodes, txNodes, txTrieNodes, rctNodes, rctTrieNodes, err := ipld.FromBlockAndReceipts(ipldPayload.Block, ipldPayload.Receipts)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Begin new db tx
 	tx, err := pub.indexer.db.Beginx()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -76,18 +76,18 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	// Publish trie nodes
 	for _, node := range txTrieNodes {
 		if err := shared.PublishIPLD(tx, node); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	for _, node := range rctTrieNodes {
 		if err := shared.PublishIPLD(tx, node); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	// Publish and index header
 	if err := shared.PublishIPLD(tx, headerNode); err != nil {
-		return nil, err
+		return err
 	}
 	reward := CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
 	header := HeaderModel{
@@ -107,13 +107,13 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	}
 	headerID, err := pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Publish and index uncles
 	for _, uncleNode := range uncleNodes {
 		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
-			return nil, err
+			return err
 		}
 		uncleReward := CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncleNode.Number.Int64())
 		uncle := UncleModel{
@@ -124,47 +124,47 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 			Reward:     uncleReward.String(),
 		}
 		if err := pub.indexer.indexUncleCID(tx, uncle, headerID); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	// Publish and index txs and receipts
 	for i, txNode := range txNodes {
 		if err := shared.PublishIPLD(tx, txNode); err != nil {
-			return nil, err
+			return err
 		}
 		rctNode := rctNodes[i]
 		if err := shared.PublishIPLD(tx, rctNode); err != nil {
-			return nil, err
+			return err
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
 		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
 		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		// If tx is a contract deployment, publish the data (code)
 		if txModel.Deployment {
 			if _, err = shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, txModel.Data); err != nil {
-				return nil, err
+				return err
 			}
 		}
 		rctModel := ipldPayload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
 		rctModel.MhKey = shared.MultihashKeyFromCID(rctNode.Cid())
 		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	// Publish and index state and storage
 	err = pub.publishAndIndexStateAndStorage(tx, ipldPayload, headerID)
 
-	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
-	return nil, err // return err variable explicitly so that we return the err = tx.Commit() assignment in the defer
+	return err // return err variable explicitly so that we return the err = tx.Commit() assignment in the defer
 }
 
-func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {
+func (pub *IPLDPublisher) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {
 	// Publish and index state and storage
 	for _, stateNode := range ipldPayload.StateNodes {
 		stateCIDStr, err := shared.PublishRaw(tx, ipld.MEthStateTrie, multihash.KECCAK_256, stateNode.Value)
@@ -190,7 +190,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 				return err
 			}
 			if len(i) != 2 {
-				return fmt.Errorf("eth IPLDPublisherAndIndexer expected state leaf node rlp to decode into two elements")
+				return fmt.Errorf("eth IPLDPublisher expected state leaf node rlp to decode into two elements")
 			}
 			var account state.Account
 			if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
@@ -224,10 +224,5 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 			}
 		}
 	}
-	return nil
-}
-
-// Index satisfies the shared.CIDIndexer interface
-func (pub *IPLDPublisherAndIndexer) Index(cids shared.CIDsForIndexing) error {
 	return nil
 }

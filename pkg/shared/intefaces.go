@@ -37,12 +37,7 @@ type PayloadConverter interface {
 
 // IPLDPublisher publishes IPLD payloads and returns a CID payload for indexing
 type IPLDPublisher interface {
-	Publish(payload ConvertedData) (CIDsForIndexing, error)
-}
-
-// CIDIndexer indexes a CID payload in Postgres
-type CIDIndexer interface {
-	Index(cids CIDsForIndexing) error
+	Publish(payload ConvertedData) error
 }
 
 // ResponseFilterer applies a filter to an IPLD payload to return a subscription response packet

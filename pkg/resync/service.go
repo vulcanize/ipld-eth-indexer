@@ -35,8 +35,6 @@ type Service struct {
 	Converter shared.PayloadConverter
 	// Interface for publishing the IPLD payloads to IPFS
 	Publisher shared.IPLDPublisher
-	// Interface for indexing the CIDs of the published IPLDs in Postgres
-	Indexer shared.CIDIndexer
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever shared.CIDRetriever
 	// Interface for fetching payloads over at historical blocks; over http
@@ -63,11 +61,7 @@ type Service struct {
 
 // NewResyncService creates and returns a resync service from the provided settings
 func NewResyncService(settings *Config) (Resync, error) {
-	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
-	if err != nil {
-		return nil, err
-	}
-	indexer, err := builders.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
+	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +90,6 @@ func NewResyncService(settings *Config) (Resync, error) {
 		batchNumber = shared.DefaultMaxBatchNumber
 	}
 	return &Service{
-		Indexer:         indexer,
 		Converter:       converter,
 		Publisher:       publisher,
 		Retriever:       retriever,
@@ -168,12 +161,8 @@ func (rs *Service) resync(id int, heightChan chan []uint64) {
 				if err != nil {
 					logrus.Errorf("%s resync worker %d converter error: %s", rs.chain.String(), id, err.Error())
 				}
-				cidPayload, err := rs.Publisher.Publish(ipldPayload)
-				if err != nil {
+				if err := rs.Publisher.Publish(ipldPayload); err != nil {
 					logrus.Errorf("%s resync worker %d publisher error: %s", rs.chain.String(), id, err.Error())
-				}
-				if err := rs.Indexer.Index(cidPayload); err != nil {
-					logrus.Errorf("%s resync worker %d indexer error: %s", rs.chain.String(), id, err.Error())
 				}
 			}
 			logrus.Infof("%s resync worker %d finished section from %d to %d", rs.chain.String(), id, heights[0], heights[len(heights)-1])

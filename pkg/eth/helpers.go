@@ -18,6 +18,7 @@ package eth
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/statediff"
 )

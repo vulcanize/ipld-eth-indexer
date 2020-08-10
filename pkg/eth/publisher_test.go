@@ -34,14 +34,14 @@ var _ = Describe("PublishAndIndexer", func() {
 	var (
 		db        *postgres.DB
 		err       error
-		repo      *eth.IPLDPublisherAndIndexer
+		repo      *eth.IPLDPublisher
 		ipfsPgGet = `SELECT data FROM public.blocks
 					WHERE key = $1`
 	)
 	BeforeEach(func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = eth.NewIPLDPublisherAndIndexer(db)
+		repo = eth.NewIPLDPublisher(db)
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)
@@ -49,8 +49,7 @@ var _ = Describe("PublishAndIndexer", func() {
 
 	Describe("Publish", func() {
 		It("Published and indexes header IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			pgStr := `SELECT cid, td, reward, id
 				FROM eth.header_cids
@@ -79,8 +78,7 @@ var _ = Describe("PublishAndIndexer", func() {
 		})
 
 		It("Publishes and indexes transaction IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			// check that txs were properly indexed
 			trxs := make([]string, 0)
@@ -113,8 +111,7 @@ var _ = Describe("PublishAndIndexer", func() {
 		})
 
 		It("Publishes and indexes receipt IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
@@ -149,8 +146,7 @@ var _ = Describe("PublishAndIndexer", func() {
 		})
 
 		It("Publishes and indexes state IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			// check that state nodes were properly indexed and published
 			stateNodes := make([]eth.StateNodeModel, 0)
@@ -205,8 +201,7 @@ var _ = Describe("PublishAndIndexer", func() {
 		})
 
 		It("Publishes and indexes storage IPLDs in a single tx", func() {
-			emptyReturn, err := repo.Publish(mocks.MockConvertedPayload)
-			Expect(emptyReturn).To(BeNil())
+			err = repo.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			// check that storage nodes were properly indexed
 			storageNodes := make([]eth.StorageNodeWithStateKeyModel, 0)

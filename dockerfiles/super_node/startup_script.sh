@@ -12,7 +12,6 @@ test $DATABASE_PORT
 test $DATABASE_USER
 test $DATABASE_PASSWORD
 test $IPFS_INIT
-test $IPFS_PATH
 test $VDB_COMMAND
 set +e
 

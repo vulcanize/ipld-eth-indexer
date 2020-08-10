@@ -33,9 +33,6 @@ import (
 var _ = Describe("BackFiller", func() {
 	Describe("FillGaps", func() {
 		It("Periodically checks for and fills in gaps in the watcher's data", func() {
-			mockCidRepo := &mocks.CIDIndexer{
-				ReturnErr: nil,
-			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
 				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
 				ReturnErr:        nil,
@@ -60,7 +57,6 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.BackFillService{
-				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
@@ -74,9 +70,6 @@ var _ = Describe("BackFiller", func() {
 			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
-			Expect(mockCidRepo.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
-			Expect(mockCidRepo.PassedCIDPayload[1]).To(Equal(mocks.MockCIDPayload))
 			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(2))
 			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
 			Expect(mockPublisher.PassedIPLDPayload[1]).To(Equal(mocks.MockConvertedPayload))
@@ -89,9 +82,6 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Works for single block `ranges`", func() {
-			mockCidRepo := &mocks.CIDIndexer{
-				ReturnErr: nil,
-			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
 				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload},
 				ReturnErr:        nil,
@@ -115,7 +105,6 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.BackFillService{
-				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
@@ -129,8 +118,6 @@ var _ = Describe("BackFiller", func() {
 			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
-			Expect(mockCidRepo.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
 			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(1))
 			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
 			Expect(len(mockConverter.PassedStatediffPayload)).To(Equal(1))
@@ -141,9 +128,6 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Finds beginning gap", func() {
-			mockCidRepo := &mocks.CIDIndexer{
-				ReturnErr: nil,
-			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
 				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
 				ReturnErr:        nil,
@@ -169,7 +153,6 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.BackFillService{
-				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
@@ -183,9 +166,6 @@ var _ = Describe("BackFiller", func() {
 			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
-			Expect(mockCidRepo.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
-			Expect(mockCidRepo.PassedCIDPayload[1]).To(Equal(mocks.MockCIDPayload))
 			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(2))
 			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
 			Expect(mockPublisher.PassedIPLDPayload[1]).To(Equal(mocks.MockConvertedPayload))

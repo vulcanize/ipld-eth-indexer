@@ -84,8 +84,8 @@ var _ = Describe("API", func() {
 	var (
 		db                *postgres.DB
 		retriever         *eth.CIDRetriever
-		fetcher           *eth.IPLDPGFetcher
-		indexAndPublisher *eth.IPLDPublisherAndIndexer
+		fetcher           *eth.IPLDFetcher
+		indexAndPublisher *eth.IPLDPublisher
 		backend           *eth.Backend
 		api               *eth.PublicEthAPI
 	)
@@ -94,15 +94,15 @@ var _ = Describe("API", func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		retriever = eth.NewCIDRetriever(db)
-		fetcher = eth.NewIPLDPGFetcher(db)
-		indexAndPublisher = eth.NewIPLDPublisherAndIndexer(db)
+		fetcher = eth.NewIPLDFetcher(db)
+		indexAndPublisher = eth.NewIPLDPublisher(db)
 		backend = &eth.Backend{
 			Retriever: retriever,
 			Fetcher:   fetcher,
 			DB:        db,
 		}
 		api = eth.NewPublicEthAPI(backend)
-		_, err = indexAndPublisher.Publish(mocks.MockConvertedPayload)
+		err = indexAndPublisher.Publish(mocks.MockConvertedPayload)
 		Expect(err).ToNot(HaveOccurred())
 		uncles := mocks.MockBlock.Uncles()
 		uncleHashes := make([]common.Hash, len(uncles))

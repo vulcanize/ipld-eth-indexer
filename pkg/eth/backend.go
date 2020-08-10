@@ -39,7 +39,7 @@ var (
 
 type Backend struct {
 	Retriever *CIDRetriever
-	Fetcher   *IPLDPGFetcher
+	Fetcher   *IPLDFetcher
 	DB        *postgres.DB
 }
 

@@ -27,21 +27,21 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
-// IPLDPGFetcher satisfies the IPLDFetcher interface for ethereum
+// IPLDFetcher satisfies the IPLDFetcher interface for ethereum
 // it interfaces directly with PG-IPFS instead of going through a node-interface or remote node
-type IPLDPGFetcher struct {
+type IPLDFetcher struct {
 	db *postgres.DB
 }
 
-// NewIPLDPGFetcher creates a pointer to a new IPLDPGFetcher
-func NewIPLDPGFetcher(db *postgres.DB) *IPLDPGFetcher {
-	return &IPLDPGFetcher{
+// NewIPLDFetcher creates a pointer to a new IPLDFetcher
+func NewIPLDFetcher(db *postgres.DB) *IPLDFetcher {
+	return &IPLDFetcher{
 		db: db,
 	}
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
+func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("btc fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
@@ -77,7 +77,7 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 }
 
 // FetchHeaders fetches headers
-func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel, error) {
 	log.Debug("fetching header ipld")
 	headerBytes, err := shared.FetchIPLDByMhKey(tx, c.MhKey)
 	if err != nil {
@@ -90,7 +90,7 @@ func (f *IPLDPGFetcher) FetchHeader(tx *sqlx.Tx, c HeaderModel) (ipfs.BlockModel
 }
 
 // FetchTrxs fetches transactions
-func (f *IPLDPGFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockModel, error) {
+func (f *IPLDFetcher) FetchTrxs(tx *sqlx.Tx, cids []TxModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching transaction iplds")
 	trxIPLDs := make([]ipfs.BlockModel, len(cids))
 	for i, c := range cids {

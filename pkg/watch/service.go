@@ -66,10 +66,8 @@ type Service struct {
 	Streamer shared.PayloadStreamer
 	// Interface for converting raw payloads into IPLD object payloads
 	Converter shared.PayloadConverter
-	// Interface for publishing the IPLD payloads to IPFS
+	// Interface for publishing and indexing the PG-IPLD payloads
 	Publisher shared.IPLDPublisher
-	// Interface for indexing the CIDs of the published IPLDs in Postgres
-	Indexer shared.CIDIndexer
 	// Interface for filtering and serving data according to subscribed clients according to their specification
 	Filterer shared.ResponseFilterer
 	// Interface for fetching IPLD objects from IPFS
@@ -86,12 +84,10 @@ type Service struct {
 	SubscriptionTypes map[common.Hash]shared.SubscriptionSettings
 	// Info for the Geth node that this watcher is working with
 	NodeInfo *node.Node
-	// Number of publishAndIndex workers
+	// Number of publish workers
 	WorkerPoolSize int
 	// chain type for this service
 	chain shared.ChainType
-	// Path to ipfs data dir
-	ipfsPath string
 	// Underlying db
 	db *postgres.DB
 	// wg for syncing serve processes
@@ -112,11 +108,7 @@ func NewWatcher(settings *Config) (Watcher, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Publisher, err = builders.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.SyncDBConn, settings.IPFSMode)
-		if err != nil {
-			return nil, err
-		}
-		sn.Indexer, err = builders.NewCIDIndexer(settings.Chain, settings.SyncDBConn, settings.IPFSMode)
+		sn.Publisher, err = builders.NewIPLDPublisher(settings.Chain, settings.SyncDBConn)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +123,7 @@ func NewWatcher(settings *Config) (Watcher, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.IPLDFetcher, err = builders.NewIPLDFetcher(settings.Chain, settings.IPFSPath, settings.ServeDBConn, settings.IPFSMode)
+		sn.IPLDFetcher, err = builders.NewIPLDFetcher(settings.Chain, settings.ServeDBConn)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +134,6 @@ func NewWatcher(settings *Config) (Watcher, error) {
 	sn.SubscriptionTypes = make(map[common.Hash]shared.SubscriptionSettings)
 	sn.WorkerPoolSize = settings.Workers
 	sn.NodeInfo = &settings.NodeInfo
-	sn.ipfsPath = settings.IPFSPath
 	sn.chain = settings.Chain
 	return sn, nil
 }
@@ -190,7 +181,7 @@ func (sap *Service) APIs() []rpc.API {
 }
 
 // Sync streams incoming raw chain data and converts it for further processing
-// It forwards the converted data to the publishAndIndex process(es) it spins up
+// It forwards the converted data to the publish process(es) it spins up
 // If forwards the converted data to a ScreenAndServe process if it there is one listening on the passed screenAndServePayload channel
 // This continues on no matter if or how many subscribers there are
 func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared.ConvertedData) error {
@@ -198,11 +189,11 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 	if err != nil {
 		return err
 	}
-	// spin up publishAndIndex worker goroutines
-	publishAndIndexPayload := make(chan shared.ConvertedData, PayloadChanBufferSize)
+	// spin up publish worker goroutines
+	publishPayload := make(chan shared.ConvertedData, PayloadChanBufferSize)
 	for i := 1; i <= sap.WorkerPoolSize; i++ {
-		go sap.publishAndIndex(wg, i, publishAndIndexPayload)
-		log.Debugf("%s publishAndIndex worker %d successfully spun up", sap.chain.String(), i)
+		go sap.publish(wg, i, publishPayload)
+		log.Debugf("%s publish worker %d successfully spun up", sap.chain.String(), i)
 	}
 	go func() {
 		wg.Add(1)
@@ -221,13 +212,13 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 				case screenAndServePayload <- ipldPayload:
 				default:
 				}
-				// Forward the payload to the publishAndIndex workers
+				// Forward the payload to the publish workers
 				// this channel acts as a ring buffer
 				select {
-				case publishAndIndexPayload <- ipldPayload:
+				case publishPayload <- ipldPayload:
 				default:
-					<-publishAndIndexPayload
-					publishAndIndexPayload <- ipldPayload
+					<-publishPayload
+					publishPayload <- ipldPayload
 				}
 			case err := <-sub.Err():
 				log.Errorf("watcher subscription error for chain %s: %v", sap.chain.String(), err)
@@ -241,26 +232,21 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 	return nil
 }
 
-// publishAndIndex is spun up by SyncAndConvert and receives converted chain data from that process
+// publish is spun up by SyncAndConvert and receives converted chain data from that process
 // it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publishAndIndex(wg *sync.WaitGroup, id int, publishAndIndexPayload <-chan shared.ConvertedData) {
+func (sap *Service) publish(wg *sync.WaitGroup, id int, publishPayload <-chan shared.ConvertedData) {
 	wg.Add(1)
 	defer wg.Done()
 	for {
 		select {
-		case payload := <-publishAndIndexPayload:
-			log.Debugf("%s watcher publishAndIndex worker %d publishing data streamed at head height %d", sap.chain.String(), id, payload.Height())
-			cidPayload, err := sap.Publisher.Publish(payload)
-			if err != nil {
-				log.Errorf("%s watcher publishAndIndex worker %d publishing error: %v", sap.chain.String(), id, err)
+		case payload := <-publishPayload:
+			log.Debugf("%s watcher sync worker %d publishing and indexing data streamed at head height %d", sap.chain.String(), id, payload.Height())
+			if err := sap.Publisher.Publish(payload); err != nil {
+				log.Errorf("%s watcher publish worker %d publishing error: %v", sap.chain.String(), id, err)
 				continue
 			}
-			log.Debugf("%s watcher publishAndIndex worker %d indexing data streamed at head height %d", sap.chain.String(), id, payload.Height())
-			if err := sap.Indexer.Index(cidPayload); err != nil {
-				log.Errorf("%s watcher publishAndIndex worker %d indexing error: %v", sap.chain.String(), id, err)
-			}
 		case <-sap.QuitChan:
-			log.Infof("%s watcher publishAndIndex worker %d shutting down", sap.chain.String(), id)
+			log.Infof("%s watcher publish worker %d shutting down", sap.chain.String(), id)
 			return
 		}
 	}

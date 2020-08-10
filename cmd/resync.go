@@ -19,9 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/resync"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
@@ -46,11 +43,6 @@ func rsyncCmdCommand() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("resync config: %+v", rConfig)
-	if rConfig.IPFSMode == shared.LocalInterface {
-		if err := ipfs.InitIPFSPlugins(); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
 	logWithCommand.Debug("initializing new resync service")
 	rService, err := resync.NewResyncService(rConfig)
 	if err != nil {

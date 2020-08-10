@@ -51,16 +51,16 @@ type UncleModel struct {
 
 // TxModel is the db model for eth.transaction_cids
 type TxModel struct {
-	ID       int64  `db:"id"`
-	HeaderID int64  `db:"header_id"`
-	Index    int64  `db:"index"`
-	TxHash   string `db:"tx_hash"`
-	CID      string `db:"cid"`
-	MhKey    string `db:"mh_key"`
-	Dst      string `db:"dst"`
-	Src      string `db:"src"`
-	Data 	 []byte `db:"data"`
-	Deployment bool `db:"deployment"`
+	ID         int64  `db:"id"`
+	HeaderID   int64  `db:"header_id"`
+	Index      int64  `db:"index"`
+	TxHash     string `db:"tx_hash"`
+	CID        string `db:"cid"`
+	MhKey      string `db:"mh_key"`
+	Dst        string `db:"dst"`
+	Src        string `db:"src"`
+	Data       []byte `db:"data"`
+	Deployment bool   `db:"deployment"`
 }
 
 // ReceiptModel is the db model for eth.receipt_cids

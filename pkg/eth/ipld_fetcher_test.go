@@ -28,20 +28,20 @@ import (
 
 var (
 	db            *postgres.DB
-	pubAndIndexer *eth.IPLDPublisherAndIndexer
-	fetcher       *eth.IPLDPGFetcher
+	pubAndIndexer *eth.IPLDPublisher
+	fetcher       *eth.IPLDFetcher
 )
 
-var _ = Describe("IPLDPGFetcher", func() {
+var _ = Describe("IPLDFetcher", func() {
 	Describe("Fetch", func() {
 		BeforeEach(func() {
 			var err error
 			db, err = shared.SetupDB()
 			Expect(err).ToNot(HaveOccurred())
-			pubAndIndexer = eth.NewIPLDPublisherAndIndexer(db)
-			_, err = pubAndIndexer.Publish(mocks.MockConvertedPayload)
+			pubAndIndexer = eth.NewIPLDPublisher(db)
+			err = pubAndIndexer.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			fetcher = eth.NewIPLDPGFetcher(db)
+			fetcher = eth.NewIPLDFetcher(db)
 		})
 		AfterEach(func() {
 			eth.TearDownDB(db)

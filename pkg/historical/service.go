@@ -40,8 +40,6 @@ type BackFillService struct {
 	Converter shared.PayloadConverter
 	// Interface for publishing the IPLD payloads to IPFS
 	Publisher shared.IPLDPublisher
-	// Interface for indexing the CIDs of the published IPLDs in Postgres
-	Indexer shared.CIDIndexer
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever shared.CIDRetriever
 	// Interface for fetching payloads over at historical blocks; over http
@@ -64,11 +62,7 @@ type BackFillService struct {
 
 // NewBackFillService returns a new BackFillInterface
 func NewBackFillService(settings *Config, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
-	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
-	if err != nil {
-		return nil, err
-	}
-	indexer, err := builders.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
+	publisher, err := builders.NewIPLDPublisher(settings.Chain, settings.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +87,6 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 		batchNumber = shared.DefaultMaxBatchNumber
 	}
 	return &BackFillService{
-		Indexer:            indexer,
 		Converter:          converter,
 		Publisher:          publisher,
 		Retriever:          retriever,
@@ -183,13 +176,9 @@ func (bfs *BackFillService) backFill(wg *sync.WaitGroup, id int, heightChan chan
 				default:
 					log.Debugf("%s backFill worker %d unable to forward converted payload to server; no channel ready to receive", bfs.chain.String(), id)
 				}
-				cidPayload, err := bfs.Publisher.Publish(ipldPayload)
-				if err != nil {
+				if err := bfs.Publisher.Publish(ipldPayload); err != nil {
 					log.Errorf("%s backFill worker %d publisher error: %s", bfs.chain.String(), id, err.Error())
 					continue
-				}
-				if err := bfs.Indexer.Index(cidPayload); err != nil {
-					log.Errorf("%s backFill worker %d indexer error: %s", bfs.chain.String(), id, err.Error())
 				}
 			}
 			log.Infof("%s backFill worker %d finished section from %d to %d", bfs.chain.String(), id, heights[0], heights[len(heights)-1])

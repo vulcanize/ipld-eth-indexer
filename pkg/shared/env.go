@@ -17,9 +17,6 @@
 package shared
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/btcsuite/btcd/rpcclient"
@@ -29,8 +26,6 @@ import (
 
 // Env variables
 const (
-	IPFS_PATH    = "IPFS_PATH"
-	IPFS_MODE    = "IPFS_MODE"
 	HTTP_TIMEOUT = "HTTP_TIMEOUT"
 
 	ETH_WS_PATH       = "ETH_WS_PATH"
@@ -71,30 +66,6 @@ func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
 		NetworkID:    viper.GetString("ethereum.networkID"),
 		ChainID:      viper.GetUint64("ethereum.chainID"),
 	}, rpcClient, nil
-}
-
-// GetIPFSPath returns the ipfs path from the config or env variable
-func GetIPFSPath() (string, error) {
-	viper.BindEnv("ipfs.path", IPFS_PATH)
-	ipfsPath := viper.GetString("ipfs.path")
-	if ipfsPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
-	}
-	return ipfsPath, nil
-}
-
-// GetIPFSMode returns the ipfs mode of operation from the config or env variable
-func GetIPFSMode() (IPFSMode, error) {
-	viper.BindEnv("ipfs.mode", IPFS_MODE)
-	ipfsMode := viper.GetString("ipfs.mode")
-	if ipfsMode == "" {
-		return DirectPostgres, nil
-	}
-	return NewIPFSMode(ipfsMode)
 }
 
 // GetBtcNodeAndClient returns btc node info from path url
