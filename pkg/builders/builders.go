@@ -22,7 +22,6 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
@@ -124,14 +123,18 @@ func NewPaylaodFetcher(chain shared.ChainType, client interface{}, timeout time.
 }
 
 // NewPayloadConverter constructs a PayloadConverter for the provided chain type
-func NewPayloadConverter(chain shared.ChainType) (shared.PayloadConverter, error) {
-	switch chain {
+func NewPayloadConverter(chainType shared.ChainType, chainID uint64) (shared.PayloadConverter, error) {
+	switch chainType {
 	case shared.Ethereum:
-		return eth.NewPayloadConverter(params.MainnetChainConfig), nil
+		chainConfig, err := eth.ChainConfig(chainID)
+		if err != nil {
+			return nil, err
+		}
+		return eth.NewPayloadConverter(chainConfig), nil
 	case shared.Bitcoin:
 		return btc.NewPayloadConverter(&chaincfg.MainNetParams), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %s for converter constructor", chain.String())
+		return nil, fmt.Errorf("invalid chain %s for converter constructor", chainType.String())
 	}
 }
 
@@ -188,7 +191,7 @@ func NewIPLDPublisher(chain shared.ChainType, ipfsPath string, db *postgres.DB, 
 }
 
 // NewPublicAPI constructs a PublicAPI for the provided chain type
-func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc.API, error) {
+func NewPublicAPI(chain shared.ChainType, db *postgres.DB) (rpc.API, error) {
 	switch chain {
 	case shared.Ethereum:
 		backend, err := eth.NewEthBackend(db)

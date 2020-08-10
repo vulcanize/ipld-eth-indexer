@@ -72,7 +72,7 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 	if err != nil {
 		return nil, err
 	}
-	converter, err := builders.NewPayloadConverter(settings.Chain)
+	converter, err := builders.NewPayloadConverter(settings.Chain, settings.NodeInfo.ChainID)
 	if err != nil {
 		return nil, err
 	}

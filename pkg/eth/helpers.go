@@ -16,7 +16,11 @@
 
 package eth
 
-import "github.com/ethereum/go-ethereum/statediff"
+import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/statediff"
+)
 
 func ResolveFromNodeType(nodeType statediff.NodeType) int {
 	switch nodeType {
@@ -45,5 +49,21 @@ func ResolveToNodeType(nodeType int) statediff.NodeType {
 		return statediff.Removed
 	default:
 		return statediff.Unknown
+	}
+}
+
+// ChainConfig returns the appropriate ethereum chain config for the provided chain id
+func ChainConfig(chainID uint64) (*params.ChainConfig, error) {
+	switch chainID {
+	case 1:
+		return params.MainnetChainConfig, nil
+	case 3:
+		return params.TestnetChainConfig, nil // Ropsten
+	case 4:
+		return params.RinkebyChainConfig, nil
+	case 5:
+		return params.GoerliChainConfig, nil
+	default:
+		return nil, fmt.Errorf("chain config for chainid %d not available", chainID)
 	}
 }

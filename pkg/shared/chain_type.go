@@ -29,6 +29,7 @@ const (
 	Ethereum
 	Bitcoin
 	Omni
+	EthereumClassic
 )
 
 func (c ChainType) String() string {
@@ -39,6 +40,8 @@ func (c ChainType) String() string {
 		return "Bitcoin"
 	case Omni:
 		return "Omni"
+	case EthereumClassic:
+		return "EthereumClassic"
 	default:
 		return ""
 	}
@@ -52,6 +55,8 @@ func (c ChainType) API() string {
 		return "btc"
 	case Omni:
 		return "omni"
+	case EthereumClassic:
+		return "etc"
 	default:
 		return ""
 	}
@@ -65,6 +70,8 @@ func NewChainType(name string) (ChainType, error) {
 		return Bitcoin, nil
 	case "omni":
 		return Omni, nil
+	case "classic", "etc":
+		return EthereumClassic, nil
 	default:
 		return UnknownChain, errors.New("invalid name for chain")
 	}

@@ -19,6 +19,7 @@ package node
 type Node struct {
 	GenesisBlock string
 	NetworkID    string
+	ChainID      uint64
 	ID           string
 	ClientName   string
 }

@@ -108,7 +108,7 @@ func NewWatcher(settings *Config) (Watcher, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Converter, err = builders.NewPayloadConverter(settings.Chain)
+		sn.Converter, err = builders.NewPayloadConverter(settings.Chain, settings.NodeInfo.ChainID)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (sap *Service) Protocols() []p2p.Protocol {
 
 // APIs returns the RPC descriptors the watcher service offers
 func (sap *Service) APIs() []rpc.API {
-	ifnoAPI := NewInfoAPI()
+	infoAPI := NewInfoAPI()
 	apis := []rpc.API{
 		{
 			Namespace: APIName,
@@ -165,23 +165,23 @@ func (sap *Service) APIs() []rpc.API {
 		{
 			Namespace: "rpc",
 			Version:   APIVersion,
-			Service:   ifnoAPI,
+			Service:   infoAPI,
 			Public:    true,
 		},
 		{
 			Namespace: "net",
 			Version:   APIVersion,
-			Service:   ifnoAPI,
+			Service:   infoAPI,
 			Public:    true,
 		},
 		{
 			Namespace: "admin",
 			Version:   APIVersion,
-			Service:   ifnoAPI,
+			Service:   infoAPI,
 			Public:    true,
 		},
 	}
-	chainAPI, err := builders.NewPublicAPI(sap.chain, sap.db, sap.ipfsPath)
+	chainAPI, err := builders.NewPublicAPI(sap.chain, sap.db)
 	if err != nil {
 		log.Error(err)
 		return apis

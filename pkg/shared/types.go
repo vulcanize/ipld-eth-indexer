@@ -16,6 +16,9 @@
 
 package shared
 
+// Very loose interface types for generic processing of different blockchains
+// TODO: split different blockchain support into separate repos
+
 // These types serve as very loose wrappers around a generic underlying interface{}
 type RawChainData interface{}
 
