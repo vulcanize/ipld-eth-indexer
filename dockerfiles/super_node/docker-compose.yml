@@ -26,7 +26,7 @@ services:
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
         USER: "vdbm"
-        CONFIG_FILE: ./environments/watcherBTC.toml
+        CONFIG_FILE: ./environments/superNodeBTC.toml
     environment:
       VDB_COMMAND: "watcher"
       DATABASE_NAME: "vulcanize_public"
@@ -49,9 +49,9 @@ services:
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
         USER: "vdbm"
-        CONFIG_FILE: ./environments/watcherETH.toml
+        CONFIG_FILE: ./environments/superNodeETH.toml
     environment:
-      VDB_COMMAND: "watcher"
+      VDB_COMMAND: "watch"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432
