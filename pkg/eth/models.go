@@ -59,7 +59,7 @@ type TxModel struct {
 	MhKey      string `db:"mh_key"`
 	Dst        string `db:"dst"`
 	Src        string `db:"src"`
-	Data       []byte `db:"data"`
+	Data       []byte `db:"tx_data"`
 	Deployment bool   `db:"deployment"`
 }
 

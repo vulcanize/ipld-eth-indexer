@@ -145,7 +145,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) error {
 			return err
 		}
 		// If tx is a contract deployment, publish the data (code)
-		if txModel.Deployment {
+		if txModel.Deployment { // codec doesn't matter in this case sine we are not interested in the cid and the db key is multihash-derived
 			if _, err = shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, txModel.Data); err != nil {
 				return err
 			}

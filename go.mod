@@ -1,6 +1,6 @@
 module github.com/vulcanize/ipfs-blockchain-watcher
 
-go 1.12
+go 1.13
 
 require (
 	github.com/btcsuite/btcd v0.20.1-beta
@@ -23,6 +23,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
+	github.com/vulcanize/pg-ipfs-ethdb v0.0.1-alpha
 	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 )

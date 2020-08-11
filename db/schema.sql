@@ -417,7 +417,7 @@ CREATE TABLE eth.transaction_cids (
     dst character varying(66) NOT NULL,
     src character varying(66) NOT NULL,
     deployment boolean NOT NULL,
-    data bytea
+    tx_data bytea
 );
 
 

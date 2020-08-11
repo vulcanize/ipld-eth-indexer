@@ -187,7 +187,8 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 	id := 1
 	pgStr := fmt.Sprintf(`SELECT transaction_cids.id, transaction_cids.header_id,
  			transaction_cids.tx_hash, transaction_cids.cid, transaction_cids.mh_key,
- 			transaction_cids.dst, transaction_cids.src, transaction_cids.index
+ 			transaction_cids.dst, transaction_cids.src, transaction_cids.index,
+			transaction_cids.tx_data, transaction_cids.deployment
  			FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
 			WHERE header_cids.id = $%d`, id)
 	args = append(args, headerID)
