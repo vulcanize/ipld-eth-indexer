@@ -63,6 +63,7 @@ var (
 	AnotherAddress                             = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
 	ContractAddress                            = crypto.CreateAddress(SenderAddr, MockTransactions[2].Nonce())
 	ContractHash                               = crypto.Keccak256Hash(ContractAddress.Bytes()).String()
+	MockContractByteCode                       = []byte{0, 1, 2, 3, 4, 5}
 	mockTopic11                                = common.HexToHash("0x04")
 	mockTopic12                                = common.HexToHash("0x06")
 	mockTopic21                                = common.HexToHash("0x05")
@@ -99,28 +100,34 @@ var (
 	StorageMhKey  = shared.MultihashKeyFromCID(StorageCID)
 	MockTrxMeta   = []eth.TxModel{
 		{
-			CID:    "", // This is empty until we go to publish to ipfs
-			MhKey:  "",
-			Src:    SenderAddr.Hex(),
-			Dst:    Address.String(),
-			Index:  0,
-			TxHash: MockTransactions[0].Hash().String(),
+			CID:        "", // This is empty until we go to publish to ipfs
+			MhKey:      "",
+			Src:        SenderAddr.Hex(),
+			Dst:        Address.String(),
+			Index:      0,
+			TxHash:     MockTransactions[0].Hash().String(),
+			Data:       []byte{},
+			Deployment: false,
 		},
 		{
-			CID:    "",
-			MhKey:  "",
-			Src:    SenderAddr.Hex(),
-			Dst:    AnotherAddress.String(),
-			Index:  1,
-			TxHash: MockTransactions[1].Hash().String(),
+			CID:        "",
+			MhKey:      "",
+			Src:        SenderAddr.Hex(),
+			Dst:        AnotherAddress.String(),
+			Index:      1,
+			TxHash:     MockTransactions[1].Hash().String(),
+			Data:       []byte{},
+			Deployment: false,
 		},
 		{
-			CID:    "",
-			MhKey:  "",
-			Src:    SenderAddr.Hex(),
-			Dst:    "",
-			Index:  2,
-			TxHash: MockTransactions[2].Hash().String(),
+			CID:        "",
+			MhKey:      "",
+			Src:        SenderAddr.Hex(),
+			Dst:        "",
+			Index:      2,
+			TxHash:     MockTransactions[2].Hash().String(),
+			Data:       MockContractByteCode,
+			Deployment: true,
 		},
 	}
 	MockTrxMetaPostPublsh = []eth.TxModel{
@@ -532,7 +539,7 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	// make transactions
 	trx1 := types.NewTransaction(0, Address, big.NewInt(1000), 50, big.NewInt(100), []byte{})
 	trx2 := types.NewTransaction(1, AnotherAddress, big.NewInt(2000), 100, big.NewInt(200), []byte{})
-	trx3 := types.NewContractCreation(2, big.NewInt(1500), 75, big.NewInt(150), []byte{0, 1, 2, 3, 4, 5})
+	trx3 := types.NewContractCreation(2, big.NewInt(1500), 75, big.NewInt(150), MockContractByteCode)
 	transactionSigner := types.MakeSigner(params.MainnetChainConfig, new(big.Int).Set(BlockNumber))
 	mockCurve := elliptic.P256()
 	mockPrvKey, err := ecdsa.GenerateKey(mockCurve, rand.Reader)

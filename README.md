@@ -161,10 +161,6 @@ This set of parameters needs to be set no matter the chain type.
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
-[ipfs]
-    path = "~/.ipfs" # $IPFS_PATH
-    mode = "postgres" # $IPFS_MODE
-
 [watcher]
     chain = "bitcoin" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
@@ -207,6 +203,7 @@ For Ethereum:
     clientName = "Geth" # $ETH_CLIENT_NAME
     genesisBlock = "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" # $ETH_GENESIS_BLOCK
     networkID = "1" # $ETH_NETWORK_ID
+    chainID = "1" # $ETH_CHAIN_ID
 ```
 
 ### Exposing the data

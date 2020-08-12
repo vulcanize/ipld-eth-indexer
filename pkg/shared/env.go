@@ -17,9 +17,6 @@
 package shared
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/btcsuite/btcd/rpcclient"
@@ -29,8 +26,6 @@ import (
 
 // Env variables
 const (
-	IPFS_PATH    = "IPFS_PATH"
-	IPFS_MODE    = "IPFS_MODE"
 	HTTP_TIMEOUT = "HTTP_TIMEOUT"
 
 	ETH_WS_PATH       = "ETH_WS_PATH"
@@ -39,6 +34,7 @@ const (
 	ETH_CLIENT_NAME   = "ETH_CLIENT_NAME"
 	ETH_GENESIS_BLOCK = "ETH_GENESIS_BLOCK"
 	ETH_NETWORK_ID    = "ETH_NETWORK_ID"
+	ETH_CHAIN_ID      = "ETH_CHAIN_ID"
 
 	BTC_WS_PATH       = "BTC_WS_PATH"
 	BTC_HTTP_PATH     = "BTC_HTTP_PATH"
@@ -48,6 +44,7 @@ const (
 	BTC_CLIENT_NAME   = "BTC_CLIENT_NAME"
 	BTC_GENESIS_BLOCK = "BTC_GENESIS_BLOCK"
 	BTC_NETWORK_ID    = "BTC_NETWORK_ID"
+	BTC_CHAIN_ID      = "BTC_CHAIN_ID"
 )
 
 // GetEthNodeAndClient returns eth node info and client from path url
@@ -56,6 +53,7 @@ func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
 	viper.BindEnv("ethereum.clientName", ETH_CLIENT_NAME)
 	viper.BindEnv("ethereum.genesisBlock", ETH_GENESIS_BLOCK)
 	viper.BindEnv("ethereum.networkID", ETH_NETWORK_ID)
+	viper.BindEnv("ethereum.chainID", ETH_CHAIN_ID)
 
 	rpcClient, err := rpc.Dial(path)
 	if err != nil {
@@ -66,31 +64,8 @@ func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
 		ClientName:   viper.GetString("ethereum.clientName"),
 		GenesisBlock: viper.GetString("ethereum.genesisBlock"),
 		NetworkID:    viper.GetString("ethereum.networkID"),
+		ChainID:      viper.GetUint64("ethereum.chainID"),
 	}, rpcClient, nil
-}
-
-// GetIPFSPath returns the ipfs path from the config or env variable
-func GetIPFSPath() (string, error) {
-	viper.BindEnv("ipfs.path", IPFS_PATH)
-	ipfsPath := viper.GetString("ipfs.path")
-	if ipfsPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
-	}
-	return ipfsPath, nil
-}
-
-// GetIPFSMode returns the ipfs mode of operation from the config or env variable
-func GetIPFSMode() (IPFSMode, error) {
-	viper.BindEnv("ipfs.mode", IPFS_MODE)
-	ipfsMode := viper.GetString("ipfs.mode")
-	if ipfsMode == "" {
-		return DirectPostgres, nil
-	}
-	return NewIPFSMode(ipfsMode)
 }
 
 // GetBtcNodeAndClient returns btc node info from path url
@@ -101,6 +76,7 @@ func GetBtcNodeAndClient(path string) (node.Node, *rpcclient.ConnConfig) {
 	viper.BindEnv("bitcoin.networkID", BTC_NETWORK_ID)
 	viper.BindEnv("bitcoin.pass", BTC_NODE_PASSWORD)
 	viper.BindEnv("bitcoin.user", BTC_NODE_USER)
+	viper.BindEnv("bitcoin.chainID", BTC_CHAIN_ID)
 
 	// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
 	return node.Node{
@@ -108,6 +84,7 @@ func GetBtcNodeAndClient(path string) (node.Node, *rpcclient.ConnConfig) {
 			ClientName:   viper.GetString("bitcoin.clientName"),
 			GenesisBlock: viper.GetString("bitcoin.genesisBlock"),
 			NetworkID:    viper.GetString("bitcoin.networkID"),
+			ChainID:      viper.GetUint64("bitcoin.chainID"),
 		}, &rpcclient.ConnConfig{
 			Host:         path,
 			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode

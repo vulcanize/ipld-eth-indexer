@@ -415,7 +415,9 @@ CREATE TABLE eth.transaction_cids (
     cid text NOT NULL,
     mh_key text NOT NULL,
     dst character varying(66) NOT NULL,
-    src character varying(66) NOT NULL
+    src character varying(66) NOT NULL,
+    deployment boolean NOT NULL,
+    data bytea
 );
 
 

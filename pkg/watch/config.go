@@ -53,8 +53,6 @@ const (
 // Config struct
 type Config struct {
 	Chain    shared.ChainType
-	IPFSPath string
-	IPFSMode shared.IPFSMode
 	DBConfig config.Database
 	// Server fields
 	Serve        bool
@@ -96,19 +94,7 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	c.IPFSMode, err = shared.GetIPFSMode()
-	if err != nil {
-		return nil, err
-	}
-	if c.IPFSMode == shared.LocalInterface || c.IPFSMode == shared.RemoteClient {
-		c.IPFSPath, err = shared.GetIPFSPath()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	c.DBConfig.Init()
-
 	c.Sync = viper.GetBool("watcher.sync")
 	if c.Sync {
 		workers := viper.GetInt("watcher.workers")

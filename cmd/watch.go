@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/viper"
 
 	h "github.com/vulcanize/ipfs-blockchain-watcher/pkg/historical"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
@@ -65,11 +64,6 @@ func watch() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("watcher config: %+v", watcherConfig)
-	if watcherConfig.IPFSMode == shared.LocalInterface {
-		if err := ipfs.InitIPFSPlugins(); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
 	logWithCommand.Debug("initializing new watcher service")
 	watcher, err := w.NewWatcher(watcherConfig)
 	if err != nil {

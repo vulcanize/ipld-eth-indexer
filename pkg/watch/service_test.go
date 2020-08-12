@@ -36,9 +36,6 @@ var _ = Describe("Service", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan shared.RawChainData, 1)
 			quitChan := make(chan bool, 1)
-			mockCidIndexer := &mocks.CIDIndexer{
-				ReturnErr: nil,
-			}
 			mockPublisher := &mocks.IPLDPublisher{
 				ReturnCIDPayload: mocks.MockCIDPayload,
 				ReturnErr:        nil,
@@ -55,7 +52,6 @@ var _ = Describe("Service", func() {
 				ReturnErr:         nil,
 			}
 			processor := &watch.Service{
-				Indexer:        mockCidIndexer,
 				Publisher:      mockPublisher,
 				Streamer:       mockStreamer,
 				Converter:      mockConverter,
@@ -69,8 +65,6 @@ var _ = Describe("Service", func() {
 			close(quitChan)
 			wg.Wait()
 			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
-			Expect(len(mockCidIndexer.PassedCIDPayload)).To(Equal(1))
-			Expect(mockCidIndexer.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
 			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockConvertedPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})

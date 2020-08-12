@@ -45,8 +45,6 @@ const (
 // Config struct
 type Config struct {
 	Chain    shared.ChainType
-	IPFSPath string
-	IPFSMode shared.IPFSMode
 	DBConfig config.Database
 
 	DB              *postgres.DB
@@ -71,19 +69,7 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	c.IPFSMode, err = shared.GetIPFSMode()
-	if err != nil {
-		return nil, err
-	}
-	if c.IPFSMode == shared.LocalInterface || c.IPFSMode == shared.RemoteClient {
-		c.IPFSPath, err = shared.GetIPFSPath()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	c.DBConfig.Init()
-
 	if err := c.init(); err != nil {
 		return nil, err
 	}

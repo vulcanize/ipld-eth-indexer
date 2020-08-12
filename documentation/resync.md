@@ -30,9 +30,6 @@ This set of parameters needs to be set no matter the chain type.
     port     = 5432 # $DATABASE_PORT
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
-
-[ipfs]
-    path = "~/.ipfs" # $IPFS_PATH
     
 [resync]
     chain = "ethereum" # $RESYNC_CHAIN

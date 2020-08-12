@@ -22,7 +22,6 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/btc"
@@ -40,32 +39,6 @@ func NewResponseFilterer(chain shared.ChainType) (shared.ResponseFilterer, error
 		return btc.NewResponseFilterer(), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %s for filterer constructor", chain.String())
-	}
-}
-
-// NewCIDIndexer constructs a CIDIndexer for the provided chain type
-func NewCIDIndexer(chain shared.ChainType, db *postgres.DB, ipfsMode shared.IPFSMode) (shared.CIDIndexer, error) {
-	switch chain {
-	case shared.Ethereum:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return eth.NewCIDIndexer(db), nil
-		case shared.DirectPostgres:
-			return eth.NewIPLDPublisherAndIndexer(db), nil
-		default:
-			return nil, fmt.Errorf("ethereum CIDIndexer unexpected ipfs mode %s", ipfsMode.String())
-		}
-	case shared.Bitcoin:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return btc.NewCIDIndexer(db), nil
-		case shared.DirectPostgres:
-			return eth.NewIPLDPublisherAndIndexer(db), nil
-		default:
-			return nil, fmt.Errorf("bitcoin CIDIndexer unexpected ipfs mode %s", ipfsMode.String())
-		}
-	default:
-		return nil, fmt.Errorf("invalid chain %s for indexer constructor", chain.String())
 	}
 }
 
@@ -124,71 +97,47 @@ func NewPaylaodFetcher(chain shared.ChainType, client interface{}, timeout time.
 }
 
 // NewPayloadConverter constructs a PayloadConverter for the provided chain type
-func NewPayloadConverter(chain shared.ChainType) (shared.PayloadConverter, error) {
-	switch chain {
+func NewPayloadConverter(chainType shared.ChainType, chainID uint64) (shared.PayloadConverter, error) {
+	switch chainType {
 	case shared.Ethereum:
-		return eth.NewPayloadConverter(params.MainnetChainConfig), nil
+		chainConfig, err := eth.ChainConfig(chainID)
+		if err != nil {
+			return nil, err
+		}
+		return eth.NewPayloadConverter(chainConfig), nil
 	case shared.Bitcoin:
 		return btc.NewPayloadConverter(&chaincfg.MainNetParams), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %s for converter constructor", chain.String())
+		return nil, fmt.Errorf("invalid chain %s for converter constructor", chainType.String())
 	}
 }
 
 // NewIPLDFetcher constructs an IPLDFetcher for the provided chain type
-func NewIPLDFetcher(chain shared.ChainType, ipfsPath string, db *postgres.DB, ipfsMode shared.IPFSMode) (shared.IPLDFetcher, error) {
+func NewIPLDFetcher(chain shared.ChainType, db *postgres.DB) (shared.IPLDFetcher, error) {
 	switch chain {
 	case shared.Ethereum:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return eth.NewIPLDFetcher(ipfsPath)
-		case shared.DirectPostgres:
-			return eth.NewIPLDPGFetcher(db), nil
-		default:
-			return nil, fmt.Errorf("ethereum IPLDFetcher unexpected ipfs mode %s", ipfsMode.String())
-		}
+		return eth.NewIPLDFetcher(db), nil
 	case shared.Bitcoin:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return btc.NewIPLDFetcher(ipfsPath)
-		case shared.DirectPostgres:
-			return btc.NewIPLDPGFetcher(db), nil
-		default:
-			return nil, fmt.Errorf("bitcoin IPLDFetcher unexpected ipfs mode %s", ipfsMode.String())
-		}
+		return btc.NewIPLDFetcher(db), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %s for IPLD fetcher constructor", chain.String())
 	}
 }
 
 // NewIPLDPublisher constructs an IPLDPublisher for the provided chain type
-func NewIPLDPublisher(chain shared.ChainType, ipfsPath string, db *postgres.DB, ipfsMode shared.IPFSMode) (shared.IPLDPublisher, error) {
+func NewIPLDPublisher(chain shared.ChainType, db *postgres.DB) (shared.IPLDPublisher, error) {
 	switch chain {
 	case shared.Ethereum:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return eth.NewIPLDPublisher(ipfsPath)
-		case shared.DirectPostgres:
-			return eth.NewIPLDPublisherAndIndexer(db), nil
-		default:
-			return nil, fmt.Errorf("ethereum IPLDPublisher unexpected ipfs mode %s", ipfsMode.String())
-		}
+		return eth.NewIPLDPublisher(db), nil
 	case shared.Bitcoin:
-		switch ipfsMode {
-		case shared.LocalInterface, shared.RemoteClient:
-			return btc.NewIPLDPublisher(ipfsPath)
-		case shared.DirectPostgres:
-			return btc.NewIPLDPublisherAndIndexer(db), nil
-		default:
-			return nil, fmt.Errorf("bitcoin IPLDPublisher unexpected ipfs mode %s", ipfsMode.String())
-		}
+		return btc.NewIPLDPublisher(db), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %s for publisher constructor", chain.String())
 	}
 }
 
 // NewPublicAPI constructs a PublicAPI for the provided chain type
-func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc.API, error) {
+func NewPublicAPI(chain shared.ChainType, db *postgres.DB) (rpc.API, error) {
 	switch chain {
 	case shared.Ethereum:
 		backend, err := eth.NewEthBackend(db)

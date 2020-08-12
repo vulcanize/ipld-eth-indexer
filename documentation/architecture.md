@@ -52,10 +52,6 @@ This set of parameters needs to be set no matter the chain type.
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
-[ipfs]
-    path = "~/.ipfs" # $IPFS_PATH
-    mode = "direct" # $IPFS_MODE
-
 [watcher]
     chain = "bitcoin" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
