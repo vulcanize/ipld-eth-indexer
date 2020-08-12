@@ -1,83 +1,105 @@
 version: '3.2'
 
 services:
-  db:
+  statediffing-geth:
+    build:
+      context: ./../../
+      cache_from:
+      - alpine:latest
+      - golang:1.13
+      dockerfile: ./dockerfiles/geth/Dockerfile
+    expose:
+    - "8545"
+    - "8546"
+    ports:
+    - "127.0.0.1:8545:8545"
+    - "127.0.0.1:8546:8546"
+    command: ["--syncmode", "full",
+              "--statediff",
+              "--ws",
+              "--cache", "4096",
+              "--cache.database", "50",
+              "--cache.gc", "50",
+              "--rpc",
+              "--rpcapi", "eth,statediff,net"]
+
+  super-node-db:
     restart: always
     image: postgres:10.12-alpine
     environment:
-      POSTGRES_USER: "vdbm"
+      POSTGRES_USER: "postgres"
       POSTGRES_DB: "vulcanize_public"
       POSTGRES_PASSWORD: "password"
     volumes:
-     - vulcanizedb_db_data:/var/lib/postgresql/data
+    - vulcanizedb_db_data:/var/lib/postgresql/data
     expose:
-     - "5432"
+    - "5432"
     ports:
-     - "127.0.0.1:8079:5432"
+    - "127.0.0.1:8079:5432"
 
-  btc:
+  ipfs-btc-watcher:
     depends_on:
-      - db
+    - super-node-db
     build:
       context: ./../../
       cache_from:
-       - alpine:latest
-       - golang:1.12.4
+      - alpine:latest
+      - golang:1.13
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
-        USER: "vdbm"
+        USER: "vdm"
         CONFIG_FILE: ./environments/superNodeBTC.toml
     environment:
-      VDB_COMMAND: "watcher"
+      VDB_COMMAND: "watch"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
+      DATABASE_USER: "postgres"
       DATABASE_PASSWORD: "password"
     ports:
-     - "127.0.0.1:8082:8082"
-     - "127.0.0.1:8083:8083"
+    - "127.0.0.1:8082:8082"
+    - "127.0.0.1:8083:8083"
 
-  eth:
+  ipfs-eth-watcher:
     depends_on:
-      - db
+    - super-node-db
     build:
       context: ./../../
       cache_from:
-       - alpine:latest
-       - golang:1.12.4
+      - alpine:latest
+      - golang:1.13
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
-        USER: "vdbm"
+        USER: "vdm"
         CONFIG_FILE: ./environments/superNodeETH.toml
     environment:
       VDB_COMMAND: "watch"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
+      DATABASE_USER: "postgres"
       DATABASE_PASSWORD: "password"
     ports:
-     - "127.0.0.1:8080:8080"
-     - "127.0.0.1:8081:8081"
+    - "127.0.0.1:8080:8080"
+    - "127.0.0.1:8081:8081"
 
-  graphql:
+  super-node-graphql:
     restart: always
     depends_on:
-      - db
+    - super-node-db
     build:
       context: ./../../
       cache_from:
       - node:alpine
       dockerfile: ./dockerfiles/postgraphile/Dockerfile
     expose:
-      - "5000"
+    - "5000"
     ports:
-      - "127.0.0.1:5000:5000"
+    - "127.0.0.1:5000:5000"
     command: ["--plugins", "@graphile/pg-pubsub",
               "--subscriptions",
               "--simple-subscriptions",
-              "--connection", "postgres://vdbm:password@db:5432/vulcanize_public",
+              "--connection", "postgres://postgres:password@super-node-db:5432/vulcanize_public",
               "--port", "5000",
               "-n", "0.0.0.0",
               "--schema", "public,btc,eth",

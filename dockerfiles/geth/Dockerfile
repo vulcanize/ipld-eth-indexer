@@ -1,8 +1,6 @@
 FROM golang:1.13-alpine as builder
 
 RUN apk add --no-cache make gcc musl-dev linux-headers git
-# DEBUG
-RUN apk add busybox-extras
 
 # Get and build vulcanize's geth fork
 RUN go get -d github.com/ethereum/go-ethereum
@@ -23,4 +21,4 @@ COPY --from=builder /go/src/github.com/ethereum/go-ethereum/build/bin/geth geth
 
 EXPOSE 8545 8546 8547 30303 30303/udp
 
-ENTRYPOINT ["geth"]
+ENTRYPOINT ["/app/geth"]

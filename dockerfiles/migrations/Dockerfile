@@ -1,17 +1,13 @@
-FROM golang:alpine
+FROM golang:1.13-alpine as builder
 
 RUN apk --update --no-cache add make git g++ linux-headers
-# DEBUG
-RUN apk add busybox-extras
-
-# this is probably a noob move, but I want apk from alpine for the above but need to avoid Go 1.13 below as this error still occurs https://github.com/ipfs/go-ipfs/issues/6603
-FROM golang:1.12.4 as builder
 
 # Get and build ipfs-blockchain-watcher
 ADD . /go/src/github.com/vulcanize/ipfs-blockchain-watcher
 
 # Build migration tool
-RUN go get -u -d github.com/pressly/goose/cmd/goose
+WORKDIR /
+RUN go get -d github.com/pressly/goose/cmd/goose
 WORKDIR /go/src/github.com/pressly/goose/cmd/goose
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -tags='no_mysql no_sqlite' -o goose .
 
