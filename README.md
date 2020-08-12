@@ -51,7 +51,7 @@ is required for running the automated tests and is used by the `make migrate` co
 1. `createdb vulcanize_public`
 1. `cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
-    - There are optional vars `USER=username` and `PASS=password` if the database user is not the default user `postgres` and/or a password is present
+    - There are optional vars `USER=username:password` if the database user is not the default user `postgres` and/or a password is present
     - To rollback a single step: `make rollback NAME=vulcanize_public`
     - To rollback to a certain migration: `make rollback_to MIGRATION=n NAME=vulcanize_public`
     - To see status of migrations: `make migration_status NAME=vulcanize_public`
