@@ -17,7 +17,6 @@
 package watch
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -105,7 +104,7 @@ func NewConfig() (*Config, error) {
 		switch c.Chain {
 		case shared.Ethereum:
 			ethWS := viper.GetString("ethereum.wsPath")
-			c.NodeInfo, c.WSClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("ws://%s", ethWS))
+			c.NodeInfo, c.WSClient, err = shared.GetEthNodeAndClient(ethWS)
 			if err != nil {
 				return nil, err
 			}

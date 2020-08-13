@@ -3,7 +3,7 @@
     hostname = "localhost" # $DATABASE_HOSTNAME
     port     = 5432 # $DATABASE_PORT
     user     = "vdbm" # $DATABASE_USER
-    password = "" # $DATABASE_PASSWORD
+    password = "password" # $DATABASE_PASSWORD
 
     [database.sync]
         maxIdle = 1
@@ -35,8 +35,8 @@
     validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 
 [bitcoin]
-    wsPath  = "127.0.0.1:8332" # $BTC_WS_PATH
-    httpPath = "127.0.0.1:8332" # $BTC_HTTP_PATH
+    wsPath  = "/btc.ipc" # $BTC_WS_PATH
+    httpPath = "/btc.ipc" # $BTC_HTTP_PATH
     pass = "password" # $BTC_NODE_PASSWORD
     user = "username" # $BTC_NODE_USER
     nodeID = "ocd0" # $BTC_NODE_ID

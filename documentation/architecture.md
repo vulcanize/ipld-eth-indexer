@@ -82,6 +82,7 @@ For Bitcoin:
     clientName = "Omnicore" # $BTC_CLIENT_NAME
     genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f" # $BTC_GENESIS_BLOCK
     networkID = "0xD9B4BEF9" # $BTC_NETWORK_ID
+    chainID = "1" # $BTC_CHAIN_ID
 ```
 
 For Ethereum:
@@ -94,6 +95,7 @@ For Ethereum:
     clientName = "Geth" # $ETH_CLIENT_NAME
     genesisBlock = "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" # $ETH_GENESIS_BLOCK
     networkID = "1" # $ETH_NETWORK_ID
+    chainID = "1" # $ETH_CHAIN_ID
 ```
 
 ## Database

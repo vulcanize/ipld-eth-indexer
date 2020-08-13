@@ -17,7 +17,6 @@
 package historical
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
@@ -97,7 +96,7 @@ func (c *Config) init() error {
 	switch c.Chain {
 	case shared.Ethereum:
 		ethHTTP := viper.GetString("ethereum.httpPath")
-		c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+		c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(ethHTTP)
 		if err != nil {
 			return err
 		}

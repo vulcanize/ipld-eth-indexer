@@ -3,7 +3,7 @@ FROM golang:1.13-alpine as builder
 RUN apk add --no-cache make gcc musl-dev linux-headers git
 
 # Get and build vulcanize's geth fork
-RUN go get -d github.com/ethereum/go-ethereum
+RUN git clone https://github.com/ethereum/go-ethereum.git /go/src/github.com/ethereum/go-ethereum/
 WORKDIR /go/src/github.com/ethereum/go-ethereum
 RUN git remote add vulcanize https://github.com/vulcanize/go-ethereum.git
 RUN git fetch vulcanize
