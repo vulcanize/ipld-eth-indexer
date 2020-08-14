@@ -132,28 +132,34 @@ var (
 	}
 	MockTrxMetaPostPublsh = []eth.TxModel{
 		{
-			CID:    Trx1CID.String(), // This is empty until we go to publish to ipfs
-			MhKey:  Trx1MhKey,
-			Src:    SenderAddr.Hex(),
-			Dst:    Address.String(),
-			Index:  0,
-			TxHash: MockTransactions[0].Hash().String(),
+			CID:        Trx1CID.String(), // This is empty until we go to publish to ipfs
+			MhKey:      Trx1MhKey,
+			Src:        SenderAddr.Hex(),
+			Dst:        Address.String(),
+			Index:      0,
+			TxHash:     MockTransactions[0].Hash().String(),
+			Data:       []byte{},
+			Deployment: false,
 		},
 		{
-			CID:    Trx2CID.String(),
-			MhKey:  Trx2MhKey,
-			Src:    SenderAddr.Hex(),
-			Dst:    AnotherAddress.String(),
-			Index:  1,
-			TxHash: MockTransactions[1].Hash().String(),
+			CID:        Trx2CID.String(),
+			MhKey:      Trx2MhKey,
+			Src:        SenderAddr.Hex(),
+			Dst:        AnotherAddress.String(),
+			Index:      1,
+			TxHash:     MockTransactions[1].Hash().String(),
+			Data:       []byte{},
+			Deployment: false,
 		},
 		{
-			CID:    Trx3CID.String(),
-			MhKey:  Trx3MhKey,
-			Src:    SenderAddr.Hex(),
-			Dst:    "",
-			Index:  2,
-			TxHash: MockTransactions[2].Hash().String(),
+			CID:        Trx3CID.String(),
+			MhKey:      Trx3MhKey,
+			Src:        SenderAddr.Hex(),
+			Dst:        "",
+			Index:      2,
+			TxHash:     MockTransactions[2].Hash().String(),
+			Data:       MockContractByteCode,
+			Deployment: true,
 		},
 	}
 	MockRctMeta = []eth.ReceiptModel{
