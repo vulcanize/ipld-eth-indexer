@@ -59,8 +59,6 @@ func init() {
 	rootCmd.AddCommand(resyncCmd)
 
 	// flags
-	resyncCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
-
 	resyncCmd.PersistentFlags().String("resync-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
 	resyncCmd.PersistentFlags().String("resync-type", "", "which type of data to resync")
 	resyncCmd.PersistentFlags().Int("resync-start", 0, "block height to start resync")
@@ -86,8 +84,6 @@ func init() {
 	resyncCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
 
 	// and their bindings
-	viper.BindPFlag("ipfs.path", resyncCmd.PersistentFlags().Lookup("ipfs-path"))
-
 	viper.BindPFlag("resync.chain", resyncCmd.PersistentFlags().Lookup("resync-chain"))
 	viper.BindPFlag("resync.type", resyncCmd.PersistentFlags().Lookup("resync-type"))
 	viper.BindPFlag("resync.start", resyncCmd.PersistentFlags().Lookup("resync-start"))

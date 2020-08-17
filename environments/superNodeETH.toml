@@ -1,14 +1,17 @@
 [database]
-    name     = "vulcanize_public" # $DATABASE_NAME
+    name     = "vulcanize_testing" # $DATABASE_NAME
     hostname = "localhost" # $DATABASE_HOSTNAME
     port     = 5432 # $DATABASE_PORT
-    user     = "vdbm" # $DATABASE_USER
+    user     = "postgres" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
     [database.sync]
         maxIdle = 1
     [database.backFill]
         maxIdle = 5
+
+[log]
+    level = "debug" # $LOGRUS_LEVEL
 
 [resync]
     chain = "ethereum" # $RESYNC_CHAIN
@@ -23,13 +26,13 @@
 
 [watcher]
     chain = "ethereum" # $SUPERNODE_CHAIN
-    server = true # $SUPERNODE_SERVER
+    server = false # $SUPERNODE_SERVER
     ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
     wsPath = "127.0.0.1:8081" # $SUPERNODE_WS_PATH
     httpPath = "127.0.0.1:8082" # $SUPERNODE_HTTP_PATH
     sync = true # $SUPERNODE_SYNC
     workers = 1 # $SUPERNODE_WORKERS
-    backFill = true # $SUPERNODE_BACKFILL
+    backFill = false # $SUPERNODE_BACKFILL
     frequency = 15 # $SUPERNODE_FREQUENCY
     batchSize = 5 # $SUPERNODE_BATCH_SIZE
     batchNumber = 5 # $SUPERNODE_BATCH_NUMBER
