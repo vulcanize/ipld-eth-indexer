@@ -10,6 +10,9 @@
     [database.backFill]
         maxIdle = 5
 
+[log]
+    level = "debug" # $LOGRUS_LEVEL
+
 [resync]
     chain = "bitcoin" # $RESYNC_CHAIN
     type = "full" # $RESYNC_TYPE

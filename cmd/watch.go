@@ -131,9 +131,6 @@ func init() {
 	rootCmd.AddCommand(watchCmd)
 
 	// flags for all config variables
-	watchCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
-	watchCmd.PersistentFlags().String("ipfs-mode", "", "ipfs operation mode")
-
 	watchCmd.PersistentFlags().String("watcher-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
 	watchCmd.PersistentFlags().Bool("watcher-server", false, "turn vdb server on or off")
 	watchCmd.PersistentFlags().String("watcher-ws-path", "", "vdb server ws path")
@@ -165,9 +162,6 @@ func init() {
 	watchCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
 
 	// and their bindings
-	viper.BindPFlag("ipfs.path", watchCmd.PersistentFlags().Lookup("ipfs-path"))
-	viper.BindPFlag("ipfs.mode", watchCmd.PersistentFlags().Lookup("ipfs-mode"))
-
 	viper.BindPFlag("watcher.chain", watchCmd.PersistentFlags().Lookup("watcher-chain"))
 	viper.BindPFlag("watcher.server", watchCmd.PersistentFlags().Lookup("watcher-server"))
 	viper.BindPFlag("watcher.wsPath", watchCmd.PersistentFlags().Lookup("watcher-ws-path"))
