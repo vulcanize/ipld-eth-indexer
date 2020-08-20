@@ -104,8 +104,8 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 // BackFill periodically checks for and fills in gaps in the watcher db
 func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		for {
 			select {

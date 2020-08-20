@@ -195,8 +195,8 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 		go sap.publish(wg, i, publishPayload)
 		log.Debugf("%s publish worker %d successfully spun up", sap.chain.String(), i)
 	}
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		for {
 			select {
