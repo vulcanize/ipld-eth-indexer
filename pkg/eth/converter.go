@@ -17,8 +17,6 @@
 package eth
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -28,6 +26,11 @@ import (
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
+
+// Converter interface to allow substitution of mocks for testing
+type Converter interface {
+	Convert(payload statediff.Payload) (*ConvertedPayload, error)
+}
 
 // PayloadConverter satisfies the PayloadConverter interface for ethereum
 type PayloadConverter struct {
@@ -43,19 +46,15 @@ func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 
 // Convert method is used to convert a eth statediff.Payload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
-	stateDiffPayload, ok := payload.(statediff.Payload)
-	if !ok {
-		return nil, fmt.Errorf("eth converter: expected payload type %T got %T", statediff.Payload{}, payload)
-	}
+func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayload, error) {
 	// Unpack block rlp to access fields
 	block := new(types.Block)
-	if err := rlp.DecodeBytes(stateDiffPayload.BlockRlp, block); err != nil {
+	if err := rlp.DecodeBytes(payload.BlockRlp, block); err != nil {
 		return nil, err
 	}
 	trxLen := len(block.Transactions())
-	convertedPayload := ConvertedPayload{
-		TotalDifficulty: stateDiffPayload.TotalDifficulty,
+	convertedPayload := &ConvertedPayload{
+		TotalDifficulty: payload.TotalDifficulty,
 		Block:           block,
 		TxMetaData:      make([]TxModel, 0, trxLen),
 		Receipts:        make(types.Receipts, 0, trxLen),
@@ -85,7 +84,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 
 	// Decode receipts for this block
 	receipts := make(types.Receipts, 0)
-	if err := rlp.DecodeBytes(stateDiffPayload.ReceiptsRlp, &receipts); err != nil {
+	if err := rlp.DecodeBytes(payload.ReceiptsRlp, &receipts); err != nil {
 		return nil, err
 	}
 	// Derive any missing fields
@@ -130,7 +129,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 
 	// Unpack state diff rlp to access fields
 	stateDiff := new(statediff.StateObject)
-	if err := rlp.DecodeBytes(stateDiffPayload.StateObjectRlp, stateDiff); err != nil {
+	if err := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff); err != nil {
 		return nil, err
 	}
 	for _, stateNode := range stateDiff.Nodes {

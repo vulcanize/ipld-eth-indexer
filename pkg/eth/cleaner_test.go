@@ -151,7 +151,7 @@ var (
 			},
 		},
 	}
-	mockCIDPayload1 = &eth.CIDPayload{
+	mockCIDPayload1 = eth.CIDPayload{
 		HeaderCID:       headerModel,
 		UncleCIDs:       uncleModels1,
 		TransactionCIDs: txModels1,
@@ -210,7 +210,7 @@ var (
 			StateKey: state1Key.String(),
 		},
 	}
-	mockCIDPayload2 = &eth.CIDPayload{
+	mockCIDPayload2 = eth.CIDPayload{
 		HeaderCID:       headerModel2,
 		TransactionCIDs: txModels2,
 		ReceiptCIDs:     receiptModels2,
@@ -239,7 +239,7 @@ var _ = Describe("Cleaner", func() {
 	var (
 		db      *postgres.DB
 		repo    *eth.CIDIndexer
-		cleaner *eth.Cleaner
+		cleaner *eth.DBCleaner
 	)
 	BeforeEach(func() {
 		var err error

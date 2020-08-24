@@ -22,8 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 const (
@@ -33,6 +31,11 @@ const (
 // StreamClient is an interface for subscribing and streaming from geth
 type StreamClient interface {
 	Subscribe(ctx context.Context, namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error)
+}
+
+// Streamer interface for substituting mocks in tests
+type Streamer interface {
+	Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
 }
 
 // PayloadStreamer satisfies the PayloadStreamer interface for ethereum
@@ -57,16 +60,7 @@ func NewPayloadStreamer(client StreamClient) *PayloadStreamer {
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
 // Satisfies the shared.PayloadStreamer interface
-func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
-	stateDiffChan := make(chan statediff.Payload, PayloadChanBufferSize)
+func (ps *PayloadStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
 	logrus.Debug("streaming diffs from geth")
-	go func() {
-		for {
-			select {
-			case payload := <-stateDiffChan:
-				payloadChan <- payload
-			}
-		}
-	}()
-	return ps.Client.Subscribe(context.Background(), "statediff", stateDiffChan, "stream", ps.params)
+	return ps.Client.Subscribe(context.Background(), "statediff", payloadChan, "stream", ps.params)
 }

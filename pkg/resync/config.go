@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
@@ -31,11 +32,10 @@ import (
 
 // Env variables
 const (
-	RESYNC_CHAIN            = "RESYNC_CHAIN"
 	RESYNC_START            = "RESYNC_START"
 	RESYNC_STOP             = "RESYNC_STOP"
 	RESYNC_BATCH_SIZE       = "RESYNC_BATCH_SIZE"
-	RESYNC_BATCH_NUMBER     = "RESYNC_BATCH_NUMBER"
+	RESYNC_WORKERS          = "RESYNC_WORKERS"
 	RESYNC_CLEAR_OLD_CACHE  = "RESYNC_CLEAR_OLD_CACHE"
 	RESYNC_TYPE             = "RESYNC_TYPE"
 	RESYNC_RESET_VALIDATION = "RESYNC_RESET_VALIDATION"
@@ -43,21 +43,20 @@ const (
 
 // Config holds the parameters needed to perform a resync
 type Config struct {
-	Chain           shared.ChainType // The type of resync to perform
-	ResyncType      shared.DataType  // The type of data to resync
-	ClearOldCache   bool             // Resync will first clear all the data within the range
-	ResetValidation bool             // If true, resync will reset the validation level to 0 for the given range
+	ResyncType      shared.DataType // The type of data to resync
+	ClearOldCache   bool            // Resync will first clear all the data within the range
+	ResetValidation bool            // If true, resync will reset the validation level to 0 for the given range
 
 	// DB info
 	DB       *postgres.DB
-	DBConfig config.Database
+	DBConfig postgres.Config
 
-	HTTPClient  interface{}   // Note this client is expected to support the retrieval of the specified data type(s)
-	NodeInfo    node.Node     // Info for the associated node
-	Ranges      [][2]uint64   // The block height ranges to resync
-	BatchSize   uint64        // BatchSize for the resync http calls (client has to support batch sizing)
-	Timeout     time.Duration // HTTP connection timeout in seconds
-	BatchNumber uint64
+	HTTPClient *rpc.Client   // Ethereum rpc client
+	NodeInfo   node.Info     // Info for the associated node
+	Ranges     [][2]uint64   // The block height ranges to resync
+	BatchSize  uint64        // BatchSize for the resync http calls (client has to support batch sizing)
+	Timeout    time.Duration // HTTP connection timeout in seconds
+	Workers    uint64
 }
 
 // NewConfig fills and returns a resync config from toml parameters
@@ -65,15 +64,13 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
+	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
 	viper.BindEnv("resync.start", RESYNC_START)
 	viper.BindEnv("resync.stop", RESYNC_STOP)
 	viper.BindEnv("resync.clearOldCache", RESYNC_CLEAR_OLD_CACHE)
 	viper.BindEnv("resync.type", RESYNC_TYPE)
-	viper.BindEnv("resync.chain", RESYNC_CHAIN)
-	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
-	viper.BindEnv("bitcoin.httpPath", shared.BTC_HTTP_PATH)
 	viper.BindEnv("resync.batchSize", RESYNC_BATCH_SIZE)
-	viper.BindEnv("resync.batchNumber", RESYNC_BATCH_NUMBER)
+	viper.BindEnv("resync.workers", RESYNC_WORKERS)
 	viper.BindEnv("resync.resetValidation", RESYNC_RESET_VALIDATION)
 	viper.BindEnv("resync.timeout", shared.HTTP_TIMEOUT)
 
@@ -94,28 +91,17 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	chain := viper.GetString("resync.chain")
-	c.Chain, err = shared.NewChainType(chain)
-	if err != nil {
-		return nil, err
-	}
-	if ok, err := shared.SupportedDataType(c.ResyncType, c.Chain); !ok {
+	if ok, err := shared.SupportedDataType(c.ResyncType); !ok {
 		if err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("chain type %s does not support data type %s", c.Chain.String(), c.ResyncType.String())
+		return nil, fmt.Errorf("ethereum does not support data type %s", c.ResyncType.String())
 	}
 
-	switch c.Chain {
-	case shared.Ethereum:
-		ethHTTP := viper.GetString("ethereum.httpPath")
-		c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
-		if err != nil {
-			return nil, err
-		}
-	case shared.Bitcoin:
-		btcHTTP := viper.GetString("bitcoin.httpPath")
-		c.NodeInfo, c.HTTPClient = shared.GetBtcNodeAndClient(btcHTTP)
+	ethHTTP := viper.GetString("ethereum.httpPath")
+	c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	if err != nil {
+		return nil, err
 	}
 
 	c.DBConfig.Init()
@@ -123,6 +109,6 @@ func NewConfig() (*Config, error) {
 	c.DB = &db
 
 	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
-	c.BatchNumber = uint64(viper.GetInt64("resync.batchNumber"))
+	c.Workers = uint64(viper.GetInt64("resync.workers"))
 	return c, nil
 }

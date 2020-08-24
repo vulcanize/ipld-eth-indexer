@@ -39,11 +39,6 @@ type ConvertedPayload struct {
 	StorageNodes    map[string][]TrieNode
 }
 
-// Height satisfies the StreamedIPLDs interface
-func (i ConvertedPayload) Height() int64 {
-	return i.Block.Number().Int64()
-}
-
 // Trie struct used to flag node as leaf or not
 type TrieNode struct {
 	Path    []byte
@@ -89,11 +84,6 @@ type IPLDs struct {
 	Receipts        []ipfs.BlockModel
 	StateNodes      []StateNode
 	StorageNodes    []StorageNode
-}
-
-// Height satisfies the StreamedIPLDs interface
-func (i IPLDs) Height() int64 {
-	return i.BlockNumber.Int64()
 }
 
 type StateNode struct {

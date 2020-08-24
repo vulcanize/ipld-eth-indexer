@@ -54,10 +54,8 @@ var _ = Describe("StateDiffFetcher", func() {
 			stateDiffPayloads, err := stateDiffFetcher.FetchAt(blockHeights)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(stateDiffPayloads)).To(Equal(2))
-			payload1, ok := stateDiffPayloads[0].(statediff.Payload)
-			Expect(ok).To(BeTrue())
-			payload2, ok := stateDiffPayloads[1].(statediff.Payload)
-			Expect(ok).To(BeTrue())
+			payload1 := stateDiffPayloads[0]
+			payload2 := stateDiffPayloads[1]
 			Expect(payload1).To(Equal(mocks.MockStateDiffPayload))
 			Expect(payload2).To(Equal(payload2))
 		})

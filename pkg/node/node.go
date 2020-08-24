@@ -16,7 +16,7 @@
 
 package node
 
-type Node struct {
+type Info struct {
 	GenesisBlock string
 	NetworkID    string
 	ChainID      uint64

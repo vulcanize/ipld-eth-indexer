@@ -23,13 +23,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
 // BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
 type BatchClient interface {
 	BatchCallContext(ctx context.Context, batch []rpc.BatchElem) error
+}
+
+// Fetcher interface for substituting mocks in tests
+type Fetcher interface {
+	FetchAt(blockHeights []uint64) ([]statediff.Payload, error)
 }
 
 // PayloadFetcher satisfies the PayloadFetcher interface for ethereum
@@ -60,7 +63,7 @@ func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
 
 // FetchAt fetches the statediff payloads at the given block heights
 // Calls StateDiffAt(ctx context.Context, blockNumber uint64, params Params) (*Payload, error)
-func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
+func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]statediff.Payload, error) {
 	batch := make([]rpc.BatchElem, 0)
 	for _, height := range blockHeights {
 		batch = append(batch, rpc.BatchElem{
@@ -74,7 +77,7 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChain
 	if err := fetcher.client.BatchCallContext(ctx, batch); err != nil {
 		return nil, fmt.Errorf("ethereum PayloadFetcher batch err for block range %d-%d: %s", blockHeights[0], blockHeights[len(blockHeights)-1], err.Error())
 	}
-	results := make([]shared.RawChainData, 0, len(blockHeights))
+	results := make([]statediff.Payload, 0, len(blockHeights))
 	for _, batchElem := range batch {
 		if batchElem.Error != nil {
 			return nil, fmt.Errorf("ethereum PayloadFetcher err at blockheight %d: %s", batchElem.Args[0].(uint64), batchElem.Error.Error())

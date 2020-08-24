@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package config
+package postgres
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ const (
 	DATABASE_MAX_CONN_LIFETIME    = "DATABASE_MAX_CONN_LIFETIME"
 )
 
-type Database struct {
+type Config struct {
 	Hostname    string
 	Name        string
 	User        string
@@ -45,19 +45,19 @@ type Database struct {
 	MaxLifetime int
 }
 
-func DbConnectionString(dbConfig Database) string {
-	if len(dbConfig.User) > 0 && len(dbConfig.Password) > 0 {
+func DbConnectionString(config Config) string {
+	if len(config.User) > 0 && len(config.Password) > 0 {
 		return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			dbConfig.User, dbConfig.Password, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+			config.User, config.Password, config.Hostname, config.Port, config.Name)
 	}
-	if len(dbConfig.User) > 0 && len(dbConfig.Password) == 0 {
+	if len(config.User) > 0 && len(config.Password) == 0 {
 		return fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable",
-			dbConfig.User, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+			config.User, config.Hostname, config.Port, config.Name)
 	}
-	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", config.Hostname, config.Port, config.Name)
 }
 
-func (d *Database) Init() {
+func (d *Config) Init() {
 	viper.BindEnv("database.name", DATABASE_NAME)
 	viper.BindEnv("database.hostname", DATABASE_HOSTNAME)
 	viper.BindEnv("database.port", DATABASE_PORT)

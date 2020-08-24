@@ -17,8 +17,6 @@
 package eth
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
@@ -30,6 +28,11 @@ import (
 var (
 	nullHash = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
 )
+
+// Indexer interface to allow substituting mocks in tests
+type Indexer interface {
+	Index(cids CIDPayload) error
+}
 
 // Indexer satisfies the Indexer interface for ethereum
 type CIDIndexer struct {
@@ -44,12 +47,7 @@ func NewCIDIndexer(db *postgres.DB) *CIDIndexer {
 }
 
 // Index indexes a cidPayload in Postgres
-func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
-	cidPayload, ok := cids.(*CIDPayload)
-	if !ok {
-		return fmt.Errorf("eth indexer expected cids type %T got %T", &CIDPayload{}, cids)
-	}
-
+func (in *CIDIndexer) Index(cids CIDPayload) error {
 	// Begin new db tx
 	tx, err := in.db.Beginx()
 	if err != nil {
@@ -66,22 +64,22 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 		}
 	}()
 
-	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID)
+	headerID, err := in.indexHeaderCID(tx, cids.HeaderCID)
 	if err != nil {
 		log.Error("eth indexer error when indexing header")
 		return err
 	}
-	for _, uncle := range cidPayload.UncleCIDs {
+	for _, uncle := range cids.UncleCIDs {
 		if err := in.indexUncleCID(tx, uncle, headerID); err != nil {
 			log.Error("eth indexer error when indexing uncle")
 			return err
 		}
 	}
-	if err := in.indexTransactionAndReceiptCIDs(tx, cidPayload, headerID); err != nil {
+	if err := in.indexTransactionAndReceiptCIDs(tx, cids, headerID); err != nil {
 		log.Error("eth indexer error when indexing transactions and receipts")
 		return err
 	}
-	err = in.indexStateAndStorageCIDs(tx, cidPayload, headerID)
+	err = in.indexStateAndStorageCIDs(tx, cids, headerID)
 	if err != nil {
 		log.Error("eth indexer error when indexing state and storage nodes")
 	}
@@ -106,7 +104,7 @@ func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle UncleModel, headerID int6
 	return err
 }
 
-func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload CIDPayload, headerID int64) error {
 	for _, trxCidMeta := range payload.TransactionCIDs {
 		var txID int64
 		err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index, mh_key, tx_data, deployment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -142,7 +140,7 @@ func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID in
 	return err
 }
 
-func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload CIDPayload, headerID int64) error {
 	for _, stateCID := range payload.StateNodeCIDs {
 		var stateID int64
 		var stateKey string

@@ -21,12 +21,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	mocks2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared/mocks"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 )
 
@@ -34,21 +33,20 @@ var _ = Describe("Service", func() {
 	Describe("Sync", func() {
 		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
-			payloadChan := make(chan shared.RawChainData, 1)
+			payloadChan := make(chan statediff.Payload, 1)
 			quitChan := make(chan bool, 1)
 			mockPublisher := &mocks.IPLDPublisher{
-				ReturnCIDPayload: mocks.MockCIDPayload,
-				ReturnErr:        nil,
+				ReturnErr: nil,
 			}
-			mockStreamer := &mocks2.PayloadStreamer{
+			mockStreamer := &mocks.PayloadStreamer{
 				ReturnSub: &rpc.ClientSubscription{},
-				StreamPayloads: []shared.RawChainData{
+				StreamPayloads: []statediff.Payload{
 					mocks.MockStateDiffPayload,
 				},
 				ReturnErr: nil,
 			}
 			mockConverter := &mocks.PayloadConverter{
-				ReturnIPLDPayload: mocks.MockConvertedPayload,
+				ReturnIPLDPayload: &mocks.MockConvertedPayload,
 				ReturnErr:         nil,
 			}
 			processor := &watch.Service{
@@ -59,7 +57,7 @@ var _ = Describe("Service", func() {
 				QuitChan:       quitChan,
 				WorkerPoolSize: 1,
 			}
-			err := processor.Sync(wg, nil)
+			err := processor.Sync(wg)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			close(quitChan)

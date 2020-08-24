@@ -17,50 +17,26 @@
 package shared
 
 import (
-	"bytes"
-
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multihash"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+
+	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
 )
 
 // SetupDB is use to setup a db for watcher tests
 func SetupDB() (*postgres.DB, error) {
-	return postgres.NewDB(config.Database{
+	return postgres.NewDB(postgres.Config{
 		Hostname: "localhost",
 		Name:     "vulcanize_testing",
 		Port:     5432,
-	}, node.Node{})
+	}, node.Info{})
 }
 
 // ListContainsString used to check if a list of strings contains a particular string
 func ListContainsString(sss []string, s string) bool {
 	for _, str := range sss {
 		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
-// IPLDsContainBytes used to check if a list of strings contains a particular string
-func IPLDsContainBytes(iplds []ipfs.BlockModel, b []byte) bool {
-	for _, ipld := range iplds {
-		if bytes.Equal(ipld.Data, b) {
-			return true
-		}
-	}
-	return false
-}
-
-// ListContainsGap used to check if a list of Gaps contains a particular Gap
-func ListContainsGap(gapList []Gap, gap Gap) bool {
-	for _, listGap := range gapList {
-		if listGap == gap {
 			return true
 		}
 	}

@@ -375,7 +375,7 @@ var (
 		StateNodes:      MockStateNodes,
 	}
 
-	MockCIDPayload = &eth.CIDPayload{
+	MockCIDPayload = eth.CIDPayload{
 		HeaderCID: eth.HeaderModel{
 			BlockHash:       MockBlock.Hash().String(),
 			BlockNumber:     MockBlock.Number().String(),
