@@ -20,20 +20,17 @@ import (
 	"os/signal"
 	s "sync"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	h "github.com/vulcanize/ipfs-blockchain-watcher/pkg/historical"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 
-// watchCmd represents the watch command
-var watchCmd = &cobra.Command{
-	Use:   "watch",
+// syncCmd represents the sync command
+var syncCmd = &cobra.Command{
+	Use:   "sync",
 	Short: "sync chain data into PG-IPFS",
 	Long: `This command configures a VulcanizeDB ipfs-blockchain-watcher.
 
@@ -49,146 +46,58 @@ and fill in gaps in the data
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
-		watch()
+		sync()
 	},
 }
 
-func watch() {
+func sync() {
 	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
 
-	var forwardPayloadChan chan shared.ConvertedData
 	wg := new(s.WaitGroup)
-	logWithCommand.Debug("loading watcher configuration variables")
-	watcherConfig, err := w.NewConfig()
+	logWithCommand.Debug("loading configuration variables")
+	syncerConfig, err := w.NewConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	logWithCommand.Infof("watcher config: %+v", watcherConfig)
-	logWithCommand.Debug("initializing new watcher service")
-	watcher, err := w.NewWatcher(watcherConfig)
+	logWithCommand.Infof("config: %+v", syncerConfig)
+	logWithCommand.Debug("initializing new indexing service")
+	syncer, err := w.NewIndexerService(syncerConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
 
-	if watcherConfig.Serve {
-		logWithCommand.Info("starting up watcher servers")
-		forwardPayloadChan = make(chan shared.ConvertedData, w.PayloadChanBufferSize)
-		watcher.Serve(wg, forwardPayloadChan)
-		if err := startServers(watcher, watcherConfig); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
-
-	if watcherConfig.Sync {
-		logWithCommand.Info("starting up watcher sync process")
-		if err := watcher.Sync(wg, forwardPayloadChan); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
-
-	var backFiller h.BackFillInterface
-	if watcherConfig.Historical {
-		historicalConfig, err := h.NewConfig()
-		if err != nil {
-			logWithCommand.Fatal(err)
-		}
-		logWithCommand.Debug("initializing new historical backfill service")
-		backFiller, err = h.NewBackFillService(historicalConfig, forwardPayloadChan)
-		if err != nil {
-			logWithCommand.Fatal(err)
-		}
-		logWithCommand.Info("starting up watcher backfill process")
-		backFiller.BackFill(wg)
+	logWithCommand.Info("starting up sync process")
+	if err := syncer.Sync(wg); err != nil {
+		logWithCommand.Fatal(err)
 	}
 
 	shutdown := make(chan os.Signal)
 	signal.Notify(shutdown, os.Interrupt)
 	<-shutdown
-	if watcherConfig.Historical {
-		backFiller.Stop()
-	}
-	watcher.Stop()
+	syncer.Stop()
 	wg.Wait()
 }
 
-func startServers(watcher w.Watcher, settings *w.Config) error {
-	logWithCommand.Debug("starting up IPC server")
-	_, _, err := rpc.StartIPCEndpoint(settings.IPCEndpoint, watcher.APIs())
-	if err != nil {
-		return err
-	}
-	logWithCommand.Debug("starting up WS server")
-	_, _, err = rpc.StartWSEndpoint(settings.WSEndpoint, watcher.APIs(), []string{"vdb"}, nil, true)
-	if err != nil {
-		return err
-	}
-	logWithCommand.Debug("starting up HTTP server")
-	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, watcher.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
-	return err
-}
-
 func init() {
-	rootCmd.AddCommand(watchCmd)
+	rootCmd.AddCommand(syncCmd)
 
 	// flags for all config variables
-	watchCmd.PersistentFlags().String("watcher-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
-	watchCmd.PersistentFlags().Bool("watcher-server", false, "turn vdb server on or off")
-	watchCmd.PersistentFlags().String("watcher-ws-path", "", "vdb server ws path")
-	watchCmd.PersistentFlags().String("watcher-http-path", "", "vdb server http path")
-	watchCmd.PersistentFlags().String("watcher-ipc-path", "", "vdb server ipc path")
-	watchCmd.PersistentFlags().Bool("watcher-sync", false, "turn vdb sync on or off")
-	watchCmd.PersistentFlags().Int("watcher-workers", 0, "how many worker goroutines to publish and index data")
-	watchCmd.PersistentFlags().Bool("watcher-back-fill", false, "turn vdb backfill on or off")
-	watchCmd.PersistentFlags().Int("watcher-frequency", 0, "how often (in seconds) the backfill process checks for gaps")
-	watchCmd.PersistentFlags().Int("watcher-batch-size", 0, "data fetching batch size")
-	watchCmd.PersistentFlags().Int("watcher-batch-number", 0, "how many goroutines to fetch data concurrently")
-	watchCmd.PersistentFlags().Int("watcher-validation-level", 0, "backfill will resync any data below this level")
-	watchCmd.PersistentFlags().Int("watcher-timeout", 0, "timeout used for backfill http requests")
+	syncCmd.PersistentFlags().Int("sync-workers", 0, "how many worker goroutines to publish and index data")
 
-	watchCmd.PersistentFlags().String("btc-ws-path", "", "ws url for bitcoin node")
-	watchCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
-	watchCmd.PersistentFlags().String("btc-password", "", "password for btc node")
-	watchCmd.PersistentFlags().String("btc-username", "", "username for btc node")
-	watchCmd.PersistentFlags().String("btc-node-id", "", "btc node id")
-	watchCmd.PersistentFlags().String("btc-client-name", "", "btc client name")
-	watchCmd.PersistentFlags().String("btc-genesis-block", "", "btc genesis block hash")
-	watchCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
-
-	watchCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
-	watchCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
-	watchCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
-	watchCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
-	watchCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
-	watchCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
+	syncCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
+	syncCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
+	syncCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
+	syncCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
+	syncCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
+	syncCmd.PersistentFlags().String("eth-chain-id", "", "eth chain id")
 
 	// and their bindings
-	viper.BindPFlag("watcher.chain", watchCmd.PersistentFlags().Lookup("watcher-chain"))
-	viper.BindPFlag("watcher.server", watchCmd.PersistentFlags().Lookup("watcher-server"))
-	viper.BindPFlag("watcher.wsPath", watchCmd.PersistentFlags().Lookup("watcher-ws-path"))
-	viper.BindPFlag("watcher.httpPath", watchCmd.PersistentFlags().Lookup("watcher-http-path"))
-	viper.BindPFlag("watcher.ipcPath", watchCmd.PersistentFlags().Lookup("watcher-ipc-path"))
-	viper.BindPFlag("watcher.sync", watchCmd.PersistentFlags().Lookup("watcher-sync"))
-	viper.BindPFlag("watcher.workers", watchCmd.PersistentFlags().Lookup("watcher-workers"))
-	viper.BindPFlag("watcher.backFill", watchCmd.PersistentFlags().Lookup("watcher-back-fill"))
-	viper.BindPFlag("watcher.frequency", watchCmd.PersistentFlags().Lookup("watcher-frequency"))
-	viper.BindPFlag("watcher.batchSize", watchCmd.PersistentFlags().Lookup("watcher-batch-size"))
-	viper.BindPFlag("watcher.batchNumber", watchCmd.PersistentFlags().Lookup("watcher-batch-number"))
-	viper.BindPFlag("watcher.validationLevel", watchCmd.PersistentFlags().Lookup("watcher-validation-level"))
-	viper.BindPFlag("watcher.timeout", watchCmd.PersistentFlags().Lookup("watcher-timeout"))
+	viper.BindPFlag("sync.workers", syncCmd.PersistentFlags().Lookup("sync-workers"))
 
-	viper.BindPFlag("bitcoin.wsPath", watchCmd.PersistentFlags().Lookup("btc-ws-path"))
-	viper.BindPFlag("bitcoin.httpPath", watchCmd.PersistentFlags().Lookup("btc-http-path"))
-	viper.BindPFlag("bitcoin.pass", watchCmd.PersistentFlags().Lookup("btc-password"))
-	viper.BindPFlag("bitcoin.user", watchCmd.PersistentFlags().Lookup("btc-username"))
-	viper.BindPFlag("bitcoin.nodeID", watchCmd.PersistentFlags().Lookup("btc-node-id"))
-	viper.BindPFlag("bitcoin.clientName", watchCmd.PersistentFlags().Lookup("btc-client-name"))
-	viper.BindPFlag("bitcoin.genesisBlock", watchCmd.PersistentFlags().Lookup("btc-genesis-block"))
-	viper.BindPFlag("bitcoin.networkID", watchCmd.PersistentFlags().Lookup("btc-network-id"))
-
-	viper.BindPFlag("ethereum.wsPath", watchCmd.PersistentFlags().Lookup("eth-ws-path"))
-	viper.BindPFlag("ethereum.httpPath", watchCmd.PersistentFlags().Lookup("eth-http-path"))
-	viper.BindPFlag("ethereum.nodeID", watchCmd.PersistentFlags().Lookup("eth-node-id"))
-	viper.BindPFlag("ethereum.clientName", watchCmd.PersistentFlags().Lookup("eth-client-name"))
-	viper.BindPFlag("ethereum.genesisBlock", watchCmd.PersistentFlags().Lookup("eth-genesis-block"))
-	viper.BindPFlag("ethereum.networkID", watchCmd.PersistentFlags().Lookup("eth-network-id"))
+	viper.BindPFlag("ethereum.wsPath", syncCmd.PersistentFlags().Lookup("eth-ws-path"))
+	viper.BindPFlag("ethereum.nodeID", syncCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", syncCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", syncCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", syncCmd.PersistentFlags().Lookup("eth-network-id"))
+	viper.BindPFlag("ethereum.chainID", syncCmd.PersistentFlags().Lookup("eth-chain-id"))
 }
