@@ -108,11 +108,11 @@ func (c *Config) init() error {
 }
 
 func overrideDBConnConfig(con postgres.Config) postgres.Config {
-	viper.BindEnv("database.backFill.maxIdle", BACKFILL_MAX_IDLE_CONNECTIONS)
-	viper.BindEnv("database.backFill.maxOpen", BACKFILL_MAX_OPEN_CONNECTIONS)
-	viper.BindEnv("database.backFill.maxLifetime", BACKFILL_MAX_CONN_LIFETIME)
-	con.MaxIdle = viper.GetInt("database.backFill.maxIdle")
-	con.MaxOpen = viper.GetInt("database.backFill.maxOpen")
-	con.MaxLifetime = viper.GetInt("database.backFill.maxLifetime")
+	viper.BindEnv("database.backfill.maxIdle", BACKFILL_MAX_IDLE_CONNECTIONS)
+	viper.BindEnv("database.backfill.maxOpen", BACKFILL_MAX_OPEN_CONNECTIONS)
+	viper.BindEnv("database.backfill.maxLifetime", BACKFILL_MAX_CONN_LIFETIME)
+	con.MaxIdle = viper.GetInt("database.backfill.maxIdle")
+	con.MaxOpen = viper.GetInt("database.backfill.maxOpen")
+	con.MaxLifetime = viper.GetInt("database.backfill.maxLifetime")
 	return con
 }
