@@ -8,7 +8,7 @@
 1. [IPFS Considerations](#ipfs-considerations)
 
 ## Processes
-ipfs-blockchain-watcher is a [service](../pkg/watch/service.go#L61) comprised of the following interfaces:
+ipfs-blockchain-watcher is a [service](../pkg/sync/service.go#L61) comprised of the following interfaces:
 
 * [Payload Fetcher](../pkg/shared/interfaces.go#L29): Fetches raw chain data from a half-duplex endpoint (HTTP/IPC), used for historical data fetching. ([BTC](../pkg/btc/payload_fetcher.go), [ETH](../pkg/eth/payload_fetcher.go)).
 * [Payload Streamer](../pkg/shared/interfaces.go#L24): Streams raw chain data from a full-duplex endpoint (WebSocket/IPC), used for syncing data at the head of the chain in real-time. ([BTC](../pkg/btc/http_streamer.go), [ETH](../pkg/eth/streamer.go)).

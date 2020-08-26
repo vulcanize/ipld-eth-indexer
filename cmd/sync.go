@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
+	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/sync"
 	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
 )
 

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watch_test
+package sync_test
 
 import (
 	"io/ioutil"
@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestIPFSWatcher(t *testing.T) {
+func TestIPLDSync(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "IPFS Watcher Suite Test")
+	RunSpecs(t, "IPLD Sync Suite Test")
 }
 
 var _ = BeforeSuite(func() {

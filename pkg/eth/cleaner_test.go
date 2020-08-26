@@ -246,7 +246,7 @@ var _ = Describe("Cleaner", func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth.NewCIDIndexer(db)
-		cleaner = eth.NewCleaner(db)
+		cleaner = eth.NewDBCleaner(db)
 	})
 	Describe("Clean", func() {
 		BeforeEach(func() {

@@ -59,15 +59,6 @@ type Config struct {
 // NewConfig is used to initialize a historical config from a .toml file
 func NewConfig() (*Config, error) {
 	c := new(Config)
-	c.DBConfig.Init()
-	if err := c.init(); err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func (c *Config) init() error {
 	var err error
 
 	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
@@ -83,12 +74,6 @@ func (c *Config) init() error {
 	}
 	c.Timeout = time.Second * time.Duration(timeout)
 
-	ethHTTP := viper.GetString("ethereum.httpPath")
-	c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
-	if err != nil {
-		return err
-	}
-
 	freq := viper.GetInt("backfill.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
@@ -101,18 +86,24 @@ func (c *Config) init() error {
 	c.Workers = uint64(viper.GetInt64("backfill.workers"))
 	c.ValidationLevel = viper.GetInt("backfill.validationLevel")
 
-	dbConn := overrideDBConnConfig(c.DBConfig)
-	db := utils.LoadPostgres(dbConn, c.NodeInfo)
+	ethHTTP := viper.GetString("ethereum.httpPath")
+	c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	if err != nil {
+		return nil, err
+	}
+
+	c.DBConfig.Init()
+	overrideDBConnConfig(&c.DBConfig)
+	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
 	c.DB = &db
-	return nil
+	return c, nil
 }
 
-func overrideDBConnConfig(con postgres.Config) postgres.Config {
+func overrideDBConnConfig(con *postgres.Config) {
 	viper.BindEnv("database.backfill.maxIdle", BACKFILL_MAX_IDLE_CONNECTIONS)
 	viper.BindEnv("database.backfill.maxOpen", BACKFILL_MAX_OPEN_CONNECTIONS)
 	viper.BindEnv("database.backfill.maxLifetime", BACKFILL_MAX_CONN_LIFETIME)
 	con.MaxIdle = viper.GetInt("database.backfill.maxIdle")
 	con.MaxOpen = viper.GetInt("database.backfill.maxOpen")
 	con.MaxLifetime = viper.GetInt("database.backfill.maxLifetime")
-	return con
 }

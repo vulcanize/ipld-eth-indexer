@@ -39,6 +39,10 @@ const (
 	RESYNC_CLEAR_OLD_CACHE  = "RESYNC_CLEAR_OLD_CACHE"
 	RESYNC_TYPE             = "RESYNC_TYPE"
 	RESYNC_RESET_VALIDATION = "RESYNC_RESET_VALIDATION"
+
+	RESYNC_MAX_IDLE_CONNECTIONS = "RESYNC_MAX_IDLE_CONNECTIONS"
+	RESYNC_MAX_OPEN_CONNECTIONS = "RESYNC_MAX_OPEN_CONNECTIONS"
+	RESYNC_MAX_CONN_LIFETIME    = "RESYNC_MAX_CONN_LIFETIME"
 )
 
 // Config holds the parameters needed to perform a resync
@@ -85,6 +89,8 @@ func NewConfig() (*Config, error) {
 	c.Ranges = [][2]uint64{{start, stop}}
 	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
 	c.ResetValidation = viper.GetBool("resync.resetValidation")
+	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
+	c.Workers = uint64(viper.GetInt64("resync.workers"))
 
 	resyncType := viper.GetString("resync.type")
 	c.ResyncType, err = shared.GenerateDataTypeFromString(resyncType)
@@ -105,10 +111,17 @@ func NewConfig() (*Config, error) {
 	}
 
 	c.DBConfig.Init()
+	overrideDBConnConfig(&c.DBConfig)
 	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
 	c.DB = &db
-
-	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
-	c.Workers = uint64(viper.GetInt64("resync.workers"))
 	return c, nil
+}
+
+func overrideDBConnConfig(con *postgres.Config) {
+	viper.BindEnv("database.resync.maxIdle", RESYNC_MAX_IDLE_CONNECTIONS)
+	viper.BindEnv("database.resync.maxOpen", RESYNC_MAX_OPEN_CONNECTIONS)
+	viper.BindEnv("database.resync.maxLifetime", RESYNC_MAX_CONN_LIFETIME)
+	con.MaxIdle = viper.GetInt("database.resync.maxIdle")
+	con.MaxOpen = viper.GetInt("database.resync.maxOpen")
+	con.MaxLifetime = viper.GetInt("database.resync.maxLifetime")
 }

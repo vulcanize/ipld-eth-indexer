@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watch
+package sync
 
 import (
 	"sync"
@@ -35,7 +35,7 @@ const (
 	PayloadChanBufferSize = 2000
 )
 
-// Indexer is the top level interface for streaming, converting to IPLDs, publishing, and indexing all chain data
+// Indexer is the top level interface for streaming, converting to IPLDs, publishing, and indexing all chain data at head
 // This service is compatible with the Ethereum service interface (node.Service)
 type Indexer interface {
 	// APIs(), Protocols(), Start() and Stop()
@@ -63,7 +63,7 @@ type Service struct {
 	// Info for the Geth node that this indexer is working with
 	NodeInfo *node.Info
 	// Number of sync workers
-	WorkerPoolSize int
+	Workers int64
 	// chain type for this service
 	ChainConfig *params.ChainConfig
 }
@@ -81,7 +81,7 @@ func NewIndexerService(settings *Config) (Indexer, error) {
 	sn.Converter = eth.NewPayloadConverter(sn.ChainConfig)
 	sn.Publisher = eth.NewIPLDPublisher(settings.DB)
 	sn.QuitChan = make(chan bool)
-	sn.WorkerPoolSize = settings.Workers
+	sn.Workers = settings.Workers
 	sn.NodeInfo = &settings.NodeInfo
 	return sn, nil
 }
@@ -98,7 +98,6 @@ func (sap *Service) APIs() []rpc.API {
 
 // Sync streams incoming raw chain data and converts it for further processing
 // It forwards the converted data to the publish process(es) it spins up
-// If forwards the converted data to a ScreenAndServe process if it there is one listening on the passed screenAndServePayload channel
 // This continues on no matter if or how many subscribers there are
 func (sap *Service) Sync(wg *sync.WaitGroup) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
@@ -106,8 +105,8 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 		return err
 	}
 	// spin up publish worker goroutines
-	publishPayload := make(chan *eth.ConvertedPayload, PayloadChanBufferSize)
-	for i := 1; i <= sap.WorkerPoolSize; i++ {
+	publishPayload := make(chan eth.ConvertedPayload, PayloadChanBufferSize)
+	for i := 1; i <= int(sap.Workers); i++ {
 		go sap.publish(wg, i, publishPayload)
 		log.Debugf("ethereum publish worker %d successfully spun up", i)
 	}
@@ -126,10 +125,10 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 				// Forward the payload to the publish workers
 				// this channel acts as a ring buffer
 				select {
-				case publishPayload <- ipldPayload:
+				case publishPayload <- *ipldPayload:
 				default:
 					<-publishPayload
-					publishPayload <- ipldPayload
+					publishPayload <- *ipldPayload
 				}
 			case err := <-sub.Err():
 				log.Errorf("ethereumm indexer subscription error: %v", err)
@@ -145,14 +144,14 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 
 // publish is spun up by SyncAndConvert and receives converted chain data from that process
 // it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publish(wg *sync.WaitGroup, id int, publishPayload <-chan *eth.ConvertedPayload) {
+func (sap *Service) publish(wg *sync.WaitGroup, id int, publishPayload <-chan eth.ConvertedPayload) {
 	wg.Add(1)
 	defer wg.Done()
 	for {
 		select {
 		case payload := <-publishPayload:
 			log.Debugf("ethereumindexer sync worker %d publishing and indexing data streamed at head height %d", id, payload.Block.Number().Uint64())
-			if err := sap.Publisher.Publish(*payload); err != nil {
+			if err := sap.Publisher.Publish(payload); err != nil {
 				log.Errorf("ethereum indexer publish worker %d publishing error: %v", id, err)
 				continue
 			}

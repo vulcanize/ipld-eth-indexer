@@ -70,7 +70,7 @@ func NewBackfillService(settings *Config) (Backfill, error) {
 	}
 	bs.Converter = eth.NewPayloadConverter(bs.ChainConfig)
 	bs.Publisher = eth.NewIPLDPublisher(settings.DB)
-	bs.Retriever = eth.NewRetriever(settings.DB)
+	bs.Retriever = eth.NewGapRetriever(settings.DB)
 	bs.BatchSize = settings.BatchSize
 	if bs.BatchSize == 0 {
 		bs.BatchSize = shared.DefaultMaxBatchSize
@@ -79,6 +79,9 @@ func NewBackfillService(settings *Config) (Backfill, error) {
 	if bs.Workers == 0 {
 		bs.Workers = shared.DefaultMaxBatchNumber
 	}
+	bs.QuitChan = make(chan bool)
+	bs.validationLevel = settings.ValidationLevel
+	bs.GapCheckFrequency = settings.Frequency
 	return bs, nil
 }
 

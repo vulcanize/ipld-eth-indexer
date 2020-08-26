@@ -37,8 +37,8 @@ type DBCleaner struct {
 	db *postgres.DB
 }
 
-// NewCleaner returns a new Cleaner struct that satisfies the shared.Cleaner interface
-func NewCleaner(db *postgres.DB) *DBCleaner {
+// NewDBCleaner returns a new DBCleaner struct
+func NewDBCleaner(db *postgres.DB) *DBCleaner {
 	return &DBCleaner{
 		db: db,
 	}

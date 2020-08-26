@@ -69,7 +69,7 @@ func NewResyncService(settings *Config) (Resync, error) {
 	}
 	rs.Converter = eth.NewPayloadConverter(rs.ChainConfig)
 	rs.Publisher = eth.NewIPLDPublisher(settings.DB)
-	rs.Cleaner = eth.NewCleaner(settings.DB)
+	rs.Cleaner = eth.NewDBCleaner(settings.DB)
 	rs.BatchSize = settings.BatchSize
 	if rs.BatchSize == 0 {
 		rs.BatchSize = shared.DefaultMaxBatchSize
@@ -78,6 +78,11 @@ func NewResyncService(settings *Config) (Resync, error) {
 	if rs.Workers == 0 {
 		rs.Workers = shared.DefaultMaxBatchNumber
 	}
+	rs.resetValidation = settings.ResetValidation
+	rs.clearOldCache = settings.ClearOldCache
+	rs.quitChan = make(chan bool)
+	rs.ranges = settings.Ranges
+	rs.data = settings.ResyncType
 	return rs, nil
 }
 

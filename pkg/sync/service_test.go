@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package watch_test
+package sync_test
 
 import (
 	"sync"
@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/watch"
+	s "github.com/vulcanize/ipfs-blockchain-watcher/pkg/sync"
 )
 
 var _ = Describe("Service", func() {
@@ -49,13 +49,13 @@ var _ = Describe("Service", func() {
 				ReturnIPLDPayload: &mocks.MockConvertedPayload,
 				ReturnErr:         nil,
 			}
-			processor := &watch.Service{
-				Publisher:      mockPublisher,
-				Streamer:       mockStreamer,
-				Converter:      mockConverter,
-				PayloadChan:    payloadChan,
-				QuitChan:       quitChan,
-				WorkerPoolSize: 1,
+			processor := &s.Service{
+				Publisher:   mockPublisher,
+				Streamer:    mockStreamer,
+				Converter:   mockConverter,
+				PayloadChan: payloadChan,
+				QuitChan:    quitChan,
+				Workers:     1,
 			}
 			err := processor.Sync(wg)
 			Expect(err).ToNot(HaveOccurred())

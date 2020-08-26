@@ -40,7 +40,7 @@ var _ = Describe("Retriever", func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth2.NewIPLDPublisher(db)
-		retriever = eth2.NewRetriever(db)
+		retriever = eth2.NewGapRetriever(db)
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)
@@ -308,7 +308,7 @@ var _ = Describe("Retriever", func() {
 			err = repo.Publish(payload14)
 			Expect(err).ToNot(HaveOccurred())
 
-			cleaner := eth.NewCleaner(db)
+			cleaner := eth.NewDBCleaner(db)
 			err = cleaner.ResetValidation([][2]uint64{{101, 102}, {104, 104}, {106, 108}})
 			Expect(err).ToNot(HaveOccurred())
 

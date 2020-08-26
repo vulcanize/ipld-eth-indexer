@@ -37,8 +37,8 @@ type GapRetriever struct {
 	db *postgres.DB
 }
 
-// NewRetriever returns a pointer to a new Retriever
-func NewRetriever(db *postgres.DB) *GapRetriever {
+// NewGapRetriever returns a pointer to a new GapRetriever
+func NewGapRetriever(db *postgres.DB) *GapRetriever {
 	return &GapRetriever{
 		db: db,
 	}
@@ -58,6 +58,7 @@ func (ecr *GapRetriever) RetrieveLastBlockNumber() (int64, error) {
 	return blockNumber, err
 }
 
+// DBGap type for querying for gaps in db
 type DBGap struct {
 	Start uint64 `db:"start"`
 	Stop  uint64 `db:"stop"`
