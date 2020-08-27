@@ -25,14 +25,14 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Prints the version of ipfs-blockchain-watcher",
-	Long: `Use this command to fetch the version of ipfs-blockchain-watcher
+	Short: "Prints the version of ipld-eth-indexer",
+	Long: `Use this command to fetch the version of ipld-eth-indexer
 
-Usage: ./ipfs-blockchain-watcher version`,
+Usage: ./ipld-eth-indexer version`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
-		logWithCommand.Infof("ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
+		logWithCommand.Infof("ipld-eth-indexer version: %s", v.VersionWithMeta)
 	},
 }
 

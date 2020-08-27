@@ -31,17 +31,12 @@ import (
 // syncCmd represents the sync command
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "sync chain data into PG-IPFS",
-	Long: `This command configures a VulcanizeDB ipfs-blockchain-watcher.
+	Short: "sync ethereum chain data into PG-IPFS",
+	Long: `This command syncs all Ethereum data from the head of the chain, processing this data into IPLD objects and
+publishing and indexing them in PG-IPFS.
+This command tracks the head of the chain, for filling in historical data see the backfill and resync commands
 
-The Sync process streams all chain data from the appropriate chain, processes this data into IPLD objects
-and publishes them to IPFS. It then indexes the CIDs against useful data fields/metadata in Postgres. 
-
-The Serve process creates and exposes a rpc subscription server over ws and ipc. Transformers can subscribe to
-these endpoints to stream
-
-The BackFill process spins up a background process which periodically probes the Postgres database to identify
-and fill in gaps in the data
+NOTE: Requires a sycmode=full statediffing go-ethereum node (doesn't require gcmode=archive)'
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
@@ -51,7 +46,7 @@ and fill in gaps in the data
 }
 
 func sync() {
-	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("running ipld-eth-indexer version: %s", v.VersionWithMeta)
 
 	wg := new(s.WaitGroup)
 	logWithCommand.Debug("loading sync configuration variables")

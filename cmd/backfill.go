@@ -34,7 +34,9 @@ var backfillCmd = &cobra.Command{
 	Short: "Find and fill gaps in database",
 	Long: `This command looks for gaps in the vdb postgres database, filling in the missing data
 It searches for heights where no header exists and heights where the header has been validated fewer times
-than the specified limit`,
+than the specified limit
+
+NOTE: Requires a syncmode=full gcmode=archive statediffing go-ethereum node`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
@@ -43,7 +45,7 @@ than the specified limit`,
 }
 
 func backfillCmdCommand() {
-	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("running ipld-eth-indexer version: %s", v.VersionWithMeta)
 
 	wg := new(s.WaitGroup)
 	logWithCommand.Debug("loading backfill configuration variables")

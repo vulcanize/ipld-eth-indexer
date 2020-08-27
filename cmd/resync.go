@@ -31,7 +31,9 @@ var resyncCmd = &cobra.Command{
 	Long: `Use this command to define historical block ranges to sync data within
 This does not find gaps or under-validated data, it resyncs all the data in the provided range
 This can be ran in parallel on non-overlapping regions to scale historical data syncing or
-used to force resyncing of data from a new source`,
+used to force resyncing of data from a new source
+
+NOTE: Requires a syncmode=full gcmode=archive statediffing go-ethereum node`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
@@ -40,7 +42,7 @@ used to force resyncing of data from a new source`,
 }
 
 func rsyncCmdCommand() {
-	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("running ipld-eth-indexer version: %s", v.VersionWithMeta)
 	logWithCommand.Debug("loading resync configuration variables")
 	rConfig, err := resync.NewConfig()
 	if err != nil {
