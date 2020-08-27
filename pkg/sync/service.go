@@ -108,7 +108,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 	publishPayload := make(chan eth.ConvertedPayload, PayloadChanBufferSize)
 	for i := 1; i <= int(sap.Workers); i++ {
 		go sap.publish(wg, i, publishPayload)
-		log.Debugf("ethereum publish worker %d successfully spun up", i)
+		log.Debugf("ethereum sync worker %d successfully spun up", i)
 	}
 	wg.Add(1)
 	go func() {
@@ -118,7 +118,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 			case payload := <-sap.PayloadChan:
 				ipldPayload, err := sap.Converter.Convert(payload)
 				if err != nil {
-					log.Errorf("ethereum indexer conversion error: %v", err)
+					log.Errorf("ethereum sync data conversion error: %v", err)
 					continue
 				}
 				log.Infof("ethereum data streamed at head height %d", ipldPayload.Block.Number().Uint64())
@@ -131,14 +131,14 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 					publishPayload <- *ipldPayload
 				}
 			case err := <-sub.Err():
-				log.Errorf("ethereumm indexer subscription error: %v", err)
+				log.Errorf("ethereumm sync subscription error: %v", err)
 			case <-sap.QuitChan:
 				log.Info("quiting ethereum sync process")
 				return
 			}
 		}
 	}()
-	log.Info("ethereum sync goroutine successfully spun up")
+	log.Info("ethereum sync process successfully spun up")
 	return nil
 }
 
@@ -152,11 +152,11 @@ func (sap *Service) publish(wg *sync.WaitGroup, id int, publishPayload <-chan et
 		case payload := <-publishPayload:
 			log.Debugf("ethereumindexer sync worker %d publishing and indexing data streamed at head height %d", id, payload.Block.Number().Uint64())
 			if err := sap.Publisher.Publish(payload); err != nil {
-				log.Errorf("ethereum indexer publish worker %d publishing error: %v", id, err)
+				log.Errorf("ethereum sync worker %d publishing error: %v", id, err)
 				continue
 			}
 		case <-sap.QuitChan:
-			log.Infof("ethereum indexer publish worker %d shutting down", id)
+			log.Infof("ethereum sync worker %d shutting down", id)
 			return
 		}
 	}

@@ -15,34 +15,11 @@ services:
     ports:
      - "127.0.0.1:8079:5432"
 
-  btc:
-    depends_on:
-      - db
-    build:
-      context: ./../../
-      cache_from:
-       - alpine:latest
-       - golang:1.12.4
-      dockerfile: ./dockerfiles/super_node/Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/superNodeBTC.toml
-    environment:
-      VDB_COMMAND: "watcher"
-      DATABASE_NAME: "vulcanize_public"
-      DATABASE_HOSTNAME: "db"
-      DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
-      DATABASE_PASSWORD: "password"
-    ports:
-     - "127.0.0.1:8082:8082"
-     - "127.0.0.1:8083:8083"
-
   eth:
     depends_on:
       - db
     build:
-      context: ./../../
+      context: ./../
       cache_from:
        - alpine:latest
        - golang:1.12.4
@@ -66,7 +43,7 @@ services:
     depends_on:
       - db
     build:
-      context: ./../../
+      context: ./../
       cache_from:
       - node:alpine
       dockerfile: ./dockerfiles/postgraphile/Dockerfile

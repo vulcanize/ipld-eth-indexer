@@ -28,7 +28,7 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
 )
 
-// Backfill for filling in gaps in the ipfs-blockchain-watcher db
+// Backfill for filling in gaps in the ipld-eth-indexer db
 type Backfill interface {
 	// Method for the watcher to periodically check for and fill in gaps in its data using an archival node
 	Sync(wg *sync.WaitGroup)
