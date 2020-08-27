@@ -38,7 +38,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	log.Info("----- Starting IPFS blockchain watcher -----")
+	log.Info("----- Starting ipld-eth-indexer -----")
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}

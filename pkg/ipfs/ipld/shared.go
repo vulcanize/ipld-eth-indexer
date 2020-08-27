@@ -17,8 +17,6 @@
 package ipld
 
 import (
-	"bytes"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -42,8 +40,6 @@ const (
 	MEthStateTrie       = 0x96
 	MEthAccountSnapshot = 0x97
 	MEthStorageTrie     = 0x98
-	MBitcoinHeader      = 0xb0
-	MBitcoinTx          = 0xb1
 )
 
 // RawdataToCid takes the desired codec and a slice of bytes
@@ -81,27 +77,6 @@ func commonHashToCid(codec uint64, h common.Hash) cid.Cid {
 	}
 
 	return cid.NewCidV1(codec, mhash)
-}
-
-// sha256ToCid takes a sha246 hash and returns its cid based on the
-// codec given
-func sha256ToCid(codec uint64, h []byte) cid.Cid {
-	hash, err := mh.Encode(h, mh.DBL_SHA2_256)
-	if err != nil {
-		panic(err)
-	}
-
-	return cid.NewCidV1(codec, hash)
-}
-
-// getRLP encodes the given object to RLP returning its bytes.
-func getRLP(object interface{}) []byte {
-	buf := new(bytes.Buffer)
-	if err := rlp.Encode(buf, object); err != nil {
-		panic(err)
-	}
-
-	return buf.Bytes()
 }
 
 // localTrie wraps a go-ethereum trie and its underlying memory db.
