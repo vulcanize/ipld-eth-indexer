@@ -54,13 +54,13 @@ func sync() {
 	logWithCommand.Infof("running ipfs-blockchain-watcher version: %s", v.VersionWithMeta)
 
 	wg := new(s.WaitGroup)
-	logWithCommand.Debug("loading configuration variables")
+	logWithCommand.Debug("loading sync configuration variables")
 	syncerConfig, err := w.NewConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("config: %+v", syncerConfig)
-	logWithCommand.Debug("initializing new indexing service")
+	logWithCommand.Debug("initializing new sync service")
 	syncer, err := w.NewIndexerService(syncerConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
@@ -81,23 +81,11 @@ func sync() {
 func init() {
 	rootCmd.AddCommand(syncCmd)
 
-	// flags for all config variables
+	// flags
 	syncCmd.PersistentFlags().Int("sync-workers", 0, "how many worker goroutines to publish and index data")
-
 	syncCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
-	syncCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
-	syncCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
-	syncCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
-	syncCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
-	syncCmd.PersistentFlags().String("eth-chain-id", "", "eth chain id")
 
-	// and their bindings
+	// and their .toml config bindings
 	viper.BindPFlag("sync.workers", syncCmd.PersistentFlags().Lookup("sync-workers"))
-
 	viper.BindPFlag("ethereum.wsPath", syncCmd.PersistentFlags().Lookup("eth-ws-path"))
-	viper.BindPFlag("ethereum.nodeID", syncCmd.PersistentFlags().Lookup("eth-node-id"))
-	viper.BindPFlag("ethereum.clientName", syncCmd.PersistentFlags().Lookup("eth-client-name"))
-	viper.BindPFlag("ethereum.genesisBlock", syncCmd.PersistentFlags().Lookup("eth-genesis-block"))
-	viper.BindPFlag("ethereum.networkID", syncCmd.PersistentFlags().Lookup("eth-network-id"))
-	viper.BindPFlag("ethereum.chainID", syncCmd.PersistentFlags().Lookup("eth-chain-id"))
 }
