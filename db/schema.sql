@@ -169,7 +169,7 @@ CREATE TABLE eth.state_cids (
     cid text NOT NULL,
     mh_key text NOT NULL,
     state_path bytea,
-    node_type integer,
+    node_type integer NOT NULL,
     diff boolean DEFAULT false NOT NULL
 );
 
@@ -643,7 +643,7 @@ ALTER TABLE ONLY eth.receipt_cids
 --
 
 ALTER TABLE ONLY eth.state_accounts
-    ADD CONSTRAINT state_accounts_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_cids(id) ON DELETE CASCADE;
+    ADD CONSTRAINT state_accounts_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
