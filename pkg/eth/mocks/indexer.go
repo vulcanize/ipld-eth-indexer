@@ -17,25 +17,17 @@
 package mocks
 
 import (
-	"fmt"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // CIDIndexer is the underlying struct for the Indexer interface
 type CIDIndexer struct {
-	PassedCIDPayload []*eth.CIDPayload
+	PassedCIDPayload []eth.CIDPayload
 	ReturnErr        error
 }
 
 // Index indexes a cidPayload in Postgres
-func (repo *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
-	cidPayload, ok := cids.(*eth.CIDPayload)
-	if !ok {
-		return fmt.Errorf("index expected cids type %T got %T", &eth.CIDPayload{}, cids)
-	}
-	repo.PassedCIDPayload = append(repo.PassedCIDPayload, cidPayload)
+func (repo *CIDIndexer) Index(cids eth.CIDPayload) error {
+	repo.PassedCIDPayload = append(repo.PassedCIDPayload, cids)
 	return repo.ReturnErr
 }

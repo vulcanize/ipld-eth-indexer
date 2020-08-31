@@ -79,66 +79,23 @@ func GenerateDataTypeFromString(str string) (DataType, error) {
 	}
 }
 
-func SupportedDataType(d DataType, c ChainType) (bool, error) {
-	switch c {
-	case Ethereum:
-		switch d {
-		case Full:
-			return true, nil
-		case Headers:
-			return true, nil
-		case Uncles:
-			return true, nil
-		case Transactions:
-			return true, nil
-		case Receipts:
-			return true, nil
-		case State:
-			return true, nil
-		case Storage:
-			return true, nil
-		default:
-			return true, nil
-		}
-	case Bitcoin:
-		switch d {
-		case Full:
-			return true, nil
-		case Headers:
-			return true, nil
-		case Uncles:
-			return false, nil
-		case Transactions:
-			return true, nil
-		case Receipts:
-			return false, nil
-		case State:
-			return false, nil
-		case Storage:
-			return false, nil
-		default:
-			return false, nil
-		}
-	case Omni:
-		switch d {
-		case Full:
-			return false, nil
-		case Headers:
-			return false, nil
-		case Uncles:
-			return false, nil
-		case Transactions:
-			return false, nil
-		case Receipts:
-			return false, nil
-		case State:
-			return false, nil
-		case Storage:
-			return false, nil
-		default:
-			return false, nil
-		}
+func SupportedDataType(d DataType) (bool, error) {
+	switch d {
+	case Full:
+		return true, nil
+	case Headers:
+		return true, nil
+	case Uncles:
+		return true, nil
+	case Transactions:
+		return true, nil
+	case Receipts:
+		return true, nil
+	case State:
+		return true, nil
+	case Storage:
+		return true, nil
 	default:
-		return false, fmt.Errorf("unrecognized chain type %s", c.String())
+		return true, nil
 	}
 }

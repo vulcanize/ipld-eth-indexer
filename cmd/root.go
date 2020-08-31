@@ -33,12 +33,12 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:              "ipfs-blockchain-watcher",
+	Use:              "ipld-eth-indexer",
 	PersistentPreRun: initFuncs,
 }
 
 func Execute() {
-	log.Info("----- Starting IPFS blockchain watcher -----")
+	log.Info("----- Starting ipld-eth-indexer -----")
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
@@ -83,23 +83,39 @@ func init() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
+	// flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
-	rootCmd.PersistentFlags().String("logfile", "", "file path for logging")
+
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
-	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
-	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 
-	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
+	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().String("logfile", "", "file path for logging")
+
+	rootCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
+	rootCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
+	rootCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
+	rootCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
+	rootCmd.PersistentFlags().String("eth-chain-id", "", "eth chain id")
+
+	// and their .toml config bindings
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
 	viper.BindPFlag("database.hostname", rootCmd.PersistentFlags().Lookup("database-hostname"))
 	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("database-user"))
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
+
+	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
+
+	viper.BindPFlag("ethereum.nodeID", rootCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", rootCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", rootCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", rootCmd.PersistentFlags().Lookup("eth-network-id"))
+	viper.BindPFlag("ethereum.chainID", rootCmd.PersistentFlags().Lookup("eth-chain-id"))
 }
 
 func initConfig() {

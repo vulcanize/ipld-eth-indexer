@@ -21,13 +21,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/config"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
-func LoadPostgres(database config.Database, node node.Node) postgres.DB {
+func LoadPostgres(database postgres.Config, node node.Info) postgres.DB {
 	db, err := postgres.NewDB(database, node)
 	if err != nil {
 		logrus.Fatal("Error loading postgres: ", err)
@@ -59,31 +57,4 @@ func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint6
 		blockRangeBins[i] = blockRange
 	}
 	return blockRangeBins, nil
-}
-
-// MissingHeightsToGaps returns a slice of gaps from a slice of missing block heights
-func MissingHeightsToGaps(heights []uint64) []shared.Gap {
-	if len(heights) == 0 {
-		return nil
-	}
-	validationGaps := make([]shared.Gap, 0)
-	start := heights[0]
-	lastHeight := start
-	for i, height := range heights[1:] {
-		if height != lastHeight+1 {
-			validationGaps = append(validationGaps, shared.Gap{
-				Start: start,
-				Stop:  lastHeight,
-			})
-			start = height
-		}
-		if i+2 == len(heights) {
-			validationGaps = append(validationGaps, shared.Gap{
-				Start: start,
-				Stop:  height,
-			})
-		}
-		lastHeight = height
-	}
-	return validationGaps
 }

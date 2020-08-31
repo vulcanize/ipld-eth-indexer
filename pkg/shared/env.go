@@ -19,9 +19,8 @@ package shared
 import (
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 )
 
 // Env variables
@@ -35,20 +34,10 @@ const (
 	ETH_GENESIS_BLOCK = "ETH_GENESIS_BLOCK"
 	ETH_NETWORK_ID    = "ETH_NETWORK_ID"
 	ETH_CHAIN_ID      = "ETH_CHAIN_ID"
-
-	BTC_WS_PATH       = "BTC_WS_PATH"
-	BTC_HTTP_PATH     = "BTC_HTTP_PATH"
-	BTC_NODE_PASSWORD = "BTC_NODE_PASSWORD"
-	BTC_NODE_USER     = "BTC_NODE_USER"
-	BTC_NODE_ID       = "BTC_NODE_ID"
-	BTC_CLIENT_NAME   = "BTC_CLIENT_NAME"
-	BTC_GENESIS_BLOCK = "BTC_GENESIS_BLOCK"
-	BTC_NETWORK_ID    = "BTC_NETWORK_ID"
-	BTC_CHAIN_ID      = "BTC_CHAIN_ID"
 )
 
 // GetEthNodeAndClient returns eth node info and client from path url
-func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
+func GetEthNodeAndClient(path string) (node.Info, *rpc.Client, error) {
 	viper.BindEnv("ethereum.nodeID", ETH_NODE_ID)
 	viper.BindEnv("ethereum.clientName", ETH_CLIENT_NAME)
 	viper.BindEnv("ethereum.genesisBlock", ETH_GENESIS_BLOCK)
@@ -57,39 +46,13 @@ func GetEthNodeAndClient(path string) (node.Node, *rpc.Client, error) {
 
 	rpcClient, err := rpc.Dial(path)
 	if err != nil {
-		return node.Node{}, nil, err
+		return node.Info{}, nil, err
 	}
-	return node.Node{
+	return node.Info{
 		ID:           viper.GetString("ethereum.nodeID"),
 		ClientName:   viper.GetString("ethereum.clientName"),
 		GenesisBlock: viper.GetString("ethereum.genesisBlock"),
 		NetworkID:    viper.GetString("ethereum.networkID"),
 		ChainID:      viper.GetUint64("ethereum.chainID"),
 	}, rpcClient, nil
-}
-
-// GetBtcNodeAndClient returns btc node info from path url
-func GetBtcNodeAndClient(path string) (node.Node, *rpcclient.ConnConfig) {
-	viper.BindEnv("bitcoin.nodeID", BTC_NODE_ID)
-	viper.BindEnv("bitcoin.clientName", BTC_CLIENT_NAME)
-	viper.BindEnv("bitcoin.genesisBlock", BTC_GENESIS_BLOCK)
-	viper.BindEnv("bitcoin.networkID", BTC_NETWORK_ID)
-	viper.BindEnv("bitcoin.pass", BTC_NODE_PASSWORD)
-	viper.BindEnv("bitcoin.user", BTC_NODE_USER)
-	viper.BindEnv("bitcoin.chainID", BTC_CHAIN_ID)
-
-	// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
-	return node.Node{
-			ID:           viper.GetString("bitcoin.nodeID"),
-			ClientName:   viper.GetString("bitcoin.clientName"),
-			GenesisBlock: viper.GetString("bitcoin.genesisBlock"),
-			NetworkID:    viper.GetString("bitcoin.networkID"),
-			ChainID:      viper.GetUint64("bitcoin.chainID"),
-		}, &rpcclient.ConnConfig{
-			Host:         path,
-			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
-			DisableTLS:   true, // Bitcoin core does not provide TLS by default
-			Pass:         viper.GetString("bitcoin.pass"),
-			User:         viper.GetString("bitcoin.user"),
-		}
 }

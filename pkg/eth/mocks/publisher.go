@@ -17,45 +17,31 @@
 package mocks
 
 import (
-	"fmt"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // IPLDPublisher is the underlying struct for the Publisher interface
 type IPLDPublisher struct {
 	PassedIPLDPayload eth.ConvertedPayload
-	ReturnCIDPayload  *eth.CIDPayload
 	ReturnErr         error
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) error {
-	ipldPayload, ok := payload.(eth.ConvertedPayload)
-	if !ok {
-		return fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
-	}
-	pub.PassedIPLDPayload = ipldPayload
+func (pub *IPLDPublisher) Publish(payload eth.ConvertedPayload) error {
+	pub.PassedIPLDPayload = payload
 	return pub.ReturnErr
 }
 
 // IterativeIPLDPublisher is the underlying struct for the Publisher interface; used in testing
 type IterativeIPLDPublisher struct {
 	PassedIPLDPayload []eth.ConvertedPayload
-	ReturnCIDPayload  []*eth.CIDPayload
 	ReturnErr         error
 	iteration         int
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IterativeIPLDPublisher) Publish(payload shared.ConvertedData) error {
-	ipldPayload, ok := payload.(eth.ConvertedPayload)
-	if !ok {
-		return fmt.Errorf("publish expected payload type %T got %T", &eth.ConvertedPayload{}, payload)
-	}
-	pub.PassedIPLDPayload = append(pub.PassedIPLDPayload, ipldPayload)
+func (pub *IterativeIPLDPublisher) Publish(payload eth.ConvertedPayload) error {
+	pub.PassedIPLDPayload = append(pub.PassedIPLDPayload, payload)
 	pub.iteration++
 	return pub.ReturnErr
 }

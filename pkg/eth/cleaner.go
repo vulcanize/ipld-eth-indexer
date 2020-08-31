@@ -22,24 +22,30 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
-// Cleaner satisfies the shared.Cleaner interface fo ethereum
-type Cleaner struct {
+// Cleaner interface to allow substitution of mocks in tests
+type Cleaner interface {
+	ResetValidation(rngs [][2]uint64) error
+	Clean(rngs [][2]uint64, t shared.DataType) error
+}
+
+// DBCleaner satisfies the Cleaner interface fo ethereum
+type DBCleaner struct {
 	db *postgres.DB
 }
 
-// NewCleaner returns a new Cleaner struct that satisfies the shared.Cleaner interface
-func NewCleaner(db *postgres.DB) *Cleaner {
-	return &Cleaner{
+// NewDBCleaner returns a new DBCleaner struct
+func NewDBCleaner(db *postgres.DB) *DBCleaner {
+	return &DBCleaner{
 		db: db,
 	}
 }
 
 // ResetValidation resets the validation level to 0 to enable revalidation
-func (c *Cleaner) ResetValidation(rngs [][2]uint64) error {
+func (c *DBCleaner) ResetValidation(rngs [][2]uint64) error {
 	tx, err := c.db.Beginx()
 	if err != nil {
 		return err
@@ -58,7 +64,7 @@ func (c *Cleaner) ResetValidation(rngs [][2]uint64) error {
 }
 
 // Clean removes the specified data from the db within the provided block range
-func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
+func (c *DBCleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 	tx, err := c.db.Beginx()
 	if err != nil {
 		return err
@@ -77,7 +83,7 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 	return c.vacuumAnalyze(t)
 }
 
-func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
+func (c *DBCleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	switch t {
 	case shared.Full, shared.Headers:
 		return c.cleanFull(tx, rng)
@@ -117,7 +123,7 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	}
 }
 
-func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
+func (c *DBCleaner) vacuumAnalyze(t shared.DataType) error {
 	switch t {
 	case shared.Full, shared.Headers:
 		return c.vacuumFull()
@@ -156,7 +162,7 @@ func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
 	return c.vacuumIPLDs()
 }
 
-func (c *Cleaner) vacuumFull() error {
+func (c *DBCleaner) vacuumFull() error {
 	if err := c.vacuumHeaders(); err != nil {
 		return err
 	}
@@ -178,47 +184,47 @@ func (c *Cleaner) vacuumFull() error {
 	return c.vacuumStorage()
 }
 
-func (c *Cleaner) vacuumHeaders() error {
+func (c *DBCleaner) vacuumHeaders() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.header_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumUncles() error {
+func (c *DBCleaner) vacuumUncles() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.uncle_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumTxs() error {
+func (c *DBCleaner) vacuumTxs() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.transaction_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumRcts() error {
+func (c *DBCleaner) vacuumRcts() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.receipt_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumState() error {
+func (c *DBCleaner) vacuumState() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.state_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumAccounts() error {
+func (c *DBCleaner) vacuumAccounts() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.state_accounts`)
 	return err
 }
 
-func (c *Cleaner) vacuumStorage() error {
+func (c *DBCleaner) vacuumStorage() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.storage_cids`)
 	return err
 }
 
-func (c *Cleaner) vacuumIPLDs() error {
+func (c *DBCleaner) vacuumIPLDs() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE public.blocks`)
 	return err
 }
 
-func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
 	if err := c.cleanStorageIPLDs(tx, rng); err != nil {
 		return err
 	}
@@ -240,7 +246,7 @@ func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
 	return c.cleanHeaderMetaData(tx, rng)
 }
 
-func (c *Cleaner) cleanStorageIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanStorageIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.storage_cids B, eth.state_cids C, eth.header_cids D
 			WHERE A.key = B.mh_key
@@ -251,7 +257,7 @@ func (c *Cleaner) cleanStorageIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanStorageMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanStorageMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.storage_cids A
 			USING eth.state_cids B, eth.header_cids C
 			WHERE A.state_id = B.id
@@ -261,7 +267,7 @@ func (c *Cleaner) cleanStorageMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanStateIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanStateIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.state_cids B, eth.header_cids C
 			WHERE A.key = B.mh_key
@@ -271,7 +277,7 @@ func (c *Cleaner) cleanStateIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanStateMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanStateMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.state_cids A
 			USING eth.header_cids B
 			WHERE A.header_id = B.id
@@ -280,7 +286,7 @@ func (c *Cleaner) cleanStateMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanReceiptIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanReceiptIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.receipt_cids B, eth.transaction_cids C, eth.header_cids D
 			WHERE A.key = B.mh_key
@@ -291,7 +297,7 @@ func (c *Cleaner) cleanReceiptIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanReceiptMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanReceiptMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.receipt_cids A
 			USING eth.transaction_cids B, eth.header_cids C
 			WHERE A.tx_id = B.id
@@ -301,7 +307,7 @@ func (c *Cleaner) cleanReceiptMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.transaction_cids B, eth.header_cids C
 			WHERE A.key = B.mh_key
@@ -311,7 +317,7 @@ func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.transaction_cids A
 			USING eth.header_cids B
 			WHERE A.header_id = B.id
@@ -320,7 +326,7 @@ func (c *Cleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanUncleIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanUncleIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.uncle_cids B, eth.header_cids C
 			WHERE A.key = B.mh_key
@@ -330,7 +336,7 @@ func (c *Cleaner) cleanUncleIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanUncleMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanUncleMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.uncle_cids A
 			USING eth.header_cids B
 			WHERE A.header_id = B.id
@@ -339,7 +345,7 @@ func (c *Cleaner) cleanUncleMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanHeaderIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanHeaderIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.header_cids B
 			WHERE A.key = B.mh_key
@@ -348,7 +354,7 @@ func (c *Cleaner) cleanHeaderIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	return err
 }
 
-func (c *Cleaner) cleanHeaderMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+func (c *DBCleaner) cleanHeaderMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.header_cids
 			WHERE block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])

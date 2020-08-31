@@ -23,7 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs"
 )
 
 // ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
@@ -37,11 +37,6 @@ type ConvertedPayload struct {
 	ReceiptMetaData []ReceiptModel
 	StateNodes      []TrieNode
 	StorageNodes    map[string][]TrieNode
-}
-
-// Height satisfies the StreamedIPLDs interface
-func (i ConvertedPayload) Height() int64 {
-	return i.Block.Number().Int64()
 }
 
 // Trie struct used to flag node as leaf or not
@@ -89,11 +84,6 @@ type IPLDs struct {
 	Receipts        []ipfs.BlockModel
 	StateNodes      []StateNode
 	StorageNodes    []StorageNode
-}
-
-// Height satisfies the StreamedIPLDs interface
-func (i IPLDs) Height() int64 {
-	return i.BlockNumber.Int64()
 }
 
 type StateNode struct {

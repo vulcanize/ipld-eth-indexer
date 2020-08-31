@@ -14,12 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package node
+package mocks
 
-type Info struct {
-	GenesisBlock string
-	NetworkID    string
-	ChainID      uint64
-	ID           string
-	ClientName   string
+import (
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
+)
+
+// PayloadStreamer mock struct
+type PayloadStreamer struct {
+	PassedPayloadChan chan statediff.Payload
+	ReturnSub         *rpc.ClientSubscription
+	ReturnErr         error
+	StreamPayloads    []statediff.Payload
+}
+
+// Stream mock method
+func (sds *PayloadStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+	sds.PassedPayloadChan = payloadChan
+
+	go func() {
+		for _, payload := range sds.StreamPayloads {
+			sds.PassedPayloadChan <- payload
+		}
+	}()
+
+	return sds.ReturnSub, sds.ReturnErr
 }

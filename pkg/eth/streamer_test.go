@@ -15,19 +15,19 @@
 package eth_test
 
 import (
+	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth/mocks"
 )
 
 var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
 		client := &mocks.StreamClient{}
 		streamer := eth.NewPayloadStreamer(client)
-		payloadChan := make(chan shared.RawChainData)
+		payloadChan := make(chan statediff.Payload)
 		_, err := streamer.Stream(payloadChan)
 		Expect(err).NotTo(HaveOccurred())
 	})

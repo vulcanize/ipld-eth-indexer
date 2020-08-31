@@ -24,9 +24,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
 var (
@@ -151,7 +151,7 @@ var (
 			},
 		},
 	}
-	mockCIDPayload1 = &eth.CIDPayload{
+	mockCIDPayload1 = eth.CIDPayload{
 		HeaderCID:       headerModel,
 		UncleCIDs:       uncleModels1,
 		TransactionCIDs: txModels1,
@@ -210,7 +210,7 @@ var (
 			StateKey: state1Key.String(),
 		},
 	}
-	mockCIDPayload2 = &eth.CIDPayload{
+	mockCIDPayload2 = eth.CIDPayload{
 		HeaderCID:       headerModel2,
 		TransactionCIDs: txModels2,
 		ReceiptCIDs:     receiptModels2,
@@ -239,14 +239,14 @@ var _ = Describe("Cleaner", func() {
 	var (
 		db      *postgres.DB
 		repo    *eth.CIDIndexer
-		cleaner *eth.Cleaner
+		cleaner *eth.DBCleaner
 	)
 	BeforeEach(func() {
 		var err error
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth.NewCIDIndexer(db)
-		cleaner = eth.NewCleaner(db)
+		cleaner = eth.NewDBCleaner(db)
 	})
 	Describe("Clean", func() {
 		BeforeEach(func() {

@@ -1,25 +1,19 @@
-# ipfs-blockchain-watcher
+# ipld-eth-indexer
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipfs-blockchain-watcher)](https://goreportcard.com/report/github.com/vulcanize/ipfs-blockchain-watcher)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipld-eth-indexer)](https://goreportcard.com/report/github.com/vulcanize/ipld-eth-indexer)
 
->  ipfs-blockchain-watcher is used to extract, transform, and load all eth or btc data into an IPFS-backing Postgres datastore while generating useful secondary indexes around the data in other Postgres tables
+>  ipld-eth-indexer is used to extract, transform, and load all Ethereum IPLD data into an IPFS-backing Postgres datastore while generating useful secondary indexes around the data in other Postgres tables
 
 ## Table of Contents
 1. [Background](#background)
-1. [Architecture](#architecture)
 1. [Install](#install)
 1. [Usage](#usage)
 1. [Contributing](#contributing)
 1. [License](#license)
 
 ## Background
-ipfs-blockchain-watcher is a collection of interfaces that are used to extract, process, store, and index
-all blockchain data in Postgres-IPFS. The raw data indexed by ipfs-blockchain-watcher serves as the basis for more specific watchers and applications.
-
-Currently the service supports complete processing of all Bitcoin and Ethereum data.
-
-## Architecture
-More details on the design of ipfs-blockchain-watcher can be found in [here](./documentation/architecture.md)
+ipld-eth-indexer is a collection of interfaces that are used to extract, transform, store, and index
+all Ethereum IPLD data in Postgres. The raw data indexed by ipld-eth-indexer serves as the basis for more specific watchers and applications.
 
 ## Dependencies
 Minimal build dependencies
@@ -32,14 +26,12 @@ Potential external dependencies
 * Goose
 * Postgres
 * Statediffing go-ethereum
-* Bitcoin node
 
 ## Install
 1. [Goose](#goose)
 1. [Postgres](#postgres)
-1. [IPFS](#ipfs)
-1. [Blockchain](#blockchain)
-1. [Watcher](#watcher)
+1. [Ethereum](#ethereum)
+1. [Indexer](#indexer)
 
 ### Goose
 [goose](https://github.com/pressly/goose) is used for migration management. While it is not necessary to use `goose` for manual setup, it
@@ -49,7 +41,7 @@ is required for running the automated tests and is used by the `make migrate` co
 1. [Install Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. `createdb vulcanize_public`
-1. `cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
+1. `cd $GOPATH/src/github.com/vulcanize/ipld-eth-indexer`
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
     - There are optional vars `USER=username:password` if the database user is not the default user `postgres` and/or a password is present
     - To rollback a single step: `make rollback NAME=vulcanize_public`
@@ -63,26 +55,8 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
 
 (It should be noted that trusted auth should only be enabled on systems without sensitive data in them: development and local test databases)
 
-### IPFS
-Data is stored in an [IPFS-backing Postgres datastore](https://github.com/ipfs/go-ds-sql).
-By default data is written directly to the ipfs blockstore in Postgres; the public.blocks table.
-In this case no further IPFS configuration is needed at this time.
-
-Optionally, ipfs-blockchain-watcher can be configured to function through an internal ipfs node interface using the flag: `-ipfs-mode=interface`.
-Operating through the ipfs interface provides the option to configure a block exchange that can search remotely for IPLD data found missing in the local datastore.
-This option is irrelevant in most cases and this mode has some disadvantages, namely:
-
-1. Environment must have IPFS configured
-1. Process will contend with the lockfile at `$IPFS_PATH`
-1. Publishing and indexing of data must occur in separate db transactions
-
-More information for configuring Postgres-IPFS can be found [here](./documentation/ipfs.md)
-
-### Blockchain
-This section describes how to setup an Ethereum or Bitcoin node to serve as a data source for ipfs-blockchain-watcher
-
-#### Ethereum
-For Ethereum, [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11) is currently *requirde*.
+### Ethereum
+[A special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11) is currently *required*.
 This can be setup as follows.
 Skip this step if you already have access to a node that displays the statediffing endpoints.
 
@@ -121,81 +95,71 @@ Also in the output will be the endpoints that will be used to interface with the
 The default ws url is "127.0.0.1:8546" and the default http url is "127.0.0.1:8545".
 These values will be used as the `ethereum.wsPath` and `ethereum.httpPath` in the config, respectively.
 
-#### Bitcoin
-For Bitcoin, ipfs-blockchain-watcher is able to operate entirely through the universally exposed JSON-RPC interfaces.
-This means any of the standard full nodes can be used (e.g. bitcoind, btcd) as the data source.
+### Indexer
+Finally, setup the indexer process itself.
 
-Point at a remote node or set one up locally using the instructions for [bitcoind](https://github.com/bitcoin/bitcoin) and [btcd](https://github.com/btcsuite/btcd).
+Start by downloading ipld-eth-indexer and moving into the repo:
 
-The default http url is "127.0.0.1:8332". We will use the http endpoint as both the `bitcoin.wsPath` and `bitcoin.httpPath`
-(bitcoind does not support websocket endpoints, the watcher currently uses a "subscription" wrapper around the http endpoints)
+`GO111MODULE=off go get -d github.com/vulcanize/ipld-eth-indexer`
 
-### Watcher
-Finally, setup the watcher process itself.
-
-Start by downloading ipfs-blockchain-watcher and moving into the repo:
-
-`GO111MODULE=off go get -d github.com/vulcanize/ipfs-blockchain-watcher`
-
-`cd $GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher`
+`cd $GOPATH/src/github.com/vulcanize/ipld-eth-indexer`
 
 Then, build the binary:
 
 `make build`
 
 ## Usage
-After building the binary, run as
+After building the binary, three commands are available
 
-`./ipfs-blockchain-watcher watch --config=<the name of your config file.toml>`
+* Sync: Streams raw chain data at the head, transforms it into IPLD objects, and indexes the resulting set of CIDs in Postgres with useful metadata.
+
+`./ipld-eth-indexer sync --config=<the name of your config file.toml>`
+
+* Backfill: Automatically searches for and detects gaps in the DB; syncs the data to fill these gaps.
+
+`./ipld-eth-indexer backfill --config=<the name of your config file.toml>`
+
+* Resync: Manually define block ranges within which to (re)fill data over HTTP; can be ran in parallel with non-overlapping regions to scale historical data processing
+
+`./ipld-eth-indexer resync --config=<the name of your config file.toml>`
+
 
 ### Configuration
 
-Below is the set of universal config parameters for the ipfs-blockchain-watcher command, in .toml form, with the respective environmental variables commented to the side.
-This set of parameters needs to be set no matter the chain type.
+Below is the set of parameters for the ipld-eth-indexer command, in .toml form, with the respective environmental variables commented to the side.
+The corresponding CLI flags can be found with the `./ipld-eth-indexer {command} --help` command.
 
 ```toml
 [database]
     name     = "vulcanize_public" # $DATABASE_NAME
     hostname = "localhost" # $DATABASE_HOSTNAME
     port     = 5432 # $DATABASE_PORT
-    user     = "vdbm" # $DATABASE_USER
+    user     = "postgres" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
-[watcher]
-    chain = "bitcoin" # $SUPERNODE_CHAIN
-    server = true # $SUPERNODE_SERVER
-    ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
-    wsPath = "127.0.0.1:8082" # $SUPERNODE_WS_PATH
-    httpPath = "127.0.0.1:8083" # $SUPERNODE_HTTP_PATH
-    sync = true # $SUPERNODE_SYNC
-    workers = 1 # $SUPERNODE_WORKERS
-    backFill = true # $SUPERNODE_BACKFILL
-    frequency = 45 # $SUPERNODE_FREQUENCY
-    batchSize = 1 # $SUPERNODE_BATCH_SIZE
-    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+[log]
+    level = "info" # $LOGRUS_LEVEL
+
+[sync]
+    workers = 4 # $SYNC_WORKERS
+
+[backfill]
+    frequency = 15 # $BACKFILL_FREQUENCY
+    batchSize = 2 # $BACKFILL_BATCH_SIZE
+    workers = 4 # $BACKFILL_WORKERS
     timeout = 300 # $HTTP_TIMEOUT
-    validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
-```
+    validationLevel = 1 # $BACKFILL_VALIDATION_LEVEL
 
-Additional parameters need to be set depending on the specific chain.
+[resync]
+    type = "full" # $RESYNC_TYPE
+    start = 0 # $RESYNC_START
+    stop = 0 # $RESYNC_STOP
+    batchSize = 2 # $RESYNC_BATCH_SIZE
+    workers = 4 # $RESYNC_WORKERS
+    timeout = 300 # $HTTP_TIMEOUT
+    clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
+    resetValidation = false # $RESYNC_RESET_VALIDATION
 
-For Bitcoin:
-
-```toml
-[bitcoin]
-    wsPath  = "127.0.0.1:8332" # $BTC_WS_PATH
-    httpPath = "127.0.0.1:8332" # $BTC_HTTP_PATH
-    pass = "password" # $BTC_NODE_PASSWORD
-    user = "username" # $BTC_NODE_USER
-    nodeID = "ocd0" # $BTC_NODE_ID
-    clientName = "Omnicore" # $BTC_CLIENT_NAME
-    genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f" # $BTC_GENESIS_BLOCK
-    networkID = "0xD9B4BEF9" # $BTC_NETWORK_ID
-```
-
-For Ethereum:
-
-```toml
 [ethereum]
     wsPath  = "127.0.0.1:8546" # $ETH_WS_PATH
     httpPath = "127.0.0.1:8545" # $ETH_HTTP_PATH
@@ -206,8 +170,12 @@ For Ethereum:
     chainID = "1" # $ETH_CHAIN_ID
 ```
 
+`sync`, `backfill`, and `resync` parameters are only applicable to their respective commands.
+
+`backfill` and `resync` require only an `ethereum.httpPath` while `sync` requires only an `ethereum.wsPath`.
+
 ### Exposing the data
-A number of different APIs for remote access to ipfs-blockchain-watcher data can be exposed, these are discussed in more detail [here](./documentation/apis.md)
+See [ipld-eth-server](https://github.com/vulcanize/ipld-eth-server)
 
 ### Testing
 `make test` will run the unit tests  

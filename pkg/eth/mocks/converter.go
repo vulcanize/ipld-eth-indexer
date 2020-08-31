@@ -21,42 +21,33 @@ import (
 
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // PayloadConverter is the underlying struct for the Converter interface
 type PayloadConverter struct {
 	PassedStatediffPayload statediff.Payload
-	ReturnIPLDPayload      eth.ConvertedPayload
+	ReturnIPLDPayload      *eth.ConvertedPayload
 	ReturnErr              error
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
-	stateDiffPayload, ok := payload.(statediff.Payload)
-	if !ok {
-		return nil, fmt.Errorf("convert expected payload type %T got %T", statediff.Payload{}, payload)
-	}
-	pc.PassedStatediffPayload = stateDiffPayload
+func (pc *PayloadConverter) Convert(payload statediff.Payload) (*eth.ConvertedPayload, error) {
+	pc.PassedStatediffPayload = payload
 	return pc.ReturnIPLDPayload, pc.ReturnErr
 }
 
 // IterativePayloadConverter is the underlying struct for the Converter interface
 type IterativePayloadConverter struct {
 	PassedStatediffPayload []statediff.Payload
-	ReturnIPLDPayload      []eth.ConvertedPayload
+	ReturnIPLDPayload      []*eth.ConvertedPayload
 	ReturnErr              error
 	iteration              int
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *IterativePayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
-	stateDiffPayload, ok := payload.(statediff.Payload)
-	if !ok {
-		return nil, fmt.Errorf("convert expected payload type %T got %T", statediff.Payload{}, payload)
-	}
-	pc.PassedStatediffPayload = append(pc.PassedStatediffPayload, stateDiffPayload)
+func (pc *IterativePayloadConverter) Convert(payload statediff.Payload) (*eth.ConvertedPayload, error) {
+	pc.PassedStatediffPayload = append(pc.PassedStatediffPayload, payload)
 	if len(pc.ReturnIPLDPayload) < pc.iteration+1 {
 		return nil, fmt.Errorf("IterativePayloadConverter does not have a payload to return at iteration %d", pc.iteration)
 	}
