@@ -12,7 +12,6 @@ set +x
 #test $DATABASE_PORT
 #test $DATABASE_USER
 #test $DATABASE_PASSWORD
-#test $IPFS_INIT
 VDB_COMMAND=${VDB_COMMAND:-watch}
 set +e
 
