@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // Retriever is a mock retriever for use in tests

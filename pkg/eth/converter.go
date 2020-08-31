@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
 // Converter interface to allow substitution of mocks for testing

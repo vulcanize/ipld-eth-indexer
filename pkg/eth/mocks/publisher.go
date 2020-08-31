@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // IPLDPublisher is the underlying struct for the Publisher interface

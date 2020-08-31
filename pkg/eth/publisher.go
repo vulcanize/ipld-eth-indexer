@@ -26,9 +26,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/multiformats/go-multihash"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/ipfs/ipld"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
 // Publisher interface for substituting mocks in tests

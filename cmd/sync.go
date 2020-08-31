@@ -24,8 +24,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	w "github.com/vulcanize/ipfs-blockchain-watcher/pkg/sync"
-	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
+	w "github.com/vulcanize/ipld-eth-indexer/pkg/sync"
+	v "github.com/vulcanize/ipld-eth-indexer/version"
 )
 
 // syncCmd represents the sync command

@@ -25,8 +25,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
-	s "github.com/vulcanize/ipfs-blockchain-watcher/pkg/sync"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth/mocks"
+	s "github.com/vulcanize/ipld-eth-indexer/pkg/sync"
 )
 
 var _ = Describe("Service", func() {

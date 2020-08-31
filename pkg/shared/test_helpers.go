@@ -19,9 +19,9 @@ package shared
 import (
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multihash"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 )
 
 // SetupDB is use to setup a db for watcher tests

@@ -18,7 +18,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/cmd"
+	"github.com/vulcanize/ipld-eth-indexer/cmd"
 )
 
 func main() {

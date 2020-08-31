@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // PayloadConverter is the underlying struct for the Converter interface

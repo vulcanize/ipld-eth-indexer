@@ -19,7 +19,7 @@ package eth
 import (
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
 // TearDownDB is used to tear down the watcher dbs after tests

@@ -26,9 +26,9 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
 const (

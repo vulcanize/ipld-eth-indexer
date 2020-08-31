@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
+	v "github.com/vulcanize/ipld-eth-indexer/version"
 )
 
 // versionCmd represents the version command

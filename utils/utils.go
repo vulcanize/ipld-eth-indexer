@@ -21,8 +21,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/node"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
 func LoadPostgres(database postgres.Config, node node.Info) postgres.DB {

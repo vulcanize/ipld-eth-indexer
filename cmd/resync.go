@@ -19,9 +19,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/resync"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/resync"
 
-	v "github.com/vulcanize/ipfs-blockchain-watcher/version"
+	v "github.com/vulcanize/ipld-eth-indexer/version"
 )
 
 // resyncCmd represents the resync command

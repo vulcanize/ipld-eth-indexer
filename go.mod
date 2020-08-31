@@ -1,4 +1,4 @@
-module github.com/vulcanize/ipfs-blockchain-watcher
+module github.com/vulcanize/ipld-eth-indexer
 
 go 1.13
 

@@ -22,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
 var DBConfig postgres.Config
@@ -34,7 +34,7 @@ func init() {
 func setTestConfig() {
 	vip := viper.New()
 	vip.SetConfigName("testing")
-	vip.AddConfigPath("$GOPATH/src/github.com/vulcanize/ipfs-blockchain-watcher/environments/")
+	vip.AddConfigPath("$GOPATH/src/github.com/vulcanize/ipld-eth-indexer/environments/")
 	if err := vip.ReadInConfig(); err != nil {
 		logrus.Fatal(err)
 	}

@@ -22,9 +22,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
-	"github.com/vulcanize/ipfs-blockchain-watcher/utils"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
+	"github.com/vulcanize/ipld-eth-indexer/utils"
 )
 
 type Resync interface {
