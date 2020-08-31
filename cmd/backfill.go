@@ -76,7 +76,7 @@ func init() {
 	backfillCmd.PersistentFlags().Int("backfill-frequency", 15, "how often to search for new gaps (in seconds; default 15)")
 	backfillCmd.PersistentFlags().Int("backfill-batch-size", 2, "batch size for http requests")
 	backfillCmd.PersistentFlags().Int("backfill-workers", 4, "number of worker goroutines to concurrently make and process http requests")
-	backfillCmd.PersistentFlags().Int("backfill-timeout", 15, "timeout used for backfill http requests")
+	backfillCmd.PersistentFlags().Int("backfill-timeout", 15, "timeout used for backfill http requests (in seconds)")
 	backfillCmd.PersistentFlags().Int("backfill-validation-level", 1, "data validated less than this amount will be backfilled")
 	backfillCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
 

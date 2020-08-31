@@ -111,11 +111,11 @@ func init() {
 	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 
-	viper.BindPFlag("ethereum.nodeID", backfillCmd.PersistentFlags().Lookup("eth-node-id"))
-	viper.BindPFlag("ethereum.clientName", backfillCmd.PersistentFlags().Lookup("eth-client-name"))
-	viper.BindPFlag("ethereum.genesisBlock", backfillCmd.PersistentFlags().Lookup("eth-genesis-block"))
-	viper.BindPFlag("ethereum.networkID", backfillCmd.PersistentFlags().Lookup("eth-network-id"))
-	viper.BindPFlag("ethereum.chainID", backfillCmd.PersistentFlags().Lookup("eth-chain-id"))
+	viper.BindPFlag("ethereum.nodeID", rootCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", rootCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", rootCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", rootCmd.PersistentFlags().Lookup("eth-network-id"))
+	viper.BindPFlag("ethereum.chainID", rootCmd.PersistentFlags().Lookup("eth-chain-id"))
 }
 
 func initConfig() {

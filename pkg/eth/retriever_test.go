@@ -18,12 +18,10 @@ package eth_test
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
-	eth2 "github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/eth/mocks"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/postgres"
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
@@ -41,15 +39,15 @@ var (
 var _ = Describe("Retriever", func() {
 	var (
 		db        *postgres.DB
-		repo      *eth2.IPLDPublisher
-		retriever *eth2.GapRetriever
+		repo      *eth.IPLDPublisher
+		retriever *eth.GapRetriever
 	)
 	BeforeEach(func() {
 		var err error
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = eth2.NewIPLDPublisher(db)
-		retriever = eth2.NewGapRetriever(db)
+		repo = eth.NewIPLDPublisher(db)
+		retriever = eth.NewGapRetriever(db)
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)

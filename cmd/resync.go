@@ -72,6 +72,7 @@ func init() {
 	resyncCmd.PersistentFlags().Int("resync-workers", 0, "number of worker goroutines to concurrently make and process http requests")
 	resyncCmd.PersistentFlags().Bool("resync-clear-old-cache", false, "if true, clear out old data of the provided type within the resync range before resyncing (warning: clearing out data will delete any rows that FK reference it")
 	resyncCmd.PersistentFlags().Bool("resync-reset-validation", false, "if true, reset times_validated of headers in this range to 0")
+	resyncCmd.PersistentFlags().Int("resync-timeout", 15, "timeout used for resync http requests (in seconds)")
 	resyncCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
 
 	// and their .toml config bindings
