@@ -29,6 +29,15 @@ import (
 	"github.com/vulcanize/ipfs-blockchain-watcher/pkg/shared"
 )
 
+var (
+	mockBlock0       = newMockBlock(0)
+	mockBlock1       = newMockBlock(1)
+	mockBlock2       = newMockBlock(2)
+	mockBlock3       = newMockBlock(3)
+	mockBlock5       = newMockBlock(5)
+	mockBlock1010101 = newMockBlock(1010101)
+)
+
 var _ = Describe("Retriever", func() {
 	var (
 		db        *postgres.DB
@@ -61,7 +70,7 @@ var _ = Describe("Retriever", func() {
 
 		It("Gets the number of the first block that has data in the database", func() {
 			payload := mocks.MockConvertedPayload
-			payload.Block = newMockBlock(1010101)
+			payload.Block = mockBlock1010101
 			err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveFirstBlockNumber()
@@ -71,9 +80,9 @@ var _ = Describe("Retriever", func() {
 
 		It("Gets the number of the first block that has data in the database", func() {
 			payload1 := mocks.MockConvertedPayload
-			payload1.Block = newMockBlock(1010101)
+			payload1.Block = mockBlock1010101
 			payload2 := payload1
-			payload2.Block = newMockBlock(5)
+			payload2.Block = mockBlock5
 			err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Publish(payload2)
@@ -99,7 +108,7 @@ var _ = Describe("Retriever", func() {
 
 		It("Gets the number of the latest block that has data in the database", func() {
 			payload := mocks.MockConvertedPayload
-			payload.Block = newMockBlock(1010101)
+			payload.Block = mockBlock1010101
 			err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			num, err := retriever.RetrieveLastBlockNumber()
@@ -109,9 +118,9 @@ var _ = Describe("Retriever", func() {
 
 		It("Gets the number of the latest block that has data in the database", func() {
 			payload1 := mocks.MockConvertedPayload
-			payload1.Block = newMockBlock(1010101)
+			payload1.Block = mockBlock1010101
 			payload2 := payload1
-			payload2.Block = newMockBlock(5)
+			payload2.Block = mockBlock5
 			err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Publish(payload2)
@@ -125,12 +134,12 @@ var _ = Describe("Retriever", func() {
 	Describe("RetrieveGapsInData", func() {
 		It("Doesn't return gaps if there are none", func() {
 			payload0 := mocks.MockConvertedPayload
-			payload0.Block = newMockBlock(0)
+			payload0.Block = mockBlock0
 			payload1 := mocks.MockConvertedPayload
 			payload2 := payload1
-			payload2.Block = newMockBlock(2)
+			payload2.Block = mockBlock2
 			payload3 := payload2
-			payload3.Block = newMockBlock(3)
+			payload3.Block = mockBlock3
 			err := repo.Publish(payload0)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Publish(payload1)
@@ -146,7 +155,7 @@ var _ = Describe("Retriever", func() {
 
 		It("Returns the gap from 0 to the earliest block", func() {
 			payload := mocks.MockConvertedPayload
-			payload.Block = newMockBlock(5)
+			payload.Block = mockBlock5
 			err := repo.Publish(payload)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
@@ -158,10 +167,10 @@ var _ = Describe("Retriever", func() {
 
 		It("Can handle single block gaps", func() {
 			payload0 := mocks.MockConvertedPayload
-			payload0.Block = newMockBlock(0)
+			payload0.Block = mockBlock0
 			payload1 := mocks.MockConvertedPayload
 			payload3 := payload1
-			payload3.Block = newMockBlock(3)
+			payload3.Block = mockBlock3
 			err := repo.Publish(payload0)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Publish(payload1)
@@ -177,9 +186,9 @@ var _ = Describe("Retriever", func() {
 
 		It("Finds gap between two entries", func() {
 			payload1 := mocks.MockConvertedPayload
-			payload1.Block = newMockBlock(1010101)
+			payload1.Block = mockBlock1010101
 			payload2 := payload1
-			payload2.Block = newMockBlock(0)
+			payload2.Block = mockBlock0
 			err := repo.Publish(payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Publish(payload2)
@@ -193,11 +202,11 @@ var _ = Describe("Retriever", func() {
 
 		It("Finds gaps between multiple entries", func() {
 			payload1 := mocks.MockConvertedPayload
-			payload1.Block = newMockBlock(1010101)
+			payload1.Block = mockBlock1010101
 			payload2 := mocks.MockConvertedPayload
-			payload2.Block = newMockBlock(1)
+			payload2.Block = mockBlock1
 			payload3 := mocks.MockConvertedPayload
-			payload3.Block = newMockBlock(5)
+			payload3.Block = mockBlock5
 			payload4 := mocks.MockConvertedPayload
 			payload4.Block = newMockBlock(100)
 			payload5 := mocks.MockConvertedPayload
@@ -251,11 +260,11 @@ var _ = Describe("Retriever", func() {
 		It("Finds validation level gaps", func() {
 
 			payload1 := mocks.MockConvertedPayload
-			payload1.Block = newMockBlock(1010101)
+			payload1.Block = mockBlock1010101
 			payload2 := mocks.MockConvertedPayload
-			payload2.Block = newMockBlock(1)
+			payload2.Block = mockBlock1
 			payload3 := mocks.MockConvertedPayload
-			payload3.Block = newMockBlock(5)
+			payload3.Block = mockBlock5
 			payload4 := mocks.MockConvertedPayload
 			payload4.Block = newMockBlock(100)
 			payload5 := mocks.MockConvertedPayload
