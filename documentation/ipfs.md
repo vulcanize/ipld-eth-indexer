@@ -1,6 +1,6 @@
 ### PG-IPFS configuration
 
-This doc walks through the steps to install IPFS and configure it to use Postgres as its backing datastore.
+This doc walks through the steps to install IPFS and configure it to use Postgres (public.blocks table) as its backing kv datastore.
 
 1. Start by downloading and moving into the IPFS repo:
 
