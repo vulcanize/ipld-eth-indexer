@@ -1,16 +1,16 @@
-FROM golang:alpine
+FROM golang:1.13-alpine as builder
 
 RUN apk --update --no-cache add make git g++ linux-headers
 # DEBUG
 RUN apk add busybox-extras
 
-# this is probably a noob move, but I want apk from alpine for the above but need to avoid Go 1.13 below as this error still occurs https://github.com/ipfs/go-ipfs/issues/6603
-FROM golang:1.12.4 as builder
-
 # Get and build ipld-eth-indexer
 ADD . /go/src/github.com/vulcanize/ipld-eth-indexer
+WORKDIR /go/src/github.com/vulcanize/ipld-eth-indexer
+RUN GO111MODULE=on GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o ipld-eth-indexer .
 
 # Build migration tool
+WORKDIR /
 RUN go get -u -d github.com/pressly/goose/cmd/goose
 WORKDIR /go/src/github.com/pressly/goose/cmd/goose
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -tags='no_mysql no_sqlite' -o goose .
@@ -21,6 +21,9 @@ WORKDIR /go/src/github.com/vulcanize/ipld-eth-indexer
 FROM alpine
 
 ARG USER
+ARG CONFIG_FILE
+ARG EXPOSE_PORT_1
+ARG EXPOSE_PORT_2
 
 RUN adduser -Du 5000 $USER
 WORKDIR /app
@@ -29,12 +32,18 @@ USER $USER
 
 # chown first so dir is writable
 # note: using $USER is merged, but not in the stable release yet
-COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/dockerfiles/migrations/startup_script.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/$CONFIG_FILE config.toml
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/startup_script.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/entrypoint.sh .
 
 
 # keep binaries immutable
+COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/ipld-eth-indexer ipld-eth-indexer
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/db/migrations migrations/vulcanizedb
-# XXX dir is already writeable RUN touch vulcanizedb.log
+COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/environments environments
 
-CMD ["./startup_script.sh"]
+EXPOSE $EXPOSE_PORT_1
+EXPOSE $EXPOSE_PORT_2
+
+ENTRYPOINT ["/app/startup_script.sh"]
