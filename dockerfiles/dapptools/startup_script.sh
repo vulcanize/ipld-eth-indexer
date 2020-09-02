@@ -1,7 +1,14 @@
 #!/bin/sh
 
+set -ex
+
+# clean up
+trap 'killall geth && rm -rf "$TMPDIR"' EXIT
+trap "exit 1" SIGINT SIGTERM
+
 TMPDIR=$(mktemp -d)
-dapp testnet --dir "$TMPDIR" > geth.log 2>&1 &
+echo "Temp dir is $TMPDIR"
+dapp testnet --rpc-addr 0.0.0.0 --dir "$TMPDIR" > geth.log 2>&1 &
 # give it a few secs to start up
 sleep 90
 

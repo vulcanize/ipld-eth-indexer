@@ -9,7 +9,7 @@ oops() {
 
 #[[ "$(id -u)" -eq 0 ]] && oops "Please run this script as a regular user"
 
-API_OUTPUT=$(curl -sS https://api.github.com/repos/dapphub/dapptools/releases/latest)
+API_OUTPUT=$(curl -sS https://api.github.com/repos/vulcanize/dapptools/releases/latest)
 RELEASE=$(echo "$API_OUTPUT" | jq -r .tarball_url)
 
 [[ $RELEASE == null ]] && oops "No release found in ${API_OUTPUT}"
