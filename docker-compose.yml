@@ -1,0 +1,42 @@
+version: '3.2'
+
+services:
+  db:
+    restart: always
+    image: postgres:10.12-alpine
+    environment:
+      POSTGRES_USER: "vdbm"
+      POSTGRES_DB: "vulcanize_public"
+      POSTGRES_PASSWORD: "password"
+    volumes:
+     - vulcanizedb_db_data:/var/lib/postgresql/data
+    expose:
+     - "5432"
+    ports:
+     - "127.0.0.1:8079:5432"
+
+  eth:
+    depends_on:
+      - db
+    build:x
+      context: ./
+      cache_from:
+       - alpine:latest
+       - golang:1.12.4
+      dockerfile: ./Dockerfile
+      args:
+        USER: "vdbm"
+        CONFIG_FILE: ./environments/example.toml
+    environment:
+      VDB_COMMAND: "sync"
+      DATABASE_NAME: "vulcanize_public"
+      DATABASE_HOSTNAME: "db"
+      DATABASE_PORT: 5432
+      DATABASE_USER: "vdbm"
+      DATABASE_PASSWORD: "password"
+    ports:
+     - "127.0.0.1:8080:8080"
+     - "127.0.0.1:8081:8081"
+
+volumes:
+  vulcanizedb_db_data:
