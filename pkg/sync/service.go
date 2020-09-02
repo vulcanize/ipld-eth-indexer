@@ -141,11 +141,13 @@ func (sap *Service) publish(wg *sync.WaitGroup, id int, statediffChan <-chan sta
 				log.Errorf("ethereum sync data conversion error: %v", err)
 				continue
 			}
-			log.Debugf("ethereum sync worker %d publishing and indexing data streamed at head height %d", id, ipldPayload.Block.Number().Uint64())
+			num := ipldPayload.Block.Number().Uint64()
+			log.Infof("ethereum sync worker %d converted data streamed at head height %d", id, num)
 			if err := sap.Publisher.Publish(*ipldPayload); err != nil {
 				log.Errorf("ethereum sync worker %d publishing error: %v", id, err)
 				continue
 			}
+			log.Infof("ethereum sync worker %d indexed data streamed at head height %d", id, num)
 		case <-sap.QuitChan:
 			log.Infof("ethereum sync worker %d shutting down", id)
 			return
