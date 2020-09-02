@@ -99,7 +99,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 		return err
 	}
 	// spin up publish worker goroutines
-	publishPayload := make(chan eth.ConvertedPayload, PayloadChanBufferSize)
+	publishPayload := make(chan statediff.Payload, PayloadChanBufferSize)
 	for i := 1; i <= int(sap.Workers); i++ {
 		go sap.publish(wg, i, publishPayload)
 		log.Debugf("ethereum sync worker %d successfully spun up", i)
@@ -109,20 +109,12 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 		defer wg.Done()
 		for {
 			select {
-			case payload := <-sap.PayloadChan:
-				ipldPayload, err := sap.Converter.Convert(payload)
-				if err != nil {
-					log.Errorf("ethereum sync data conversion error: %v", err)
-					continue
-				}
-				log.Infof("ethereum data streamed at head height %d", ipldPayload.Block.Number().Uint64())
-				// Forward the payload to the publish workers
-				// this channel acts as a ring buffer
+			case diffPayload := <-sap.PayloadChan:
 				select {
-				case publishPayload <- *ipldPayload:
+				case publishPayload <- diffPayload:
 				default:
 					<-publishPayload
-					publishPayload <- *ipldPayload
+					publishPayload <- diffPayload
 				}
 			case err := <-sub.Err():
 				log.Errorf("ethereumm sync subscription error: %v", err)
@@ -138,14 +130,19 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 
 // publish is spun up by SyncAndConvert and receives converted chain data from that process
 // it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publish(wg *sync.WaitGroup, id int, publishPayload <-chan eth.ConvertedPayload) {
+func (sap *Service) publish(wg *sync.WaitGroup, id int, statediffChan <-chan statediff.Payload) {
 	wg.Add(1)
 	defer wg.Done()
 	for {
 		select {
-		case payload := <-publishPayload:
-			log.Debugf("ethereumindexer sync worker %d publishing and indexing data streamed at head height %d", id, payload.Block.Number().Uint64())
-			if err := sap.Publisher.Publish(payload); err != nil {
+		case diff := <-statediffChan:
+			ipldPayload, err := sap.Converter.Convert(diff)
+			if err != nil {
+				log.Errorf("ethereum sync data conversion error: %v", err)
+				continue
+			}
+			log.Debugf("ethereum sync worker %d publishing and indexing data streamed at head height %d", id, ipldPayload.Block.Number().Uint64())
+			if err := sap.Publisher.Publish(*ipldPayload); err != nil {
 				log.Errorf("ethereum sync worker %d publishing error: %v", id, err)
 				continue
 			}

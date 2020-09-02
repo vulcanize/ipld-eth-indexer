@@ -34,8 +34,6 @@ USER $USER
 # note: using $USER is merged, but not in the stable release yet
 COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/$CONFIG_FILE config.toml
 COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/startup_script.sh .
-COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/entrypoint.sh .
-
 
 # keep binaries immutable
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/ipld-eth-indexer ipld-eth-indexer

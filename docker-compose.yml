@@ -28,7 +28,7 @@ services:
         USER: "vdbm"
         CONFIG_FILE: ./environments/example.toml
     environment:
-      VDB_COMMAND: "watch"
+      VDB_COMMAND: "sync"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432

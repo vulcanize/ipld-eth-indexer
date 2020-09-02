@@ -17,6 +17,8 @@
 package eth
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -64,23 +66,6 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 	}
 	signer := types.MakeSigner(pc.chainConfig, block.Number())
 	transactions := block.Transactions()
-	for i, trx := range transactions {
-		// Extract to and from data from the the transactions for indexing
-		from, err := types.Sender(signer, trx)
-		if err != nil {
-			return nil, err
-		}
-
-		txMeta := TxModel{
-			Dst:    shared.HandleZeroAddrPointer(trx.To()),
-			Src:    shared.HandleZeroAddr(from),
-			TxHash: trx.Hash().String(),
-			Index:  int64(i),
-			Data:   trx.Data(),
-		}
-		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
-		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, txMeta)
-	}
 
 	// Decode receipts for this block
 	receipts := make(types.Receipts, 0)
@@ -91,6 +76,11 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 	if err := receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions()); err != nil {
 		return nil, err
 	}
+	// Ensure we have matching numbers of rcts and txs
+	if len(receipts) != trxLen {
+		return nil, fmt.Errorf("expected number of transactions (%d) to be equal to the number of receipts (%d)", trxLen, len(receipts))
+	}
+	// Process receipts and txs
 	for i, receipt := range receipts {
 		// Extract topic and contract data from the receipt for indexing
 		topicSets := make([][]string, 4)
@@ -109,11 +99,14 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 		// This is the contract address if this receipt is for a contract creation tx
 		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
+		deployment := false
 		if contract != "" {
-			convertedPayload.TxMetaData[i].Deployment = true
+			deployment = true
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
 		}
-		rctMeta := ReceiptModel{
+		// receipt and rctMeta will have same indexes
+		convertedPayload.Receipts = append(convertedPayload.Receipts, receipt)
+		convertedPayload.ReceiptMetaData = append(convertedPayload.ReceiptMetaData, ReceiptModel{
 			Topic0s:      topicSets[0],
 			Topic1s:      topicSets[1],
 			Topic2s:      topicSets[2],
@@ -121,10 +114,22 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 			Contract:     contract,
 			ContractHash: contractHash,
 			LogContracts: logContracts,
+		})
+		// process tx that corresponds with this rct
+		trx := transactions[i]
+		from, err := types.Sender(signer, trx)
+		if err != nil {
+			return nil, err
 		}
-		// receipt and rctMeta will have same indexes
-		convertedPayload.Receipts = append(convertedPayload.Receipts, receipt)
-		convertedPayload.ReceiptMetaData = append(convertedPayload.ReceiptMetaData, rctMeta)
+		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
+		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, TxModel{
+			Dst:        shared.HandleZeroAddrPointer(trx.To()),
+			Src:        shared.HandleZeroAddr(from),
+			TxHash:     trx.Hash().String(),
+			Index:      int64(i),
+			Data:       trx.Data(),
+			Deployment: deployment,
+		})
 	}
 
 	// Unpack state diff rlp to access fields
