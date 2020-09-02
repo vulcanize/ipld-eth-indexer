@@ -1,6 +1,12 @@
 version: '3.2'
 
 services:
+  dapptools:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dapptools/Dockerfile
+    command: ["./startup_script.sh"]
+
   db:
     restart: always
     image: postgres:10.12-alpine
@@ -34,6 +40,8 @@ services:
       DATABASE_PORT: 5432
       DATABASE_USER: "vdbm"
       DATABASE_PASSWORD: "password"
+      IPFS_INIT: "false"
+      IPFS_PATH: "/tmp"
     ports:
      - "127.0.0.1:8080:8080"
      - "127.0.0.1:8081:8081"
