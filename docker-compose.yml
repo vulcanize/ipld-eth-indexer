@@ -25,15 +25,12 @@ services:
   eth:
     depends_on:
       - db
-    build:x
+    build:
       context: ./
       cache_from:
        - alpine:latest
        - golang:1.12.4
       dockerfile: ./Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/example.toml
     environment:
       VDB_COMMAND: "sync"
       DATABASE_NAME: "vulcanize_public"
