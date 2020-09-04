@@ -81,7 +81,7 @@ build:
 ## Build docker image
 .PHONY: docker-build
 docker-build:
-	docker build -t vulcanize/ipld-eth-indexer -f dockerfiles/Dockerfile .
+	docker build -t vulcanize/ipld-eth-indexer -f Dockerfile .
 
 # Parameter checks
 ## Check that DB variables are provided
