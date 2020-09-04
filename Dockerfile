@@ -20,10 +20,10 @@ WORKDIR /go/src/github.com/vulcanize/ipld-eth-indexer
 # app container
 FROM alpine
 
-ARG USER
-ARG CONFIG_FILE
-ARG EXPOSE_PORT_1
-ARG EXPOSE_PORT_2
+ARG USER="vdm"
+ARG CONFIG_FILE="./environments/superNodeETH.toml"
+#ARG EXPOSE_PORT_1
+#ARG EXPOSE_PORT_2
 
 RUN adduser -Du 5000 $USER
 WORKDIR /app
@@ -41,7 +41,7 @@ COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/db/migrations migrations/vulcanizedb
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/environments environments
 
-EXPOSE $EXPOSE_PORT_1
-EXPOSE $EXPOSE_PORT_2
+#EXPOSE $EXPOSE_PORT_1
+#EXPOSE $EXPOSE_PORT_2
 
 ENTRYPOINT ["/app/startup_script.sh"]

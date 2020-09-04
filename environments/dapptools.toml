@@ -1,0 +1,15 @@
+[database]
+  name     = "vulcanize_public"
+  hostname = "db"
+  port     = 5432
+  user     = "vdbm"
+  password = "password"
+
+[client]
+  ipcPath  = "http://dapptools:8545"
+
+[ethereum]
+  wsPath  = "dapptools:8546" # $ETH_WS_PATH
+  httpPath = "dapptools:8545" # $ETH_HTTP_PATH
+  networkID = "4"
+  chainID = "4" # $ETH_CHAIN_ID
