@@ -1,6 +1,13 @@
 version: '3.2'
 
 services:
+  dapptools:
+    restart: unless-stopped
+    image: vulcanize/dapptools:v0.29.0-statediff-0.0.2
+    ports:
+      - "127.0.0.1:8545:8545"
+      - "127.0.0.1:8546:8546"
+
   db:
     restart: always
     image: postgres:10.12-alpine
@@ -18,15 +25,12 @@ services:
   eth:
     depends_on:
       - db
-    build:x
+    build:
       context: ./
       cache_from:
        - alpine:latest
        - golang:1.12.4
       dockerfile: ./Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/example.toml
     environment:
       VDB_COMMAND: "sync"
       DATABASE_NAME: "vulcanize_public"
