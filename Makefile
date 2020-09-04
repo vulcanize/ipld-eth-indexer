@@ -78,6 +78,11 @@ build:
 	go fmt ./...
 	GO111MODULE=on go build
 
+## Build docker image
+.PHONY: docker-build
+docker-build:
+	docker build -t vulcanize/ipld-eth-indexer -f dockerfiles/Dockerfile .
+
 # Parameter checks
 ## Check that DB variables are provided
 .PHONY: checkdbvars

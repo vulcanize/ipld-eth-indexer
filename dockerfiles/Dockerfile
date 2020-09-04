@@ -20,10 +20,10 @@ WORKDIR /go/src/github.com/vulcanize/ipld-eth-indexer
 # app container
 FROM alpine
 
-ARG USER
-ARG CONFIG_FILE
-ARG EXPOSE_PORT_1
-ARG EXPOSE_PORT_2
+ARG USER="vdm"
+ARG CONFIG_FILE="./environments/superNodeETH.toml"
+#ARG EXPOSE_PORT_1
+#ARG EXPOSE_PORT_2
 
 RUN adduser -Du 5000 $USER
 WORKDIR /app
@@ -33,8 +33,8 @@ USER $USER
 # chown first so dir is writable
 # note: using $USER is merged, but not in the stable release yet
 COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/$CONFIG_FILE config.toml
-COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/dockerfiles/super_node/startup_script.sh .
-COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/dockerfiles/super_node/entrypoint.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/dockerfiles/startup_script.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/dockerfiles/entrypoint.sh .
 
 
 # keep binaries immutable
@@ -43,7 +43,7 @@ COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/db/migrations migrations/vulcanizedb
 COPY --from=builder /go/src/github.com/vulcanize/ipld-eth-indexer/environments environments
 
-EXPOSE $EXPOSE_PORT_1
-EXPOSE $EXPOSE_PORT_2
+#EXPOSE $EXPOSE_PORT_1
+#EXPOSE $EXPOSE_PORT_2
 
 ENTRYPOINT ["/app/startup_script.sh"]
