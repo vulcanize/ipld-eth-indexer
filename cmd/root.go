@@ -96,10 +96,10 @@ func init() {
 	rootCmd.PersistentFlags().String("logfile", "", "file path for logging")
 
 	rootCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
-	rootCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
-	rootCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
-	rootCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
-	rootCmd.PersistentFlags().String("eth-chain-id", "", "eth chain id")
+	rootCmd.PersistentFlags().String("eth-client-name", "Geth", "eth client name")
+	rootCmd.PersistentFlags().String("eth-genesis-block", "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "eth genesis block hash")
+	rootCmd.PersistentFlags().String("eth-network-id", "1", "eth network id")
+	rootCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 
 	// and their .toml config bindings
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
