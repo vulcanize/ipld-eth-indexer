@@ -49,10 +49,8 @@ type Indexer interface {
 type Service struct {
 	// Interface for streaming payloads over an rpc subscription
 	Streamer eth.Streamer
-	// Interface for converting raw payloads into IPLD object payloads
-	Converter eth.Converter
-	// Interface for publishing and indexing the PG-IPLD payloads
-	Publisher eth.Publisher
+	// Interface for transforming raw payloads into IPLD object models in Postgres
+	Transformer eth.Transformer
 	// Chan the processor uses to subscribe to payloads from the Streamer
 	PayloadChan chan statediff.Payload
 	// Used to signal shutdown of the service
@@ -73,8 +71,7 @@ func NewIndexerService(settings *Config) (Indexer, error) {
 	if err != nil {
 		return nil, err
 	}
-	sn.Converter = eth.NewPayloadConverter(sn.ChainConfig)
-	sn.Publisher = eth.NewIPLDPublisher(settings.DB)
+	sn.Transformer = eth.NewStateDiffTransformer(sn.ChainConfig, settings.db)
 	sn.QuitChan = make(chan bool)
 	sn.Workers = settings.Workers
 	return sn, nil
@@ -136,18 +133,11 @@ func (sap *Service) publish(wg *sync.WaitGroup, id int, statediffChan <-chan sta
 	for {
 		select {
 		case diff := <-statediffChan:
-			ipldPayload, err := sap.Converter.Convert(diff)
+			blockNumber, err := sap.Transformer.Transform(id, diff)
 			if err != nil {
-				log.Errorf("ethereum sync data conversion error: %v", err)
-				continue
+				log.Errorf("ethereum sync worker %d transformer error: %v", err)
 			}
-			num := ipldPayload.Block.Number().Uint64()
-			log.Infof("ethereum sync worker %d converted data streamed at head height %d", id, num)
-			if err := sap.Publisher.Publish(*ipldPayload); err != nil {
-				log.Errorf("ethereum sync worker %d publishing error: %v", id, err)
-				continue
-			}
-			log.Infof("ethereum sync worker %d indexed data streamed at head height %d", id, num)
+			log.Infof("ethereum sync worker %d transformed data at height %d", id, blockNumber)
 		case <-sap.QuitChan:
 			log.Infof("ethereum sync worker %d shutting down", id)
 			return

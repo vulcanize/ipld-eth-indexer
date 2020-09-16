@@ -34,10 +34,8 @@ type Resync interface {
 type Service struct {
 	// Interface for fetching historical statediff objects over http
 	Fetcher eth.Fetcher
-	// Interface for converting payloads into IPLD object payloads
-	Converter eth.Converter
-	// Interface for publishing the IPLD payloads to IPFS
-	Publisher eth.Publisher
+	// Interface for transforming payloads into IPLD object models in Postgres
+	Transformer eth.Transformer
 	// Interface for cleaning out data before resyncing (if clearOldCache is on)
 	Cleaner eth.Cleaner
 	// Size of batch fetches
@@ -67,8 +65,7 @@ func NewResyncService(settings *Config) (Resync, error) {
 	if err != nil {
 		return nil, err
 	}
-	rs.Converter = eth.NewPayloadConverter(rs.ChainConfig)
-	rs.Publisher = eth.NewIPLDPublisher(settings.DB)
+	rs.Transformer = eth.NewStateDiffTransformer(rs.ChainConfig, settings.DB)
 	rs.Cleaner = eth.NewDBCleaner(settings.DB)
 	rs.BatchSize = settings.BatchSize
 	if rs.BatchSize == 0 {
@@ -138,13 +135,11 @@ func (rs *Service) resync(id int, heightChan chan []uint64) {
 				logrus.Errorf("ethereum resync worker %d fetcher error: %s", id, err.Error())
 			}
 			for _, payload := range payloads {
-				ipldPayload, err := rs.Converter.Convert(payload)
+				blockNumber, err := rs.Transformer.Transform(id, payload)
 				if err != nil {
-					logrus.Errorf("ethereum resync worker %d converter error: %s", id, err.Error())
+					logrus.Errorf("ethereum resync worker %d transformer error: %s", id, err.Error())
 				}
-				if err := rs.Publisher.Publish(*ipldPayload); err != nil {
-					logrus.Errorf("ethereum resync worker %d publisher error: %s", id, err.Error())
-				}
+				logrus.Infof("ethereum resync worker %d transformed data at height %d", id, blockNumber)
 			}
 			logrus.Infof("ethereum resync worker %d finished section from %d to %d", id, heights[0], heights[len(heights)-1])
 		case <-rs.quitChan:
