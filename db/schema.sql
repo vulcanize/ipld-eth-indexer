@@ -362,7 +362,7 @@ CREATE TABLE public.nodes (
     genesis_block character varying(66),
     network_id character varying,
     node_id character varying(128),
-    chain_id integer
+    chain_id integer DEFAULT 1
 );
 
 
