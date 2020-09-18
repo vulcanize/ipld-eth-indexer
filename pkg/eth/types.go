@@ -22,8 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/statediff"
-
-	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs"
 )
 
 // ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
@@ -58,45 +56,4 @@ type CIDPayload struct {
 	StateNodeCIDs   []StateNodeModel
 	StateAccounts   map[string]StateAccountModel
 	StorageNodeCIDs map[string][]StorageNodeModel
-}
-
-// CIDWrapper is used to direct fetching of IPLDs from IPFS
-// Returned by CIDRetriever
-// Passed to IPLDFetcher
-type CIDWrapper struct {
-	BlockNumber  *big.Int
-	Header       HeaderModel
-	Uncles       []UncleModel
-	Transactions []TxModel
-	Receipts     []ReceiptModel
-	StateNodes   []StateNodeModel
-	StorageNodes []StorageNodeWithStateKeyModel
-}
-
-// IPLDs is used to package raw IPLD block data fetched from IPFS and returned by the server
-// Returned by IPLDFetcher and ResponseFilterer
-type IPLDs struct {
-	BlockNumber     *big.Int
-	TotalDifficulty *big.Int
-	Header          ipfs.BlockModel
-	Uncles          []ipfs.BlockModel
-	Transactions    []ipfs.BlockModel
-	Receipts        []ipfs.BlockModel
-	StateNodes      []StateNode
-	StorageNodes    []StorageNode
-}
-
-type StateNode struct {
-	Type         statediff.NodeType
-	StateLeafKey common.Hash
-	Path         []byte
-	IPLD         ipfs.BlockModel
-}
-
-type StorageNode struct {
-	Type           statediff.NodeType
-	StateLeafKey   common.Hash
-	StorageLeafKey common.Hash
-	Path           []byte
-	IPLD           ipfs.BlockModel
 }

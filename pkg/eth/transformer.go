@@ -18,23 +18,22 @@ package eth
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/state"
-	node "github.com/ipfs/go-ipld-format"
-	"github.com/jmoiron/sqlx"
-	"github.com/multiformats/go-multihash"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs/ipld"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	node "github.com/ipfs/go-ipld-format"
+	"github.com/jmoiron/sqlx"
+	"github.com/multiformats/go-multihash"
+	"github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs/ipld"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
@@ -66,7 +65,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 		return 0, err
 	}
 	blockHash := block.Hash()
-	logrus.Infof("worker %d transforming state diff payload for blocknumber %d with hash %s", workerID, block.Number().Int64(), blockHash)
+	logrus.Infof("worker %d transforming state diff payload for blocknumber %d with hash %s", workerID, block.Number().Int64(), blockHash.String())
 	transactions := block.Transactions()
 	// Block processing
 	// Decode receipts for this block
@@ -244,9 +243,8 @@ func (sdt *StateDiffTransformer) processReceiptsAndTxs(tx *sqlx.Tx, args process
 		// this is the contract address if this receipt is for a contract creation tx
 		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
-		deployment := false
-		if contract != "" {
-			deployment = true
+		isDeployment := contract != ""
+		if isDeployment {
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
 			// if tx is a contract deployment, publish the data (code)
 			// codec doesn't matter in this case sine we are not interested in the cid and the db key is multihash-derived
@@ -263,9 +261,9 @@ func (sdt *StateDiffTransformer) processReceiptsAndTxs(tx *sqlx.Tx, args process
 			TxHash:     trx.Hash().String(),
 			Index:      int64(i),
 			Data:       trx.Data(),
-			Deployment: deployment,
-			CID:        rctNode.Cid().String(),
-			MhKey:      shared.MultihashKeyFromCID(rctNode.Cid()),
+			Deployment: isDeployment,
+			CID:        txNode.Cid().String(),
+			MhKey:      shared.MultihashKeyFromCID(txNode.Cid()),
 		}
 		txID, err := sdt.indexer.indexTransactionCID(tx, txModel, args.headerID)
 		if err != nil {
@@ -280,8 +278,8 @@ func (sdt *StateDiffTransformer) processReceiptsAndTxs(tx *sqlx.Tx, args process
 			Contract:     contract,
 			ContractHash: contractHash,
 			LogContracts: logContracts,
-			CID:          txNode.Cid().String(),
-			MhKey:        shared.MultihashKeyFromCID(txNode.Cid()),
+			CID:          rctNode.Cid().String(),
+			MhKey:        shared.MultihashKeyFromCID(rctNode.Cid()),
 		}
 		if err := sdt.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			return err

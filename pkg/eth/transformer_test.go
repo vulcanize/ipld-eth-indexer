@@ -69,7 +69,7 @@ var _ = Describe("PublishAndIndexer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(header.CID).To(Equal(mocks.HeaderCID.String()))
 			Expect(header.TD).To(Equal(mocks.MockBlock.Difficulty().String()))
-			Expect(header.Reward).To(Equal("5000000000000000000"))
+			Expect(header.Reward).To(Equal("5000000000000011250"))
 			dc, err := cid.Decode(header.CID)
 			Expect(err).ToNot(HaveOccurred())
 			mhKey := dshelp.MultihashToDsKey(dc.Hash())
