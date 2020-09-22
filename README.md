@@ -186,6 +186,34 @@ e.g.
 This will stand up a Postgraphile server on the public and eth schemas- exposing GraphQL endpoints for all of the tables contained under those schemas.
 All of their data can then be queried with standard [GraphQL](https://graphql.org) queries.
 
+Also, graphql subscription is available. Using the following query you will be notified when new data come in.
+For `topic` use table name.
+
+e.g.
+
+```
+subscription MySubscription {
+  listen(topic: "receipt_cids") {
+    relatedNodeId
+    relatedNode {
+      nodeId
+      ... on ReceiptCid {
+        id
+        contract
+        contractHash
+        logContracts
+        topic0S
+        topic1S
+        topic2S
+        topic3S
+        txId
+      }
+    }
+  }
+}
+
+```
+
 * Use PG-IPFS to expose the raw IPLD data. More information on how to stand up an IPFS node on top
 of Postgres can be found [here](./documentation/ipfs.md)
 
