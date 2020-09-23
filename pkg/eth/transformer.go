@@ -62,7 +62,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	// Unpack block rlp to access fields
 	block := new(types.Block)
 	if err := rlp.DecodeBytes(payload.BlockRlp, block); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error decoding payload block rlp: %s", err.Error())
 	}
 	blockHash := block.Hash()
 	logrus.Infof("worker %d transforming state diff payload for blocknumber %d with hash %s", workerID, block.Number().Int64(), blockHash.String())
@@ -71,7 +71,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	// Decode receipts for this block
 	receipts := make(types.Receipts, 0)
 	if err := rlp.DecodeBytes(payload.ReceiptsRlp, &receipts); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error decoding payload receipts rlp: %s", err.Error())
 	}
 	// Derive any missing fields
 	if err := receipts.DeriveFields(sdt.chainConfig, blockHash, block.NumberU64(), transactions); err != nil {
@@ -85,11 +85,14 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	if len(txNodes) != len(txTrieNodes) && len(rctNodes) != len(rctTrieNodes) && len(txNodes) != len(rctNodes) {
 		return 0, fmt.Errorf("expected number of transactions (%d), transaction trie nodes (%d), receipts (%d), and receipt trie nodes (%d)to be equal", len(txNodes), len(txTrieNodes), len(rctNodes), len(rctTrieNodes))
 	}
+	// Calculate reward
+	reward := CalcEthBlockReward(block.Header(), block.Uncles(), block.Transactions(), receipts)
 	// Begin new db tx for everything
 	tx, err := sdt.indexer.db.Beginx()
 	if err != nil {
 		return 0, err
 	}
+	// defer to handle transaction commit or rollback for any return case
 	defer func() {
 		if p := recover(); p != nil {
 			shared.Rollback(tx)
@@ -100,9 +103,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 			err = tx.Commit()
 		}
 	}()
-
 	// Publish and index header, collect headerID
-	reward := CalcEthBlockReward(block.Header(), block.Uncles(), block.Transactions(), receipts)
 	headerID, err := sdt.processHeader(tx, block.Header(), headerNode, reward, payload.TotalDifficulty)
 	if err != nil {
 		return 0, err
@@ -124,11 +125,10 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	}); err != nil {
 		return 0, err
 	}
-
 	// Unpack state diff rlp to access fields
 	stateDiff := new(statediff.StateObject)
 	if err := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error decoding payload state object rlp: %s", err.Error())
 	}
 	// Publish and index state and storage nodes
 	if err := sdt.processStateAndStorage(tx, headerID, stateDiff); err != nil {
@@ -313,14 +313,14 @@ func (sdt *StateDiffTransformer) processStateAndStorage(tx *sqlx.Tx, headerID in
 		if stateNode.NodeType == statediff.Leaf {
 			var i []interface{}
 			if err := rlp.DecodeBytes(stateNode.NodeValue, &i); err != nil {
-				return err
+				return fmt.Errorf("error decoding state leaf node rlp: %s", err.Error())
 			}
 			if len(i) != 2 {
 				return fmt.Errorf("eth IPLDPublisher expected state leaf node rlp to decode into two elements")
 			}
 			var account state.Account
 			if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
-				return err
+				return fmt.Errorf("error decoding state account rlp: %s", err.Error())
 			}
 			accountModel := StateAccountModel{
 				Balance:     account.Balance.String(),
