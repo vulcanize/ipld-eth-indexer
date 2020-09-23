@@ -33,12 +33,9 @@ import (
 var _ = Describe("BackFiller", func() {
 	Describe("FillGaps", func() {
 		It("Periodically checks for and fills in gaps in the watcher's data", func() {
-			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnErr: nil,
-			}
-			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.ConvertedPayload{&mocks.MockConvertedPayload, &mocks.MockConvertedPayload},
-				ReturnErr:         nil,
+			mockTransformer := &mocks.IterativeTransformer{
+				ReturnErr:     nil,
+				ReturnHeights: []int64{100, 101},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 0,
@@ -56,8 +53,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.Service{
-				Publisher:         mockPublisher,
-				Converter:         mockConverter,
+				Transformer:       mockTransformer,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
@@ -69,24 +65,18 @@ var _ = Describe("BackFiller", func() {
 			backfiller.Sync(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(2))
-			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
-			Expect(mockPublisher.PassedIPLDPayload[1]).To(Equal(mocks.MockConvertedPayload))
-			Expect(len(mockConverter.PassedStatediffPayload)).To(Equal(2))
-			Expect(mockConverter.PassedStatediffPayload[0]).To(Equal(mocks.MockStateDiffPayload))
-			Expect(mockConverter.PassedStatediffPayload[1]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(len(mockTransformer.PassedStateDiffs)).To(Equal(2))
+			Expect(mockTransformer.PassedStateDiffs[0]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(mockTransformer.PassedStateDiffs[1]).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockRetriever.CalledTimes).To(Equal(1))
 			Expect(len(mockFetcher.CalledAtBlockHeights)).To(Equal(1))
 			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{100, 101}))
 		})
 
 		It("Works for single block `ranges`", func() {
-			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnErr: nil,
-			}
-			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.ConvertedPayload{&mocks.MockConvertedPayload},
-				ReturnErr:         nil,
+			mockTransformer := &mocks.IterativeTransformer{
+				ReturnErr:     nil,
+				ReturnHeights: []int64{100},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 0,
@@ -103,8 +93,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.Service{
-				Publisher:         mockPublisher,
-				Converter:         mockConverter,
+				Transformer:       mockTransformer,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
@@ -116,22 +105,17 @@ var _ = Describe("BackFiller", func() {
 			backfiller.Sync(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(1))
-			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
-			Expect(len(mockConverter.PassedStatediffPayload)).To(Equal(1))
-			Expect(mockConverter.PassedStatediffPayload[0]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(len(mockTransformer.PassedStateDiffs)).To(Equal(1))
+			Expect(mockTransformer.PassedStateDiffs[0]).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockRetriever.CalledTimes).To(Equal(1))
 			Expect(len(mockFetcher.CalledAtBlockHeights)).To(Equal(1))
 			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{100}))
 		})
 
 		It("Finds beginning gap", func() {
-			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnErr: nil,
-			}
-			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.ConvertedPayload{&mocks.MockConvertedPayload, &mocks.MockConvertedPayload, &mocks.MockConvertedPayload},
-				ReturnErr:         nil,
+			mockTransformer := &mocks.IterativeTransformer{
+				ReturnErr:     nil,
+				ReturnHeights: []int64{0, 1, 2},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 3,
@@ -151,8 +135,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			quitChan := make(chan bool, 1)
 			backfiller := &historical.Service{
-				Publisher:         mockPublisher,
-				Converter:         mockConverter,
+				Transformer:       mockTransformer,
 				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
@@ -164,14 +147,10 @@ var _ = Describe("BackFiller", func() {
 			backfiller.Sync(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
-			Expect(len(mockPublisher.PassedIPLDPayload)).To(Equal(3))
-			Expect(mockPublisher.PassedIPLDPayload[0]).To(Equal(mocks.MockConvertedPayload))
-			Expect(mockPublisher.PassedIPLDPayload[1]).To(Equal(mocks.MockConvertedPayload))
-			Expect(mockPublisher.PassedIPLDPayload[2]).To(Equal(mocks.MockConvertedPayload))
-			Expect(len(mockConverter.PassedStatediffPayload)).To(Equal(3))
-			Expect(mockConverter.PassedStatediffPayload[0]).To(Equal(mocks.MockStateDiffPayload))
-			Expect(mockConverter.PassedStatediffPayload[1]).To(Equal(mocks.MockStateDiffPayload))
-			Expect(mockConverter.PassedStatediffPayload[2]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(len(mockTransformer.PassedStateDiffs)).To(Equal(3))
+			Expect(mockTransformer.PassedStateDiffs[0]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(mockTransformer.PassedStateDiffs[1]).To(Equal(mocks.MockStateDiffPayload))
+			Expect(mockTransformer.PassedStateDiffs[2]).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockRetriever.CalledTimes).To(Equal(1))
 			Expect(len(mockFetcher.CalledAtBlockHeights)).To(Equal(1))
 			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{0, 1, 2}))

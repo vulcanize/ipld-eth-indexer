@@ -49,10 +49,8 @@ type Indexer interface {
 type Service struct {
 	// Interface for streaming payloads over an rpc subscription
 	Streamer eth.Streamer
-	// Interface for converting raw payloads into IPLD object payloads
-	Converter eth.Converter
-	// Interface for publishing and indexing the PG-IPLD payloads
-	Publisher eth.Publisher
+	// Interface for transforming raw payloads into IPLD object models in Postgres
+	Transformer eth.Transformer
 	// Chan the processor uses to subscribe to payloads from the Streamer
 	PayloadChan chan statediff.Payload
 	// Used to signal shutdown of the service
@@ -73,8 +71,7 @@ func NewIndexerService(settings *Config) (Indexer, error) {
 	if err != nil {
 		return nil, err
 	}
-	sn.Converter = eth.NewPayloadConverter(sn.ChainConfig)
-	sn.Publisher = eth.NewIPLDPublisher(settings.DB)
+	sn.Transformer = eth.NewStateDiffTransformer(sn.ChainConfig, settings.DB)
 	sn.QuitChan = make(chan bool)
 	sn.Workers = settings.Workers
 	return sn, nil
@@ -101,7 +98,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 	// spin up publish worker goroutines
 	publishPayload := make(chan statediff.Payload, PayloadChanBufferSize)
 	for i := 1; i <= int(sap.Workers); i++ {
-		go sap.publish(wg, i, publishPayload)
+		go sap.transform(wg, i, publishPayload)
 		log.Debugf("ethereum sync worker %d successfully spun up", i)
 	}
 	wg.Add(1)
@@ -128,26 +125,19 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// publish is spun up by SyncAndConvert and receives converted chain data from that process
-// it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publish(wg *sync.WaitGroup, id int, statediffChan <-chan statediff.Payload) {
+// transform is spun up by Sync and receives statediff payloads from it
+// it transforms this data into IPLD models and indexes their CIDs with useful metadata in Postgres
+func (sap *Service) transform(wg *sync.WaitGroup, id int, statediffChan <-chan statediff.Payload) {
 	wg.Add(1)
 	defer wg.Done()
 	for {
 		select {
 		case diff := <-statediffChan:
-			ipldPayload, err := sap.Converter.Convert(diff)
+			blockNumber, err := sap.Transformer.Transform(id, diff)
 			if err != nil {
-				log.Errorf("ethereum sync data conversion error: %v", err)
-				continue
+				log.Errorf("ethereum sync worker %d transformer error: %v", id, err)
 			}
-			num := ipldPayload.Block.Number().Uint64()
-			log.Infof("ethereum sync worker %d converted data streamed at head height %d", id, num)
-			if err := sap.Publisher.Publish(*ipldPayload); err != nil {
-				log.Errorf("ethereum sync worker %d publishing error: %v", id, err)
-				continue
-			}
-			log.Infof("ethereum sync worker %d indexed data streamed at head height %d", id, num)
+			log.Infof("ethereum sync worker %d transformed data at height %d", id, blockNumber)
 		case <-sap.QuitChan:
 			log.Infof("ethereum sync worker %d shutting down", id)
 			return

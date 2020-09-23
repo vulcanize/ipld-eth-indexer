@@ -37,7 +37,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs/ipld"
 )
 
@@ -426,40 +425,6 @@ var (
 		},
 	}
 
-	MockCIDWrapper = &eth.CIDWrapper{
-		BlockNumber: new(big.Int).Set(BlockNumber),
-		Header: eth.HeaderModel{
-			BlockNumber:     "1",
-			BlockHash:       MockBlock.Hash().String(),
-			ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
-			CID:             HeaderCID.String(),
-			MhKey:           HeaderMhKey,
-			TotalDifficulty: MockBlock.Difficulty().String(),
-			Reward:          "5000000000000000000",
-			StateRoot:       MockBlock.Root().String(),
-			RctRoot:         MockBlock.ReceiptHash().String(),
-			TxRoot:          MockBlock.TxHash().String(),
-			UncleRoot:       MockBlock.UncleHash().String(),
-			Bloom:           MockBlock.Bloom().Bytes(),
-			Timestamp:       MockBlock.Time(),
-			TimesValidated:  1,
-		},
-		Transactions: MockTrxMetaPostPublsh,
-		Receipts:     MockRctMetaPostPublish,
-		Uncles:       []eth.UncleModel{},
-		StateNodes:   MockStateMetaPostPublish,
-		StorageNodes: []eth.StorageNodeWithStateKeyModel{
-			{
-				Path:       []byte{},
-				CID:        StorageCID.String(),
-				MhKey:      StorageMhKey,
-				NodeType:   2,
-				StateKey:   common.BytesToHash(ContractLeafKey).Hex(),
-				StorageKey: common.BytesToHash(StorageLeafKey).Hex(),
-			},
-		},
-	}
-
 	HeaderIPLD, _  = blocks.NewBlockWithCid(MockHeaderRlp, HeaderCID)
 	Trx1IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(0), Trx1CID)
 	Trx2IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(1), Trx2CID)
@@ -470,74 +435,6 @@ var (
 	State1IPLD, _  = blocks.NewBlockWithCid(ContractLeafNode, State1CID)
 	State2IPLD, _  = blocks.NewBlockWithCid(AccountLeafNode, State2CID)
 	StorageIPLD, _ = blocks.NewBlockWithCid(StorageLeafNode, StorageCID)
-
-	MockIPLDs = eth.IPLDs{
-		BlockNumber: new(big.Int).Set(BlockNumber),
-		Header: ipfs.BlockModel{
-			Data: HeaderIPLD.RawData(),
-			CID:  HeaderIPLD.Cid().String(),
-		},
-		Transactions: []ipfs.BlockModel{
-			{
-				Data: Trx1IPLD.RawData(),
-				CID:  Trx1IPLD.Cid().String(),
-			},
-			{
-				Data: Trx2IPLD.RawData(),
-				CID:  Trx2IPLD.Cid().String(),
-			},
-			{
-				Data: Trx3IPLD.RawData(),
-				CID:  Trx3IPLD.Cid().String(),
-			},
-		},
-		Receipts: []ipfs.BlockModel{
-			{
-				Data: Rct1IPLD.RawData(),
-				CID:  Rct1IPLD.Cid().String(),
-			},
-			{
-				Data: Rct2IPLD.RawData(),
-				CID:  Rct2IPLD.Cid().String(),
-			},
-			{
-				Data: Rct3IPLD.RawData(),
-				CID:  Rct3IPLD.Cid().String(),
-			},
-		},
-		StateNodes: []eth.StateNode{
-			{
-				StateLeafKey: common.BytesToHash(ContractLeafKey),
-				Type:         statediff.Leaf,
-				IPLD: ipfs.BlockModel{
-					Data: State1IPLD.RawData(),
-					CID:  State1IPLD.Cid().String(),
-				},
-				Path: []byte{'\x06'},
-			},
-			{
-				StateLeafKey: common.BytesToHash(AccountLeafKey),
-				Type:         statediff.Leaf,
-				IPLD: ipfs.BlockModel{
-					Data: State2IPLD.RawData(),
-					CID:  State2IPLD.Cid().String(),
-				},
-				Path: []byte{'\x0c'},
-			},
-		},
-		StorageNodes: []eth.StorageNode{
-			{
-				StateLeafKey:   common.BytesToHash(ContractLeafKey),
-				StorageLeafKey: common.BytesToHash(StorageLeafKey),
-				Type:           statediff.Leaf,
-				IPLD: ipfs.BlockModel{
-					Data: StorageIPLD.RawData(),
-					CID:  StorageIPLD.Cid().String(),
-				},
-				Path: []byte{},
-			},
-		},
-	}
 )
 
 // createTransactionsAndReceipts is a helper function to generate signed mock transactions and mock receipts with mock logs

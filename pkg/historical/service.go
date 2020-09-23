@@ -39,10 +39,8 @@ type Backfill interface {
 type Service struct {
 	// Interface for fetching statediff.Payloads over http
 	Fetcher eth.Fetcher
-	// Interface for converting payloads into IPLD object payloads
-	Converter eth.Converter
-	// Interface for publishing the IPLD payloads to IPFS
-	Publisher eth.Publisher
+	// Interface for transforming payloads into IPLD object models in Postgres
+	Transformer eth.Transformer
 	// Interface for finding gaps in the database
 	Retriever eth.Retriever
 	// Check frequency
@@ -68,8 +66,7 @@ func NewBackfillService(settings *Config) (Backfill, error) {
 	if err != nil {
 		return nil, err
 	}
-	bs.Converter = eth.NewPayloadConverter(bs.ChainConfig)
-	bs.Publisher = eth.NewIPLDPublisher(settings.DB)
+	bs.Transformer = eth.NewStateDiffTransformer(bs.ChainConfig, settings.DB)
 	bs.Retriever = eth.NewGapRetriever(settings.DB)
 	bs.BatchSize = settings.BatchSize
 	if bs.BatchSize == 0 {
@@ -149,14 +146,11 @@ func (bfs *Service) backFill(wg *sync.WaitGroup, id int, heightChan chan []uint6
 				log.Errorf("ethereum backfill worker %d fetcher error: %s", id, err.Error())
 			}
 			for _, payload := range payloads {
-				ipldPayload, err := bfs.Converter.Convert(payload)
+				blockNumber, err := bfs.Transformer.Transform(id, payload)
 				if err != nil {
-					log.Errorf("ethereum backfill worker %d converter error: %s", id, err.Error())
+					log.Errorf("ethereum backfill worker %d transformer error: %s", id, err.Error())
 				}
-				if err := bfs.Publisher.Publish(*ipldPayload); err != nil {
-					log.Errorf("ethereum backfill worker %d publisher error: %s", id, err.Error())
-					continue
-				}
+				log.Infof("ethereum backfill worker %d transformed data at height %d", id, blockNumber)
 			}
 			log.Infof("ethereum backfill worker %d finished section from %d to %d", id, heights[0], heights[len(heights)-1])
 		case <-bfs.QuitChan:

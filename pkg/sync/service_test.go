@@ -35,8 +35,9 @@ var _ = Describe("Service", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan statediff.Payload, 1)
 			quitChan := make(chan bool, 1)
-			mockPublisher := &mocks.IPLDPublisher{
-				ReturnErr: nil,
+			mockTransformer := &mocks.Transformer{
+				ReturnErr:    nil,
+				ReturnHeight: mocks.BlockNumber.Int64(),
 			}
 			mockStreamer := &mocks.PayloadStreamer{
 				ReturnSub: &rpc.ClientSubscription{},
@@ -45,14 +46,9 @@ var _ = Describe("Service", func() {
 				},
 				ReturnErr: nil,
 			}
-			mockConverter := &mocks.PayloadConverter{
-				ReturnIPLDPayload: &mocks.MockConvertedPayload,
-				ReturnErr:         nil,
-			}
 			processor := &s.Service{
-				Publisher:   mockPublisher,
 				Streamer:    mockStreamer,
-				Converter:   mockConverter,
+				Transformer: mockTransformer,
 				PayloadChan: payloadChan,
 				QuitChan:    quitChan,
 				Workers:     1,
@@ -62,8 +58,7 @@ var _ = Describe("Service", func() {
 			time.Sleep(2 * time.Second)
 			close(quitChan)
 			wg.Wait()
-			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
-			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockConvertedPayload))
+			Expect(mockTransformer.PassedStateDiff).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})
 	})
