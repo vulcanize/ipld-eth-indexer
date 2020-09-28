@@ -24,12 +24,12 @@ import (
 type Transformer struct {
 	PassedWorkerID  int
 	PassedStateDiff statediff.Payload
-	ReturnHeight    int64
+	ReturnHeight    uint64
 	ReturnErr       error
 }
 
 // Transform mock method
-func (t *Transformer) Transform(workerID int, payload statediff.Payload) (int64, error) {
+func (t *Transformer) Transform(workerID int, payload statediff.Payload) (uint64, error) {
 	t.PassedWorkerID = workerID
 	t.PassedStateDiff = payload
 	return t.ReturnHeight, t.ReturnErr
@@ -39,13 +39,13 @@ func (t *Transformer) Transform(workerID int, payload statediff.Payload) (int64,
 type IterativeTransformer struct {
 	PassedWorkerIDs  []int
 	PassedStateDiffs []statediff.Payload
-	ReturnHeights    []int64
+	ReturnHeights    []uint64
 	ReturnErr        error
 	iteration        int
 }
 
 // Transform mock method
-func (t *IterativeTransformer) Transform(workerID int, payload statediff.Payload) (int64, error) {
+func (t *IterativeTransformer) Transform(workerID int, payload statediff.Payload) (uint64, error) {
 	t.PassedWorkerIDs = append(t.PassedWorkerIDs, workerID)
 	t.PassedStateDiffs = append(t.PassedStateDiffs, payload)
 	height := t.ReturnHeights[t.iteration]

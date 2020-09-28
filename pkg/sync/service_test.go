@@ -37,7 +37,7 @@ var _ = Describe("Service", func() {
 			quitChan := make(chan bool, 1)
 			mockTransformer := &mocks.Transformer{
 				ReturnErr:    nil,
-				ReturnHeight: mocks.BlockNumber.Int64(),
+				ReturnHeight: mocks.BlockNumber.Uint64(),
 			}
 			mockStreamer := &mocks.PayloadStreamer{
 				ReturnSub: &rpc.ClientSubscription{},

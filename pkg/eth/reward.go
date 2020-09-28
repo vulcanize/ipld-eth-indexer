@@ -23,24 +23,24 @@ import (
 )
 
 func CalcEthBlockReward(header *types.Header, uncles []*types.Header, txs types.Transactions, receipts types.Receipts) *big.Int {
-	staticBlockReward := staticRewardByBlockNumber(header.Number.Int64())
+	staticBlockReward := staticRewardByBlockNumber(header.Number.Uint64())
 	transactionFees := calcEthTransactionFees(txs, receipts)
 	uncleInclusionRewards := calcEthUncleInclusionRewards(header, uncles)
 	tmp := transactionFees.Add(transactionFees, uncleInclusionRewards)
 	return tmp.Add(tmp, staticBlockReward)
 }
 
-func CalcUncleMinerReward(blockNumber, uncleBlockNumber int64) *big.Int {
+func CalcUncleMinerReward(blockNumber, uncleBlockNumber uint64) *big.Int {
 	staticBlockReward := staticRewardByBlockNumber(blockNumber)
 	rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
-	mainBlock := big.NewInt(blockNumber)
-	uncleBlock := big.NewInt(uncleBlockNumber)
+	mainBlock := new(big.Int).SetUint64(blockNumber)
+	uncleBlock := new(big.Int).SetUint64(uncleBlockNumber)
 	uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
 	uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
 	return rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
 }
 
-func staticRewardByBlockNumber(blockNumber int64) *big.Int {
+func staticRewardByBlockNumber(blockNumber uint64) *big.Int {
 	staticBlockReward := new(big.Int)
 	//https://blog.ethereum.org/2017/10/12/byzantium-hf-announcement/
 	if blockNumber >= 7280000 {
@@ -68,7 +68,7 @@ func calcEthTransactionFees(txs types.Transactions, receipts types.Receipts) *bi
 func calcEthUncleInclusionRewards(header *types.Header, uncles []*types.Header) *big.Int {
 	uncleInclusionRewards := new(big.Int)
 	for range uncles {
-		staticBlockReward := staticRewardByBlockNumber(header.Number.Int64())
+		staticBlockReward := staticRewardByBlockNumber(header.Number.Uint64())
 		staticBlockReward.Div(staticBlockReward, big.NewInt(32))
 		uncleInclusionRewards.Add(uncleInclusionRewards, staticBlockReward)
 	}

@@ -43,10 +43,10 @@ var _ = Describe("PublishAndIndexer", func() {
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		transformer = eth.NewStateDiffTransformer(params.MainnetChainConfig, db)
-		var blockNumber int64
+		var blockNumber uint64
 		blockNumber, err = transformer.Transform(1, mocks.MockStateDiffPayload)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(blockNumber).To(Equal(mocks.BlockNumber.Int64()))
+		Expect(blockNumber).To(Equal(mocks.BlockNumber.Uint64()))
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)

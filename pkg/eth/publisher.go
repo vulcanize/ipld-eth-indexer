@@ -116,7 +116,7 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
 			return err
 		}
-		uncleReward := CalcUncleMinerReward(payload.Block.Number().Int64(), uncleNode.Number.Int64())
+		uncleReward := CalcUncleMinerReward(payload.Block.Number().Uint64(), uncleNode.Number.Uint64())
 		uncle := UncleModel{
 			CID:        uncleNode.Cid().String(),
 			MhKey:      shared.MultihashKeyFromCID(uncleNode.Cid()),
