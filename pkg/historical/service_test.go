@@ -35,7 +35,7 @@ var _ = Describe("BackFiller", func() {
 		It("Periodically checks for and fills in gaps in the watcher's data", func() {
 			mockTransformer := &mocks.IterativeTransformer{
 				ReturnErr:     nil,
-				ReturnHeights: []int64{100, 101},
+				ReturnHeights: []uint64{100, 101},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 0,
@@ -76,7 +76,7 @@ var _ = Describe("BackFiller", func() {
 		It("Works for single block `ranges`", func() {
 			mockTransformer := &mocks.IterativeTransformer{
 				ReturnErr:     nil,
-				ReturnHeights: []int64{100},
+				ReturnHeights: []uint64{100},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 0,
@@ -115,7 +115,7 @@ var _ = Describe("BackFiller", func() {
 		It("Finds beginning gap", func() {
 			mockTransformer := &mocks.IterativeTransformer{
 				ReturnErr:     nil,
-				ReturnHeights: []int64{0, 1, 2},
+				ReturnHeights: []uint64{0, 1, 2},
 			}
 			mockRetriever := &mocks.Retriever{
 				FirstBlockNumberToReturn: 3,

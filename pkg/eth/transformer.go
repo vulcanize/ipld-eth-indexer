@@ -19,6 +19,7 @@ package eth
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -39,7 +40,7 @@ import (
 
 // Transformer interface to allow substitution of mocks for testing
 type Transformer interface {
-	Transform(workerID int, payload statediff.Payload) (int64, error)
+	Transform(workerID int, payload statediff.Payload) (uint64, error)
 }
 
 // StateDiffTransformer satisfies the Transformer interface for ethereum statediff objects
@@ -58,23 +59,30 @@ func NewStateDiffTransformer(chainConfig *params.ChainConfig, db *postgres.DB) *
 
 // Transform method is used to process statediff.Payload objects
 // It performs the necessary data conversions and database persistence
-func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Payload) (int64, error) {
+func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Payload) (uint64, error) {
+	start, t := time.Now(), time.Now()
 	// Unpack block rlp to access fields
 	block := new(types.Block)
 	if err := rlp.DecodeBytes(payload.BlockRlp, block); err != nil {
 		return 0, fmt.Errorf("error decoding payload block rlp: %s", err.Error())
 	}
 	blockHash := block.Hash()
-	logrus.Infof("worker %d transforming state diff payload for blocknumber %d with hash %s", workerID, block.Number().Int64(), blockHash.String())
+	blockHashStr := blockHash.String()
+	height := block.NumberU64()
+	traceMsg := fmt.Sprintf("worker %d transformer stats for payload at %d with hash %s:\r\n", workerID, height, blockHashStr)
 	transactions := block.Transactions()
-	// Block processing
 	// Decode receipts for this block
 	receipts := make(types.Receipts, 0)
 	if err := rlp.DecodeBytes(payload.ReceiptsRlp, &receipts); err != nil {
 		return 0, fmt.Errorf("error decoding payload receipts rlp: %s", err.Error())
 	}
+	// Decode state diff rlp for this block
+	stateDiff := new(statediff.StateObject)
+	if err := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff); err != nil {
+		return 0, fmt.Errorf("error decoding payload state object rlp: %s", err.Error())
+	}
 	// Derive any missing fields
-	if err := receipts.DeriveFields(sdt.chainConfig, blockHash, block.NumberU64(), transactions); err != nil {
+	if err := receipts.DeriveFields(sdt.chainConfig, blockHash, height, transactions); err != nil {
 		return 0, err
 	}
 	// Generate the block iplds
@@ -87,6 +95,8 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	}
 	// Calculate reward
 	reward := CalcEthBlockReward(block.Header(), block.Uncles(), block.Transactions(), receipts)
+	traceMsg += fmt.Sprintf("payload decoding time: %s\r\n", time.Now().Sub(t).String())
+	t = time.Now()
 	// Begin new db tx for everything
 	tx, err := sdt.indexer.db.Beginx()
 	if err != nil {
@@ -101,17 +111,27 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 			shared.Rollback(tx)
 		} else {
 			err = tx.Commit()
+			traceMsg += fmt.Sprintf("postgres transaction commit duration: %s\r\n", time.Now().Sub(t).String())
 		}
+		traceMsg += fmt.Sprintf(" TOTAL PROCESSING TIME: %s\r\n", time.Now().Sub(start).String())
+		logrus.Info(traceMsg)
 	}()
+	traceMsg += fmt.Sprintf("time spent waiting for free postgres tx: %s:\r\n", time.Now().Sub(t).String())
+	t = time.Now()
+
 	// Publish and index header, collect headerID
 	headerID, err := sdt.processHeader(tx, block.Header(), headerNode, reward, payload.TotalDifficulty)
 	if err != nil {
 		return 0, err
 	}
+	traceMsg += fmt.Sprintf("header processing time: %s\r\n", time.Now().Sub(t).String())
+	t = time.Now()
 	// Publish and index uncles
-	if err := sdt.processUncles(tx, headerID, block.Number().Int64(), uncleNodes); err != nil {
+	if err := sdt.processUncles(tx, headerID, height, uncleNodes); err != nil {
 		return 0, err
 	}
+	traceMsg += fmt.Sprintf("uncle processing time: %s\r\n", time.Now().Sub(t).String())
+	t = time.Now()
 	// Publish and index receipts and txs
 	if err := sdt.processReceiptsAndTxs(tx, processArgs{
 		headerID:     headerID,
@@ -125,17 +145,15 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	}); err != nil {
 		return 0, err
 	}
-	// Unpack state diff rlp to access fields
-	stateDiff := new(statediff.StateObject)
-	if err := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff); err != nil {
-		return 0, fmt.Errorf("error decoding payload state object rlp: %s", err.Error())
-	}
+	traceMsg += fmt.Sprintf("tx and receipt processing time: %s\r\n", time.Now().Sub(t).String())
+	t = time.Now()
 	// Publish and index state and storage nodes
 	if err := sdt.processStateAndStorage(tx, headerID, stateDiff); err != nil {
 		return 0, err
 	}
-
-	return block.Number().Int64(), err // return error explicity so that the defer() assigns to it
+	traceMsg += fmt.Sprintf("state and storage processing time: %s\r\n", time.Now().Sub(t).String())
+	t = time.Now()
+	return height, err // return error explicity so that the defer() assigns to it
 }
 
 // processHeader publishes and indexes a header IPLD in Postgres
@@ -163,13 +181,13 @@ func (sdt *StateDiffTransformer) processHeader(tx *sqlx.Tx, header *types.Header
 	})
 }
 
-func (sdt *StateDiffTransformer) processUncles(tx *sqlx.Tx, headerID, blockNumber int64, uncleNodes []*ipld.EthHeader) error {
+func (sdt *StateDiffTransformer) processUncles(tx *sqlx.Tx, headerID int64, blockNumber uint64, uncleNodes []*ipld.EthHeader) error {
 	// publish and index uncles
 	for _, uncleNode := range uncleNodes {
 		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
 			return err
 		}
-		uncleReward := CalcUncleMinerReward(blockNumber, uncleNode.Number.Int64())
+		uncleReward := CalcUncleMinerReward(blockNumber, uncleNode.Number.Uint64())
 		uncle := UncleModel{
 			CID:        uncleNode.Cid().String(),
 			MhKey:      shared.MultihashKeyFromCID(uncleNode.Cid()),
