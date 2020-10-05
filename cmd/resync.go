@@ -65,7 +65,7 @@ func init() {
 	rootCmd.AddCommand(resyncCmd)
 
 	// flags
-	resyncCmd.PersistentFlags().String("resync-type", "", "which type of data to resync")
+	resyncCmd.PersistentFlags().String("resync-type", "", "which type of data to resync (full|headers|uncles|transactions|receipts|state|storage)")
 	resyncCmd.PersistentFlags().Int("resync-start", 0, "block height to start resync")
 	resyncCmd.PersistentFlags().Int("resync-stop", 0, "block height to stop resync")
 	resyncCmd.PersistentFlags().Int("resync-batch-size", 0, "batch size for http requests")
