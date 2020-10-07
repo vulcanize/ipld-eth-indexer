@@ -73,6 +73,7 @@ func init() {
 	resyncCmd.PersistentFlags().Bool("resync-clear-old-cache", false, "if true, clear out old data of the provided type within the resync range before resyncing (warning: clearing out data will delete any rows that FK reference it")
 	resyncCmd.PersistentFlags().Bool("resync-reset-validation", false, "if true, reset times_validated of headers in this range to 0")
 	resyncCmd.PersistentFlags().Int("resync-timeout", 15, "timeout used for resync http requests (in seconds)")
+	resyncCmd.PersistentFlags().Int("resync-retries", 1, "number of times to retry failed http requests")
 	resyncCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
 
 	// and their .toml config bindings
@@ -84,5 +85,6 @@ func init() {
 	viper.BindPFlag("resync.clearOldCache", resyncCmd.PersistentFlags().Lookup("resync-clear-old-cache"))
 	viper.BindPFlag("resync.resetValidation", resyncCmd.PersistentFlags().Lookup("resync-reset-validation"))
 	viper.BindPFlag("resync.timeout", resyncCmd.PersistentFlags().Lookup("resync-timeout"))
+	viper.BindPFlag("resync.retries", resyncCmd.PersistentFlags().Lookup("resync-retries"))
 	viper.BindPFlag("ethereum.httpPath", resyncCmd.PersistentFlags().Lookup("eth-http-path"))
 }

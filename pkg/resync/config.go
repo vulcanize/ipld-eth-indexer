@@ -109,6 +109,7 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.HTTPClient.NumRetries = viper.GetInt("resync.retries")
 
 	c.DBConfig.Init()
 	overrideDBConnConfig(&c.DBConfig)
