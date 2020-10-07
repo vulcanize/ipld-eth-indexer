@@ -18,6 +18,7 @@ package resync
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/sirupsen/logrus"
@@ -86,6 +87,10 @@ func NewResyncService(settings *Config) (Resync, error) {
 	return rs, nil
 }
 
+type fetchStats struct {
+	successes, failures uint64
+}
+
 // Sync indexes data within a specified block range
 func (rs *Service) Sync() error {
 	if rs.resetValidation {
@@ -100,10 +105,13 @@ func (rs *Service) Sync() error {
 			return fmt.Errorf("ethereum %s data resync cleaning error: %v", rs.data.String(), err)
 		}
 	}
+	var stats fetchStats
+	defer fmt.Println("fetch stats", &stats)
+
 	// spin up worker goroutines
 	heightsChan := make(chan []uint64)
 	for i := 1; i <= int(rs.Workers); i++ {
-		go rs.resync(i, heightsChan)
+		go rs.resync(i, heightsChan, &stats)
 	}
 	for _, rng := range rs.ranges {
 		if rng[1] < rng[0] {
@@ -128,7 +136,7 @@ func (rs *Service) Sync() error {
 	return nil
 }
 
-func (rs *Service) resync(id int, heightChan chan []uint64) {
+func (rs *Service) resync(id int, heightChan chan []uint64, stats *fetchStats) {
 	for {
 		select {
 		case heights := <-heightChan:
@@ -136,6 +144,9 @@ func (rs *Service) resync(id int, heightChan chan []uint64) {
 			payloads, err := rs.Fetcher.FetchAt(heights)
 			if err != nil {
 				logrus.Errorf("ethereum resync worker %d fetcher error: %s", id, err.Error())
+				atomic.AddUint64(&stats.failures, uint64(len(heights)))
+			} else {
+				atomic.AddUint64(&stats.successes, uint64(len(heights)))
 			}
 			for _, payload := range payloads {
 				ipldPayload, err := rs.Converter.Convert(payload)
@@ -146,6 +157,7 @@ func (rs *Service) resync(id int, heightChan chan []uint64) {
 					logrus.Errorf("ethereum resync worker %d publisher error: %s", id, err.Error())
 				}
 			}
+			logrus.Info("fetch stats", stats)
 			logrus.Infof("ethereum resync worker %d finished section from %d to %d", id, heights[0], heights[len(heights)-1])
 		case <-rs.quitChan:
 			logrus.Infof("ethereum resync worker %d goroutine shutting down", id)
