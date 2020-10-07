@@ -28,8 +28,6 @@ require (
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 )
 
-// replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.5
-
+replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.5.0.20201007091955-7cd2dd60178f
 
 // replace github.com/ethereum/go-ethereum v1.9.11 => /home/roy/vulcanize/go-ethereum
-replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.5.0.20201007070928-f02622cf67b0
