@@ -38,21 +38,6 @@ func ResolveFromNodeType(nodeType statediff.NodeType) int {
 	}
 }
 
-func ResolveToNodeType(nodeType int) statediff.NodeType {
-	switch nodeType {
-	case 0:
-		return statediff.Branch
-	case 1:
-		return statediff.Extension
-	case 2:
-		return statediff.Leaf
-	case 3:
-		return statediff.Removed
-	default:
-		return statediff.Unknown
-	}
-}
-
 // ChainConfig returns the appropriate ethereum chain config for the provided chain id
 func ChainConfig(chainID uint64) (*params.ChainConfig, error) {
 	switch chainID {
