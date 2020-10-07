@@ -30,6 +30,6 @@ require (
 
 // replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.5
 
-replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.4.0.20200924013450-e357673b8a4e
 
 // replace github.com/ethereum/go-ethereum v1.9.11 => /home/roy/vulcanize/go-ethereum
+replace github.com/ethereum/go-ethereum v1.9.11 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.5.0.20201007070928-f02622cf67b0
