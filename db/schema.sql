@@ -639,7 +639,7 @@ ALTER TABLE ONLY public.nodes
 -- Name: account_state_id_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX account_state_id_index ON eth.state_accounts USING brin (state_id) WITH (pages_per_range='32');
+CREATE INDEX account_state_id_index ON eth.state_accounts USING btree (state_id);
 
 
 --
@@ -653,7 +653,7 @@ CREATE INDEX block_hash_index ON eth.header_cids USING btree (block_hash);
 -- Name: block_number_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX block_number_index ON eth.header_cids USING brin (block_number) WITH (pages_per_range='32');
+CREATE INDEX block_number_index ON eth.header_cids USING brin (block_number);
 
 
 --
@@ -737,7 +737,7 @@ CREATE INDEX rct_topic3_index ON eth.receipt_cids USING gin (topic3s);
 -- Name: rct_tx_id_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX rct_tx_id_index ON eth.receipt_cids USING brin (tx_id) WITH (pages_per_range='32');
+CREATE INDEX rct_tx_id_index ON eth.receipt_cids USING btree (tx_id);
 
 
 --
@@ -751,7 +751,7 @@ CREATE INDEX state_cid_index ON eth.state_cids USING btree (cid);
 -- Name: state_header_id_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX state_header_id_index ON eth.state_cids USING brin (header_id) WITH (pages_per_range='32');
+CREATE INDEX state_header_id_index ON eth.state_cids USING btree (header_id);
 
 
 --
@@ -821,14 +821,14 @@ CREATE INDEX storage_root_index ON eth.state_accounts USING btree (storage_root)
 -- Name: storage_state_id_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX storage_state_id_index ON eth.storage_cids USING brin (state_id) WITH (pages_per_range='32');
+CREATE INDEX storage_state_id_index ON eth.storage_cids USING btree (state_id);
 
 
 --
 -- Name: timestamp_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX timestamp_index ON eth.header_cids USING brin ("timestamp") WITH (pages_per_range='32');
+CREATE INDEX timestamp_index ON eth.header_cids USING brin ("timestamp");
 
 
 --
@@ -863,7 +863,7 @@ CREATE INDEX tx_hash_index ON eth.transaction_cids USING btree (tx_hash);
 -- Name: tx_header_id_index; Type: INDEX; Schema: eth; Owner: -
 --
 
-CREATE INDEX tx_header_id_index ON eth.transaction_cids USING brin (header_id) WITH (pages_per_range='32');
+CREATE INDEX tx_header_id_index ON eth.transaction_cids USING btree (header_id);
 
 
 --

@@ -1,6 +1,6 @@
 -- +goose Up
 -- header indexes
-CREATE INDEX block_number_index ON eth.header_cids USING brin (block_number) WITH (pages_per_range = 32);
+CREATE INDEX block_number_index ON eth.header_cids USING brin (block_number);
 
 CREATE INDEX block_hash_index ON eth.header_cids USING btree (block_hash);
 
@@ -10,10 +10,10 @@ CREATE INDEX header_mh_index ON eth.header_cids USING btree (mh_key);
 
 CREATE INDEX state_root_index ON eth.header_cids USING btree (state_root);
 
-CREATE INDEX timestamp_index ON eth.header_cids USING brin (timestamp) WITH (pages_per_range = 32);
+CREATE INDEX timestamp_index ON eth.header_cids USING brin (timestamp);
 
 -- transaction indexes
-CREATE INDEX tx_header_id_index ON eth.transaction_cids USING brin (header_id) WITH (pages_per_range = 32);
+CREATE INDEX tx_header_id_index ON eth.transaction_cids USING btree (header_id);
 
 CREATE INDEX tx_hash_index ON eth.transaction_cids USING btree (tx_hash);
 
@@ -28,7 +28,7 @@ CREATE INDEX tx_src_index ON eth.transaction_cids USING btree (src);
 CREATE INDEX tx_data_index ON eth.transaction_cids USING btree (tx_data);
 
 -- receipt indexes
-CREATE INDEX rct_tx_id_index ON eth.receipt_cids USING brin (tx_id) WITH (pages_per_range = 32);
+CREATE INDEX rct_tx_id_index ON eth.receipt_cids USING btree (tx_id);
 
 CREATE INDEX rct_cid_index ON eth.receipt_cids USING btree (cid);
 
@@ -49,7 +49,7 @@ CREATE INDEX rct_topic3_index ON eth.receipt_cids USING gin (topic3s);
 CREATE INDEX rct_log_contract_index ON eth.receipt_cids USING gin (log_contracts);
 
 -- state node indexes
-CREATE INDEX state_header_id_index ON eth.state_cids USING brin (header_id) WITH (pages_per_range = 32);
+CREATE INDEX state_header_id_index ON eth.state_cids USING btree (header_id);
 
 CREATE INDEX state_leaf_key_index ON eth.state_cids USING btree (state_leaf_key);
 
@@ -60,7 +60,7 @@ CREATE INDEX state_mh_index ON eth.state_cids USING btree (mh_key);
 CREATE INDEX state_path_index ON eth.state_cids USING btree (state_path);
 
 -- storage node indexes
-CREATE INDEX storage_state_id_index ON eth.storage_cids USING brin (state_id) WITH (pages_per_range = 32);
+CREATE INDEX storage_state_id_index ON eth.storage_cids USING btree (state_id);
 
 CREATE INDEX storage_leaf_key_index ON eth.storage_cids USING btree (storage_leaf_key);
 
@@ -71,7 +71,7 @@ CREATE INDEX storage_mh_index ON eth.storage_cids USING btree (mh_key);
 CREATE INDEX storage_path_index ON eth.storage_cids USING btree (storage_path);
 
 -- state accounts indexes
-CREATE INDEX account_state_id_index ON eth.state_accounts USING brin (state_id) WITH (pages_per_range = 32);
+CREATE INDEX account_state_id_index ON eth.state_accounts USING btree (state_id);
 
 CREATE INDEX storage_root_index ON eth.state_accounts USING btree (storage_root);
 
