@@ -157,7 +157,7 @@ func (rs *Service) resync(id int, heightChan chan []uint64, stats *fetchStats) {
 					logrus.Errorf("ethereum resync worker %d publisher error: %s", id, err.Error())
 				}
 			}
-			logrus.Info("fetch stats", stats)
+			logrus.Infof("fetch stats %v", stats)
 			logrus.Infof("ethereum resync worker %d finished section from %d to %d", id, heights[0], heights[len(heights)-1])
 		case <-rs.quitChan:
 			logrus.Infof("ethereum resync worker %d goroutine shutting down", id)
