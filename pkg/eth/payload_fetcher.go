@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 )
@@ -39,15 +41,16 @@ type Fetcher interface {
 type PayloadFetcher struct {
 	// PayloadFetcher is thread-safe as long as the underlying client is thread-safe, since it has/modifies no other state
 	// http.Client is thread-safe
-	client  BatchClient
-	timeout time.Duration
-	params  statediff.Params
+	client     BatchClient
+	timeout    time.Duration
+	params     statediff.Params
+	numRetries int
 }
 
 const method = "statediff_stateDiffAt"
 
 // NewPayloadFetcher returns a PayloadFetcher
-func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
+func NewPayloadFetcher(bc BatchClient, timeout time.Duration, retries int) *PayloadFetcher {
 	return &PayloadFetcher{
 		client:  bc,
 		timeout: timeout,
@@ -58,6 +61,7 @@ func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
 			IntermediateStateNodes:   true,
 			IntermediateStorageNodes: true,
 		},
+		numRetries: retries,
 	}
 }
 
@@ -72,10 +76,23 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]statediff.Paylo
 			Result: new(statediff.Payload),
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), fetcher.timeout)
-	defer cancel()
-	if err := fetcher.client.BatchCallContext(ctx, batch); err != nil {
-		return nil, fmt.Errorf("ethereum PayloadFetcher batch err for block range %d-%d: %s", blockHeights[0], blockHeights[len(blockHeights)-1], err.Error())
+	retries := fetcher.numRetries
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), fetcher.timeout)
+		defer cancel()
+		if err := fetcher.client.BatchCallContext(ctx, batch); err != nil {
+			log.Warnf(
+				"ethereum PayloadFetcher batch err for block range %d-%d (%d retries): %s",
+				blockHeights[0], blockHeights[len(blockHeights)-1], retries, err.Error())
+			if retries == 0 {
+				return nil, fmt.Errorf(
+					"ethereum PayloadFetcher batch err for block range %d-%d: %s",
+					blockHeights[0], blockHeights[len(blockHeights)-1], err.Error())
+			}
+		} else {
+			break
+		}
+		retries -= 1
 	}
 	results := make([]statediff.Payload, 0, len(blockHeights))
 	for _, batchElem := range batch {

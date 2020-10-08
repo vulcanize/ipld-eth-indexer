@@ -39,6 +39,7 @@ const (
 	RESYNC_CLEAR_OLD_CACHE  = "RESYNC_CLEAR_OLD_CACHE"
 	RESYNC_TYPE             = "RESYNC_TYPE"
 	RESYNC_RESET_VALIDATION = "RESYNC_RESET_VALIDATION"
+	RESYNC_RETRIES          = "RESYNC_RETRIES"
 
 	RESYNC_MAX_IDLE_CONNECTIONS = "RESYNC_MAX_IDLE_CONNECTIONS"
 	RESYNC_MAX_OPEN_CONNECTIONS = "RESYNC_MAX_OPEN_CONNECTIONS"
@@ -61,6 +62,7 @@ type Config struct {
 	BatchSize  uint64        // BatchSize for the resync http calls (client has to support batch sizing)
 	Timeout    time.Duration // HTTP connection timeout in seconds
 	Workers    uint64
+	NumRetries int // Number of times to retry failed requests (-1 = infinite)
 }
 
 // NewConfig fills and returns a resync config from toml parameters
@@ -83,6 +85,7 @@ func NewConfig() (*Config, error) {
 		timeout = 5
 	}
 	c.Timeout = time.Second * time.Duration(timeout)
+	c.NumRetries = viper.GetInt("resync.retries")
 
 	start := uint64(viper.GetInt64("resync.start"))
 	stop := uint64(viper.GetInt64("resync.stop"))
@@ -109,7 +112,6 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.HTTPClient.NumRetries = viper.GetInt("resync.retries")
 
 	c.DBConfig.Init()
 	overrideDBConnConfig(&c.DBConfig)

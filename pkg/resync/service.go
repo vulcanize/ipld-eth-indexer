@@ -63,7 +63,7 @@ type Service struct {
 func NewResyncService(settings *Config) (Resync, error) {
 	rs := new(Service)
 	var err error
-	rs.Fetcher = eth.NewPayloadFetcher(settings.HTTPClient, settings.Timeout)
+	rs.Fetcher = eth.NewPayloadFetcher(settings.HTTPClient, settings.Timeout, settings.NumRetries)
 	rs.ChainConfig, err = eth.ChainConfig(settings.NodeInfo.ChainID)
 	if err != nil {
 		return nil, err

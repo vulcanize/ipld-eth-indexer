@@ -63,7 +63,7 @@ type Service struct {
 func NewBackfillService(settings *Config) (Backfill, error) {
 	bs := new(Service)
 	var err error
-	bs.Fetcher = eth.NewPayloadFetcher(settings.HTTPClient, settings.Timeout)
+	bs.Fetcher = eth.NewPayloadFetcher(settings.HTTPClient, settings.Timeout, 0)
 	bs.ChainConfig, err = eth.ChainConfig(settings.NodeInfo.ChainID)
 	if err != nil {
 		return nil, err
