@@ -24,6 +24,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/web"
 )
 
@@ -67,6 +68,10 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	if viper.GetBool("http") {
 		addr := fmt.Sprintf("%s:%s", viper.GetString("http.addr"), viper.GetString("http.port"))
 		web.Listen(addr)
+	}
+
+	if viper.GetBool("metrics") {
+		prom.Init()
 	}
 }
 
