@@ -24,6 +24,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/web"
 )
 
 var (
@@ -61,6 +62,11 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	}
 	if err := logLevel(); err != nil {
 		log.Fatal("Could not set log level: ", err)
+	}
+
+	if viper.GetBool("http") {
+		addr := fmt.Sprintf("%s:%s", viper.GetString("http.addr"), viper.GetString("http.port"))
+		web.Listen(addr)
 	}
 }
 
@@ -101,6 +107,7 @@ func init() {
 	rootCmd.PersistentFlags().String("eth-network-id", "1", "eth network id")
 	rootCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 
+	rootCmd.PersistentFlags().Bool("http", false, "enable http service")
 	rootCmd.PersistentFlags().String("http-addr", "127.0.0.1", "http host")
 	rootCmd.PersistentFlags().String("http-port", "8080", "http port")
 
