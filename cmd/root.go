@@ -122,6 +122,7 @@ func init() {
 	viper.BindPFlag("ethereum.networkID", rootCmd.PersistentFlags().Lookup("eth-network-id"))
 	viper.BindPFlag("ethereum.chainID", rootCmd.PersistentFlags().Lookup("eth-chain-id"))
 
+	viper.BindPFlag("http", rootCmd.PersistentFlags().Lookup("http"))
 	viper.BindPFlag("http.addr", rootCmd.PersistentFlags().Lookup("http-addr"))
 	viper.BindPFlag("http.port", rootCmd.PersistentFlags().Lookup("http-port"))
 
