@@ -1,13 +1,9 @@
 package prom
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-)
-
-// Env variables
-const (
-	METRICS = "METRICS"
 )
 
 var (
@@ -32,6 +28,13 @@ func Init() {
 		Name: "receipts",
 		Help: "The total number of processed receipts",
 	})
+}
+
+// RegisterDBCollector create metric colletor for given connection
+func RegisterDBCollector(name string, db *sqlx.DB) {
+	if metrics {
+		prometheus.Register(NewDBStatsCollector(name, db))
+	}
 }
 
 // BlockInc block counter increment
