@@ -132,7 +132,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 		return 0, err
 	}
 	tDiff = time.Now().Sub(t)
-	prom.SetTimeMetric("t_header_rocessing", tDiff)
+	prom.SetTimeMetric("t_header_processing", tDiff)
 	traceMsg += fmt.Sprintf("header processing time: %s\r\n", tDiff.String())
 	t = time.Now()
 	// Publish and index uncles

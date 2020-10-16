@@ -67,7 +67,7 @@ func Init() {
 	tHeaderProcessing = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: statsSubsystem,
-		Name:      "t_header_rocessing",
+		Name:      "t_header_processing",
 		Help:      "Header processing time",
 	})
 	tUncleProcessing = promauto.NewHistogram(prometheus.HistogramOpts{
@@ -123,7 +123,7 @@ func SetTimeMetric(name string, t time.Duration) {
 	if !metrics {
 		return
 	}
-	tAsF64 := float64(t.Microseconds())
+	tAsF64 := t.Seconds()
 	switch name {
 	case "t_payload_decode":
 		tPayloadDecode.Observe(tAsF64)
@@ -131,7 +131,7 @@ func SetTimeMetric(name string, t time.Duration) {
 		tFreePostgres.Observe(tAsF64)
 	case "t_postgres_commit":
 		tPostgresCommit.Observe(tAsF64)
-	case "t_header_rocessing":
+	case "t_header_processing":
 		tHeaderProcessing.Observe(tAsF64)
 	case "t_uncle_processing":
 		tUncleProcessing.Observe(tAsF64)
