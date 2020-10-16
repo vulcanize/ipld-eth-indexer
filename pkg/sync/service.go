@@ -135,6 +135,7 @@ func (sap *Service) transform(wg *sync.WaitGroup, id int, statediffChan <-chan s
 	for {
 		select {
 		case diff := <-statediffChan:
+			prom.SetLenPayloadChan(len(statediffChan))
 			blockNumber, err := sap.Transformer.Transform(id, diff)
 			if err != nil {
 				log.Errorf("ethereum sync worker %d transformer error: %v", id, err)
