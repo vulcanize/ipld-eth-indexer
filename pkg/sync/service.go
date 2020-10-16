@@ -27,6 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
@@ -113,6 +114,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 					<-publishPayload
 					publishPayload <- diffPayload
 				}
+				prom.SetLenPayloadChan(len(publishPayload))
 			case err := <-sub.Err():
 				log.Errorf("ethereumm sync subscription error: %v", err)
 			case <-sap.QuitChan:

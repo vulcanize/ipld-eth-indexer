@@ -17,13 +17,15 @@ var (
 	transactions prometheus.Counter
 	blocks       prometheus.Counter
 
-	tPayloadDecode           prometheus.Histogram // payload decoding time: 58.173µs
-	tFreePostgres            prometheus.Histogram // time spent waiting for free postgres tx: 94.511µs
-	tPostgresCommit          prometheus.Histogram // postgres transaction commit duration: 1.509643ms
-	tHeaderProcessing        prometheus.Histogram // header processing time: 1.057721ms
-	tUncleProcessing         prometheus.Histogram // uncle processing time: 140ns
-	tTxAndRecProcessing      prometheus.Histogram // tx and receipt processing time: 1.749µs
-	tStateAndStoreProcessing prometheus.Histogram // state and storage processing time: 4.737994ms
+	lenPayloadChan prometheus.Gauge
+
+	tPayloadDecode           prometheus.Histogram
+	tFreePostgres            prometheus.Histogram
+	tPostgresCommit          prometheus.Histogram
+	tHeaderProcessing        prometheus.Histogram
+	tUncleProcessing         prometheus.Histogram
+	tTxAndRecProcessing      prometheus.Histogram
+	tStateAndStoreProcessing prometheus.Histogram
 )
 
 // Init module initialization
@@ -44,6 +46,12 @@ func Init() {
 		Namespace: namespace,
 		Name:      "receipts",
 		Help:      "The total number of processed receipts",
+	})
+
+	lenPayloadChan = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "len_payload_chan",
+		Help:      "Current length of publishPayload",
 	})
 
 	tPayloadDecode = promauto.NewHistogram(prometheus.HistogramOpts{
@@ -115,6 +123,13 @@ func TransactionInc() {
 func ReceiptInc() {
 	if metrics {
 		receipts.Inc()
+	}
+}
+
+// SetLenPayloadChan set chan length
+func SetLenPayloadChan(ln int) {
+	if metrics {
+		lenPayloadChan.Set(float64(ln))
 	}
 }
 
