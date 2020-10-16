@@ -17,16 +17,19 @@ var (
 func Init() {
 	metrics = true
 	blocks = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "blocks",
-		Help: "The total number of processed blocks",
+		Namespace: namespace,
+		Name:      "blocks",
+		Help:      "The total number of processed blocks",
 	})
 	transactions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "transactions",
-		Help: "The total number of processed transactions",
+		Namespace: namespace,
+		Name:      "transactions",
+		Help:      "The total number of processed transactions",
 	})
 	receipts = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "receipts",
-		Help: "The total number of processed receipts",
+		Namespace: namespace,
+		Name:      "receipts",
+		Help:      "The total number of processed receipts",
 	})
 }
 

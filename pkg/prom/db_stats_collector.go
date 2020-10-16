@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	namespace = "go_sqlx_stats"
+	namespace = "ipld_eth_indexer"
 	subsystem = "connections"
 )
 
