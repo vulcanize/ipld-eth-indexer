@@ -221,6 +221,15 @@ of Postgres can be found [here](./documentation/ipfs.md)
 `make test` will run the unit tests  
 `make test` setups a clean `vulcanize_testing` db
 
+## Monitoring
+
+* Enable http server and metrics using parameters `--http --metrics`
+* ipld-eth-indexer exposes prometheus metrics at `/metric` endpoint
+* start prometheus using `monitoring/prometheus.yml` config (`prometheus --config.file=monitoring/prometheus.yml`)
+* start grafana, connect to prometheus datasource and import dashboard from `monitoring/grafana/dashboard_main.json`
+
+![](monitoring/grafana.png)
+
 ## Contributing
 Contributions are welcome!
 
