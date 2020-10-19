@@ -145,12 +145,6 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 		if err != nil {
 			return err
 		}
-		// If tx is a contract deployment, publish the data (code)
-		if txModel.Deployment { // codec doesn't matter in this case sine we are not interested in the cid and the db key is multihash-derived
-			if _, err = shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, txModel.Data); err != nil {
-				return err
-			}
-		}
 		rctModel := payload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
 		rctModel.MhKey = shared.MultihashKeyFromCID(rctNode.Cid())

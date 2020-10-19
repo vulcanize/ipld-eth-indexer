@@ -19,13 +19,14 @@ var (
 
 	lenPayloadChan prometheus.Gauge
 
-	tPayloadDecode           prometheus.Histogram
-	tFreePostgres            prometheus.Histogram
-	tPostgresCommit          prometheus.Histogram
-	tHeaderProcessing        prometheus.Histogram
-	tUncleProcessing         prometheus.Histogram
-	tTxAndRecProcessing      prometheus.Histogram
-	tStateAndStoreProcessing prometheus.Histogram
+	tPayloadDecode             prometheus.Histogram
+	tFreePostgres              prometheus.Histogram
+	tPostgresCommit            prometheus.Histogram
+	tHeaderProcessing          prometheus.Histogram
+	tUncleProcessing           prometheus.Histogram
+	tTxAndRecProcessing        prometheus.Histogram
+	tStateAndStoreProcessing   prometheus.Histogram
+	tCodeAndCodeHashProcessing prometheus.Histogram
 )
 
 // Init module initialization
@@ -96,6 +97,12 @@ func Init() {
 		Name:      "t_state_store_processing",
 		Help:      "State and storage processing time",
 	})
+	tCodeAndCodeHashProcessing = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: statsSubsystem,
+		Name:      "t_code_codehash_processing",
+		Help:      "Code and codehash processing time",
+	})
 }
 
 // RegisterDBCollector create metric colletor for given connection
@@ -154,5 +161,7 @@ func SetTimeMetric(name string, t time.Duration) {
 		tTxAndRecProcessing.Observe(tAsF64)
 	case "t_state_store_processing":
 		tStateAndStoreProcessing.Observe(tAsF64)
+	case "t_code_codehash_processing":
+		tCodeAndCodeHashProcessing.Observe(tAsF64)
 	}
 }

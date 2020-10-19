@@ -63,6 +63,7 @@ var (
 	ContractAddress                            = crypto.CreateAddress(SenderAddr, MockTransactions[2].Nonce())
 	ContractHash                               = crypto.Keccak256Hash(ContractAddress.Bytes()).String()
 	MockContractByteCode                       = []byte{0, 1, 2, 3, 4, 5}
+	MockCodeHash                               = crypto.Keccak256Hash(MockContractByteCode)
 	mockTopic11                                = common.HexToHash("0x04")
 	mockTopic12                                = common.HexToHash("0x06")
 	mockTopic21                                = common.HexToHash("0x05")
@@ -99,66 +100,60 @@ var (
 	StorageMhKey  = shared.MultihashKeyFromCID(StorageCID)
 	MockTrxMeta   = []eth.TxModel{
 		{
-			CID:        "", // This is empty until we go to publish to ipfs
-			MhKey:      "",
-			Src:        SenderAddr.Hex(),
-			Dst:        Address.String(),
-			Index:      0,
-			TxHash:     MockTransactions[0].Hash().String(),
-			Data:       []byte{},
-			Deployment: false,
+			CID:    "", // This is empty until we go to publish to ipfs
+			MhKey:  "",
+			Src:    SenderAddr.Hex(),
+			Dst:    Address.String(),
+			Index:  0,
+			TxHash: MockTransactions[0].Hash().String(),
+			Data:   []byte{},
 		},
 		{
-			CID:        "",
-			MhKey:      "",
-			Src:        SenderAddr.Hex(),
-			Dst:        AnotherAddress.String(),
-			Index:      1,
-			TxHash:     MockTransactions[1].Hash().String(),
-			Data:       []byte{},
-			Deployment: false,
+			CID:    "",
+			MhKey:  "",
+			Src:    SenderAddr.Hex(),
+			Dst:    AnotherAddress.String(),
+			Index:  1,
+			TxHash: MockTransactions[1].Hash().String(),
+			Data:   []byte{},
 		},
 		{
-			CID:        "",
-			MhKey:      "",
-			Src:        SenderAddr.Hex(),
-			Dst:        "",
-			Index:      2,
-			TxHash:     MockTransactions[2].Hash().String(),
-			Data:       MockContractByteCode,
-			Deployment: true,
+			CID:    "",
+			MhKey:  "",
+			Src:    SenderAddr.Hex(),
+			Dst:    "",
+			Index:  2,
+			TxHash: MockTransactions[2].Hash().String(),
+			Data:   MockContractByteCode,
 		},
 	}
 	MockTrxMetaPostPublsh = []eth.TxModel{
 		{
-			CID:        Trx1CID.String(), // This is empty until we go to publish to ipfs
-			MhKey:      Trx1MhKey,
-			Src:        SenderAddr.Hex(),
-			Dst:        Address.String(),
-			Index:      0,
-			TxHash:     MockTransactions[0].Hash().String(),
-			Data:       []byte{},
-			Deployment: false,
+			CID:    Trx1CID.String(), // This is empty until we go to publish to ipfs
+			MhKey:  Trx1MhKey,
+			Src:    SenderAddr.Hex(),
+			Dst:    Address.String(),
+			Index:  0,
+			TxHash: MockTransactions[0].Hash().String(),
+			Data:   []byte{},
 		},
 		{
-			CID:        Trx2CID.String(),
-			MhKey:      Trx2MhKey,
-			Src:        SenderAddr.Hex(),
-			Dst:        AnotherAddress.String(),
-			Index:      1,
-			TxHash:     MockTransactions[1].Hash().String(),
-			Data:       []byte{},
-			Deployment: false,
+			CID:    Trx2CID.String(),
+			MhKey:  Trx2MhKey,
+			Src:    SenderAddr.Hex(),
+			Dst:    AnotherAddress.String(),
+			Index:  1,
+			TxHash: MockTransactions[1].Hash().String(),
+			Data:   []byte{},
 		},
 		{
-			CID:        Trx3CID.String(),
-			MhKey:      Trx3MhKey,
-			Src:        SenderAddr.Hex(),
-			Dst:        "",
-			Index:      2,
-			TxHash:     MockTransactions[2].Hash().String(),
-			Data:       MockContractByteCode,
-			Deployment: true,
+			CID:    Trx3CID.String(),
+			MhKey:  Trx3MhKey,
+			Src:    SenderAddr.Hex(),
+			Dst:    "",
+			Index:  2,
+			TxHash: MockTransactions[2].Hash().String(),
+			Data:   MockContractByteCode,
 		},
 	}
 	MockRctMeta = []eth.ReceiptModel{
@@ -313,6 +308,12 @@ var (
 		BlockNumber: new(big.Int).Set(BlockNumber),
 		BlockHash:   MockBlock.Hash(),
 		Nodes:       StateDiffs,
+		CodeAndCodeHashes: []statediff.CodeAndCodeHash{
+			{
+				Code: MockContractByteCode,
+				Hash: MockCodeHash,
+			},
+		},
 	}
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 	MockStateNodes        = []eth.TrieNode{

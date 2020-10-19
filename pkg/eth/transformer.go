@@ -168,6 +168,13 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	prom.SetTimeMetric("t_state_store_processing", tDiff)
 	traceMsg += fmt.Sprintf("state and storage processing time: %s\r\n", tDiff.String())
 	t = time.Now()
+	if err := sdt.processCodeAndCodeHashes(tx, stateDiff.CodeAndCodeHashes); err != nil {
+		return 0, err
+	}
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_code_codehash_processing", tDiff)
+	traceMsg += fmt.Sprintf("code and codehash processing time: %s\r\n", tDiff.String())
+	t = time.Now()
 	return height, err // return error explicity so that the defer() assigns to it
 }
 
@@ -276,27 +283,18 @@ func (sdt *StateDiffTransformer) processReceiptsAndTxs(tx *sqlx.Tx, args process
 		// this is the contract address if this receipt is for a contract creation tx
 		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
-		isDeployment := contract != ""
-		if isDeployment {
+		if contract != "" {
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
-			// if tx is a contract deployment, publish the data (code)
-			// codec doesn't matter in this case sine we are not interested in the cid and the db key is multihash-derived
-			// TODO: THE DATA IS NOT DIRECTLY THE CONTRACT CODE; THERE IS A MISSING PROCESSING STEP HERE
-			// the contractHash => contract code is not currently correct
-			if _, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, trx.Data()); err != nil {
-				return err
-			}
 		}
 		// index tx first so that the receipt can reference it by FK
 		txModel := TxModel{
-			Dst:        shared.HandleZeroAddrPointer(trx.To()),
-			Src:        shared.HandleZeroAddr(from),
-			TxHash:     trx.Hash().String(),
-			Index:      int64(i),
-			Data:       trx.Data(),
-			Deployment: isDeployment,
-			CID:        txNode.Cid().String(),
-			MhKey:      shared.MultihashKeyFromCID(txNode.Cid()),
+			Dst:    shared.HandleZeroAddrPointer(trx.To()),
+			Src:    shared.HandleZeroAddr(from),
+			TxHash: trx.Hash().String(),
+			Index:  int64(i),
+			Data:   trx.Data(),
+			CID:    txNode.Cid().String(),
+			MhKey:  shared.MultihashKeyFromCID(txNode.Cid()),
 		}
 		txID, err := sdt.indexer.indexTransactionCID(tx, txModel, args.headerID)
 		if err != nil {
@@ -382,6 +380,21 @@ func (sdt *StateDiffTransformer) processStateAndStorage(tx *sqlx.Tx, headerID in
 			if err := sdt.indexer.indexStorageCID(tx, storageModel, stateID); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+// processCodeAndCodeHashes publishes code and codehash pairs to the ipld database
+func (sdt *StateDiffTransformer) processCodeAndCodeHashes(tx *sqlx.Tx, codeAndCodeHashes []statediff.CodeAndCodeHash) error {
+	for _, c := range codeAndCodeHashes {
+		// codec doesn't matter since db key is multihash-based
+		mhKey, err := shared.MultihashKeyFromKeccak256(c.Hash)
+		if err != nil {
+			return err
+		}
+		if err := shared.PublishDirect(tx, mhKey, c.Code); err != nil {
+			return err
 		}
 	}
 	return nil

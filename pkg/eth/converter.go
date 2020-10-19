@@ -99,9 +99,7 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 		// This is the contract address if this receipt is for a contract creation tx
 		contract := shared.HandleZeroAddr(receipt.ContractAddress)
 		var contractHash string
-		deployment := false
 		if contract != "" {
-			deployment = true
 			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
 		}
 		// receipt and rctMeta will have same indexes
@@ -123,12 +121,11 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ConvertedPayloa
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, TxModel{
-			Dst:        shared.HandleZeroAddrPointer(trx.To()),
-			Src:        shared.HandleZeroAddr(from),
-			TxHash:     trx.Hash().String(),
-			Index:      int64(i),
-			Data:       trx.Data(),
-			Deployment: deployment,
+			Dst:    shared.HandleZeroAddrPointer(trx.To()),
+			Src:    shared.HandleZeroAddr(from),
+			TxHash: trx.Hash().String(),
+			Index:  int64(i),
+			Data:   trx.Data(),
 		})
 	}
 
