@@ -16,9 +16,159 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1602852966068,
   "links": [],
   "panels": [
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "max": 2000,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 400
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 18,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.2.1",
+      "targets": [
+        {
+          "expr": "ipld_eth_indexer_len_payload_chan",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Payload Channel Length",
+      "type": "gauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 20,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.2.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(ipld_eth_indexer_len_payload_chan[1m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Payload Channel growth",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
     {
       "aliasColors": {},
       "bars": false,
@@ -52,7 +202,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 9
       },
       "hiddenSeries": false,
       "id": 2,
@@ -148,7 +298,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 9
       },
       "hiddenSeries": false,
       "id": 4,
@@ -243,10 +393,10 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 18
       },
       "hiddenSeries": false,
-      "id": 6,
+      "id": 22,
       "legend": {
         "avg": false,
         "current": false,
@@ -273,7 +423,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(ipld_eth_indexer_transactions[1m])",
+          "expr": "rate(ipld_eth_indexer_stats_t_postgres_commit_count[1m])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -283,7 +433,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Transactions",
+      "title": "Pg Commits per second",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -339,7 +489,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 10,
@@ -422,11 +572,9 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "unit": "s"
+          "custom": {}
         },
         "overrides": []
       },
@@ -436,10 +584,10 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 28
       },
       "hiddenSeries": false,
-      "id": 8,
+      "id": 6,
       "legend": {
         "avg": false,
         "current": false,
@@ -466,7 +614,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(ipld_eth_indexer_stats_t_payload_decode_sum[1m])/rate(ipld_eth_indexer_stats_t_payload_decode_count[1m])",
+          "expr": "rate(ipld_eth_indexer_transactions[1m])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -476,7 +624,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Payload decoding time",
+      "title": "Transactions",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -492,7 +640,7 @@
       },
       "yaxes": [
         {
-          "format": "s",
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -533,7 +681,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 12,
@@ -616,6 +764,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "custom": {},
@@ -626,13 +775,13 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 38
       },
       "hiddenSeries": false,
-      "id": 14,
+      "id": 8,
       "legend": {
         "avg": false,
         "current": false,
@@ -659,7 +808,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(ipld_eth_indexer_stats_t_header_processing_sum[1m])/rate(ipld_eth_indexer_stats_t_header_processing_count[1m])",
+          "expr": "rate(ipld_eth_indexer_stats_t_payload_decode_sum[1m])/rate(ipld_eth_indexer_stats_t_payload_decode_count[1m])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -669,7 +818,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Header processing time",
+      "title": "Payload decoding time",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -725,7 +874,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 29
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 16,
@@ -801,9 +950,105 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "hiddenSeries": false,
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.2.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(ipld_eth_indexer_stats_t_header_processing_sum[1m])/rate(ipld_eth_indexer_stats_t_header_processing_count[1m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Header processing time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
-  "refresh": "",
+  "refresh": "10s",
   "schemaVersion": 26,
   "style": "dark",
   "tags": [],
@@ -818,5 +1063,5 @@
   "timezone": "",
   "title": "ipld-eth-indexer",
   "uid": "LU0rKucGz",
-  "version": 24
+  "version": 31
 }
