@@ -207,7 +207,7 @@ ALTER SEQUENCE eth.receipt_cids_id_seq OWNED BY eth.receipt_cids.id;
 
 CREATE TABLE eth.state_accounts (
     id integer NOT NULL,
-    state_id integer NOT NULL,
+    state_id bigint NOT NULL,
     balance numeric NOT NULL,
     nonce integer NOT NULL,
     code_hash bytea NOT NULL,
@@ -240,7 +240,7 @@ ALTER SEQUENCE eth.state_accounts_id_seq OWNED BY eth.state_accounts.id;
 --
 
 CREATE TABLE eth.state_cids (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     header_id integer NOT NULL,
     state_leaf_key character varying(66),
     cid text NOT NULL,
@@ -276,8 +276,8 @@ ALTER SEQUENCE eth.state_cids_id_seq OWNED BY eth.state_cids.id;
 --
 
 CREATE TABLE eth.storage_cids (
-    id integer NOT NULL,
-    state_id integer NOT NULL,
+    id bigint NOT NULL,
+    state_id bigint NOT NULL,
     storage_leaf_key character varying(66),
     cid text NOT NULL,
     mh_key text NOT NULL,
