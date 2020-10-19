@@ -224,5 +224,15 @@ var _ = Describe("PublishAndIndexer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data).To(Equal(mocks.StorageLeafNode))
 		})
+
+		It("Publishes code and codehash", func() {
+			code := make([]byte, 0)
+			key, err := shared.MultihashKeyFromKeccak256(mocks.MockCodeHash)
+			Expect(err).ToNot(HaveOccurred())
+			pgStr := `SELECT data FROM public.blocks WHERE key = $1`
+			err = db.Get(&code, pgStr, key)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(code).To(Equal(mocks.MockContractByteCode))
+		})
 	})
 })
