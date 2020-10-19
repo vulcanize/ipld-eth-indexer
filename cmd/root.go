@@ -24,6 +24,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/web"
 )
 
 var (
@@ -61,6 +63,15 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	}
 	if err := logLevel(); err != nil {
 		log.Fatal("Could not set log level: ", err)
+	}
+
+	if viper.GetBool("http") {
+		addr := fmt.Sprintf("%s:%s", viper.GetString("http.addr"), viper.GetString("http.port"))
+		web.Listen(addr)
+	}
+
+	if viper.GetBool("metrics") {
+		prom.Init()
 	}
 }
 
@@ -101,6 +112,12 @@ func init() {
 	rootCmd.PersistentFlags().String("eth-network-id", "1", "eth network id")
 	rootCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 
+	rootCmd.PersistentFlags().Bool("http", false, "enable http service")
+	rootCmd.PersistentFlags().String("http-addr", "127.0.0.1", "http host")
+	rootCmd.PersistentFlags().String("http-port", "8080", "http port")
+
+	rootCmd.PersistentFlags().Bool("metrics", false, "enable metrics")
+
 	// and their .toml config bindings
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -116,6 +133,12 @@ func init() {
 	viper.BindPFlag("ethereum.genesisBlock", rootCmd.PersistentFlags().Lookup("eth-genesis-block"))
 	viper.BindPFlag("ethereum.networkID", rootCmd.PersistentFlags().Lookup("eth-network-id"))
 	viper.BindPFlag("ethereum.chainID", rootCmd.PersistentFlags().Lookup("eth-chain-id"))
+
+	viper.BindPFlag("http", rootCmd.PersistentFlags().Lookup("http"))
+	viper.BindPFlag("http.addr", rootCmd.PersistentFlags().Lookup("http-addr"))
+	viper.BindPFlag("http.port", rootCmd.PersistentFlags().Lookup("http-port"))
+
+	viper.BindPFlag("metrics", rootCmd.PersistentFlags().Lookup("metrics"))
 }
 
 func initConfig() {

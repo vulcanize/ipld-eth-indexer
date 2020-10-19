@@ -22,6 +22,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
 )
 
 type DB struct {
@@ -36,6 +37,7 @@ func NewDB(databaseConfig Config, node node.Info) (*DB, error) {
 	if connectErr != nil {
 		return &DB{}, ErrDBConnectionFailed(connectErr)
 	}
+	prom.RegisterDBCollector(databaseConfig.Name, db)
 	if databaseConfig.MaxOpen > 0 {
 		db.SetMaxOpenConns(databaseConfig.MaxOpen)
 	}

@@ -35,6 +35,7 @@ import (
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/ipfs/ipld"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
@@ -95,7 +96,9 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	}
 	// Calculate reward
 	reward := CalcEthBlockReward(block.Header(), block.Uncles(), block.Transactions(), receipts)
-	traceMsg += fmt.Sprintf("payload decoding time: %s\r\n", time.Now().Sub(t).String())
+	tDiff := time.Now().Sub(t)
+	prom.SetTimeMetric("t_payload_decode", tDiff)
+	traceMsg += fmt.Sprintf("payload decoding time: %s\r\n", tDiff.String())
 	t = time.Now()
 	// Begin new db tx for everything
 	tx, err := sdt.indexer.db.Beginx()
@@ -111,12 +114,16 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 			shared.Rollback(tx)
 		} else {
 			err = tx.Commit()
-			traceMsg += fmt.Sprintf("postgres transaction commit duration: %s\r\n", time.Now().Sub(t).String())
+			tDiff := time.Now().Sub(t)
+			prom.SetTimeMetric("t_postgres_commit", tDiff)
+			traceMsg += fmt.Sprintf("postgres transaction commit duration: %s\r\n", tDiff.String())
 		}
 		traceMsg += fmt.Sprintf(" TOTAL PROCESSING TIME: %s\r\n", time.Now().Sub(start).String())
 		logrus.Info(traceMsg)
 	}()
-	traceMsg += fmt.Sprintf("time spent waiting for free postgres tx: %s:\r\n", time.Now().Sub(t).String())
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_free_postgres", tDiff)
+	traceMsg += fmt.Sprintf("time spent waiting for free postgres tx: %s:\r\n", tDiff.String())
 	t = time.Now()
 
 	// Publish and index header, collect headerID
@@ -124,13 +131,17 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	if err != nil {
 		return 0, err
 	}
-	traceMsg += fmt.Sprintf("header processing time: %s\r\n", time.Now().Sub(t).String())
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_header_processing", tDiff)
+	traceMsg += fmt.Sprintf("header processing time: %s\r\n", tDiff.String())
 	t = time.Now()
 	// Publish and index uncles
 	if err := sdt.processUncles(tx, headerID, height, uncleNodes); err != nil {
 		return 0, err
 	}
-	traceMsg += fmt.Sprintf("uncle processing time: %s\r\n", time.Now().Sub(t).String())
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_uncle_processing", tDiff)
+	traceMsg += fmt.Sprintf("uncle processing time: %s\r\n", tDiff.String())
 	t = time.Now()
 	// Publish and index receipts and txs
 	if err := sdt.processReceiptsAndTxs(tx, processArgs{
@@ -145,13 +156,17 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 	}); err != nil {
 		return 0, err
 	}
-	traceMsg += fmt.Sprintf("tx and receipt processing time: %s\r\n", time.Now().Sub(t).String())
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_tx_receipt_processing", tDiff)
+	traceMsg += fmt.Sprintf("tx and receipt processing time: %s\r\n", tDiff.String())
 	t = time.Now()
 	// Publish and index state and storage nodes
 	if err := sdt.processStateAndStorage(tx, headerID, stateDiff); err != nil {
 		return 0, err
 	}
-	traceMsg += fmt.Sprintf("state and storage processing time: %s\r\n", time.Now().Sub(t).String())
+	tDiff = time.Now().Sub(t)
+	prom.SetTimeMetric("t_state_store_processing", tDiff)
+	traceMsg += fmt.Sprintf("state and storage processing time: %s\r\n", tDiff.String())
 	t = time.Now()
 	return height, err // return error explicity so that the defer() assigns to it
 }

@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
@@ -94,6 +95,9 @@ func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, er
 								RETURNING id`,
 		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, in.db.NodeID, header.Reward, header.StateRoot, header.TxRoot,
 		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp, header.MhKey, 1).Scan(&headerID)
+	if err == nil {
+		prom.BlockInc()
+	}
 	return headerID, err
 }
 
@@ -114,6 +118,7 @@ func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload CIDPay
 		if err != nil {
 			return err
 		}
+		prom.TransactionInc()
 		receiptCidMeta, ok := payload.ReceiptCIDs[common.HexToHash(trxCidMeta.TxHash)]
 		if ok {
 			if err := in.indexReceiptCID(tx, receiptCidMeta, txID); err != nil {
@@ -130,6 +135,9 @@ func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModel, head
 									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index, mh_key, tx_data, deployment) = ($3, $4, $5, $6, $7, $8, $9)
 									RETURNING id`,
 		headerID, transaction.TxHash, transaction.CID, transaction.Dst, transaction.Src, transaction.Index, transaction.MhKey, transaction.Data, transaction.Deployment).Scan(&txID)
+	if err == nil {
+		prom.TransactionInc()
+	}
 	return txID, err
 }
 
@@ -137,6 +145,9 @@ func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, rct ReceiptModel, txID int64)
 	_, err := tx.Exec(`INSERT INTO eth.receipt_cids (tx_id, cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts, mh_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 							  ON CONFLICT (tx_id) DO UPDATE SET (cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts, mh_key) = ($2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		txID, rct.CID, rct.Contract, rct.ContractHash, rct.Topic0s, rct.Topic1s, rct.Topic2s, rct.Topic3s, rct.LogContracts, rct.MhKey)
+	if err == nil {
+		prom.ReceiptInc()
+	}
 	return err
 }
 
