@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,7 +39,6 @@ var _ = Describe("Service", func() {
 				ReturnHeight: mocks.BlockNumber.Uint64(),
 			}
 			mockStreamer := &mocks.PayloadStreamer{
-				ReturnSub: &rpc.ClientSubscription{},
 				StreamPayloads: []statediff.Payload{
 					mocks.MockStateDiffPayload,
 				},

@@ -19,12 +19,11 @@ package sync
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 	"github.com/vulcanize/ipld-eth-indexer/utils"
 )
 
@@ -42,7 +41,7 @@ type Config struct {
 	DB       *postgres.DB
 	DBConfig postgres.Config
 	Workers  int64
-	WSClient *rpc.Client
+	WSClient *eth.Client
 	NodeInfo node.Info
 }
 
@@ -51,7 +50,7 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 	viper.BindEnv("sync.workers", SYNC_WORKERS)
-	viper.BindEnv("ethereum.wsPath", shared.ETH_WS_PATH)
+	viper.BindEnv("ethereum.wsPath", eth.ETH_WS_PATH)
 
 	workers := viper.GetInt64("sync.workers")
 	if workers < 1 {
@@ -60,7 +59,7 @@ func NewConfig() (*Config, error) {
 	c.Workers = workers
 
 	ethWS := viper.GetString("ethereum.wsPath")
-	c.NodeInfo, c.WSClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("ws://%s", ethWS))
+	c.NodeInfo, c.WSClient, err = eth.GetNodeAndClient(fmt.Sprintf("ws://%s", ethWS))
 	if err != nil {
 		return nil, err
 	}

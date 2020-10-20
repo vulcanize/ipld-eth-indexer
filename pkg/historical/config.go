@@ -20,13 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 	"github.com/vulcanize/ipld-eth-indexer/utils"
 )
 
@@ -47,7 +45,7 @@ type Config struct {
 	DBConfig postgres.Config
 
 	DB              *postgres.DB
-	HTTPClient      *rpc.Client
+	HTTPClient      *eth.Client
 	Frequency       time.Duration
 	BatchSize       uint64
 	Workers         uint64
@@ -61,12 +59,12 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
-	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
+	viper.BindEnv("ethereum.httpPath", eth.HTTP_TIMEOUT)
 	viper.BindEnv("backfill.frequency", BACKFILL_FREQUENCY)
 	viper.BindEnv("backfill.batchSize", BACKFILL_BATCH_SIZE)
 	viper.BindEnv("backfill.workers", BACKFILL_WORKERS)
 	viper.BindEnv("backfill.validationLevel", BACKFILL_VALIDATION_LEVEL)
-	viper.BindEnv("backfill.timeout", shared.HTTP_TIMEOUT)
+	viper.BindEnv("backfill.timeout", eth.HTTP_TIMEOUT)
 
 	timeout := viper.GetInt("backfill.timeout")
 	if timeout < 15 {
@@ -87,7 +85,7 @@ func NewConfig() (*Config, error) {
 	c.ValidationLevel = viper.GetInt("backfill.validationLevel")
 
 	ethHTTP := viper.GetString("ethereum.httpPath")
-	c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	c.NodeInfo, c.HTTPClient, err = eth.GetNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
 	if err != nil {
 		return nil, err
 	}

@@ -17,27 +17,67 @@
 package mocks
 
 import (
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
+
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
 // PayloadStreamer mock struct
 type PayloadStreamer struct {
-	PassedPayloadChan chan statediff.Payload
-	ReturnSub         *rpc.ClientSubscription
-	ReturnErr         error
-	StreamPayloads    []statediff.Payload
+	PassedPayloadChan  chan statediff.Payload
+	PassedCodeChan     chan statediff.CodeAndCodeHash
+	ReturnErr          error
+	StreamPayloads     []statediff.Payload
+	StreamCodePayloads map[uint64][]statediff.CodeAndCodeHash
 }
 
 // Stream mock method
-func (sds *PayloadStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+func (sds *PayloadStreamer) Stream(payloadChan chan statediff.Payload) (eth.ClientSubscription, error) {
 	sds.PassedPayloadChan = payloadChan
 
+	errChan := make(chan error)
+	quitChan := make(chan bool)
+	clientSub := &ClientSubscription{
+		errChan: errChan,
+	}
 	go func() {
 		for _, payload := range sds.StreamPayloads {
+			select {
+			case <-quitChan:
+				return
+			default:
+			}
 			sds.PassedPayloadChan <- payload
 		}
+		close(errChan)
 	}()
 
-	return sds.ReturnSub, sds.ReturnErr
+	return clientSub, sds.ReturnErr
+}
+
+// StreamCodeAndCodeHash mock method
+func (sds *PayloadStreamer) StreamCodeAndCodeHash(payloadChan chan statediff.CodeAndCodeHash, blockNumber uint64) (eth.ClientSubscription, error) {
+	sds.PassedCodeChan = payloadChan
+	if sds.StreamCodePayloads == nil {
+		return nil, nil
+	}
+
+	errChan := make(chan error)
+	quitChan := make(chan bool)
+	clientSub := &ClientSubscription{
+		errChan: errChan,
+	}
+	go func() {
+		for _, payload := range sds.StreamCodePayloads[blockNumber] {
+			select {
+			case <-quitChan:
+				return
+			default:
+			}
+			sds.PassedCodeChan <- payload
+		}
+		close(errChan)
+	}()
+
+	return clientSub, sds.ReturnErr
 }

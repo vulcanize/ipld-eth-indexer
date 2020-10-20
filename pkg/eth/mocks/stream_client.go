@@ -18,27 +18,63 @@ package mocks
 
 import (
 	"context"
+	"reflect"
 
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 )
 
+// StreamClient mock eth rpc client
 type StreamClient struct {
-	passedContext       context.Context
-	passedResult        interface{}
-	passedNamespace     string
-	passedPayloadChan   interface{}
-	passedSubscribeArgs []interface{}
+	StreamPayloads      []interface{}
+	PassedContext       context.Context
+	PassedResult        interface{}
+	PassedNamespace     string
+	PassedPayloadChan   interface{}
+	PassedSubscribeArgs []interface{}
 }
 
-func (client *StreamClient) Subscribe(ctx context.Context, namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
-	client.passedNamespace = namespace
-	client.passedPayloadChan = payloadChan
-	client.passedContext = ctx
+// Subscribe mock method
+func (client *StreamClient) Subscribe(ctx context.Context, namespace string, payloadChan interface{}, args ...interface{}) (eth.ClientSubscription, error) {
+	client.PassedNamespace = namespace
+	client.PassedPayloadChan = payloadChan
+	client.PassedContext = ctx
+
+	chanVal := reflect.ValueOf(payloadChan)
 
 	for _, arg := range args {
-		client.passedSubscribeArgs = append(client.passedSubscribeArgs, arg)
+		client.PassedSubscribeArgs = append(client.PassedSubscribeArgs, arg)
 	}
+	errChan := make(chan error)
+	quitChan := make(chan bool)
+	clientSub := &ClientSubscription{
+		errChan: errChan,
+	}
+	go func() {
+		for _, payload := range client.StreamPayloads {
+			select {
+			case <-quitChan:
+				return
+			default:
+			}
+			chanVal.Send(reflect.ValueOf(payload))
+		}
+		close(errChan)
+	}()
+	return clientSub, nil
+}
 
-	subscription := rpc.ClientSubscription{}
-	return &subscription, nil
+// ClientSubscription type for testing
+type ClientSubscription struct {
+	errChan  chan error
+	quitChan chan bool
+}
+
+// Err satisfies the eth.ClientSubscription interface
+func (cs *ClientSubscription) Err() <-chan error {
+	return cs.errChan
+}
+
+// Unsubscribe satisfies the eth.ClientSubscription interface
+func (cs *ClientSubscription) Unsubscribe() {
+	close(cs.quitChan)
 }

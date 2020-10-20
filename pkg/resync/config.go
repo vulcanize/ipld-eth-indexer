@@ -20,10 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/ipld-eth-indexer/pkg/eth"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
@@ -55,7 +54,7 @@ type Config struct {
 	DB       *postgres.DB
 	DBConfig postgres.Config
 
-	HTTPClient *rpc.Client   // Ethereum rpc client
+	HTTPClient *eth.Client   // Ethereum rpc client
 	NodeInfo   node.Info     // Info for the associated node
 	Ranges     [][2]uint64   // The block height ranges to resync
 	BatchSize  uint64        // BatchSize for the resync http calls (client has to support batch sizing)
@@ -68,7 +67,7 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
-	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
+	viper.BindEnv("ethereum.httpPath", eth.ETH_HTTP_PATH)
 	viper.BindEnv("resync.start", RESYNC_START)
 	viper.BindEnv("resync.stop", RESYNC_STOP)
 	viper.BindEnv("resync.clearOldCache", RESYNC_CLEAR_OLD_CACHE)
@@ -76,7 +75,7 @@ func NewConfig() (*Config, error) {
 	viper.BindEnv("resync.batchSize", RESYNC_BATCH_SIZE)
 	viper.BindEnv("resync.workers", RESYNC_WORKERS)
 	viper.BindEnv("resync.resetValidation", RESYNC_RESET_VALIDATION)
-	viper.BindEnv("resync.timeout", shared.HTTP_TIMEOUT)
+	viper.BindEnv("resync.timeout", eth.HTTP_TIMEOUT)
 
 	timeout := viper.GetInt("resync.timeout")
 	if timeout < 5 {
@@ -105,7 +104,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	ethHTTP := viper.GetString("ethereum.httpPath")
-	c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	c.NodeInfo, c.HTTPClient, err = eth.GetNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
 	if err != nil {
 		return nil, err
 	}

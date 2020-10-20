@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package shared
+package eth
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/spf13/viper"
+
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 )
 
@@ -36,8 +36,8 @@ const (
 	ETH_CHAIN_ID      = "ETH_CHAIN_ID"
 )
 
-// GetEthNodeAndClient returns eth node info and client from path url
-func GetEthNodeAndClient(path string) (node.Info, *rpc.Client, error) {
+// GetNodeAndClient returns eth node info and client from path url
+func GetNodeAndClient(path string) (node.Info, *Client, error) {
 	viper.BindEnv("ethereum.nodeID", ETH_NODE_ID)
 	viper.BindEnv("ethereum.clientName", ETH_CLIENT_NAME)
 	viper.BindEnv("ethereum.genesisBlock", ETH_GENESIS_BLOCK)
@@ -54,5 +54,5 @@ func GetEthNodeAndClient(path string) (node.Info, *rpc.Client, error) {
 		GenesisBlock: viper.GetString("ethereum.genesisBlock"),
 		NetworkID:    viper.GetString("ethereum.networkID"),
 		ChainID:      viper.GetUint64("ethereum.chainID"),
-	}, rpcClient, nil
+	}, NewClient(rpcClient), nil
 }
