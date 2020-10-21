@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	PayloadChanBufferSize = 20000 // the max eth sub buffer size
+	PayloadChanBufferSize = 10000 // half the max eth sub buffer size
 )
 
 // StreamClient is an interface for subscribing and streaming from geth
