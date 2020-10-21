@@ -119,7 +119,7 @@ func (sdt *StateDiffTransformer) Transform(workerID int, payload statediff.Paylo
 			traceMsg += fmt.Sprintf("postgres transaction commit duration: %s\r\n", tDiff.String())
 		}
 		traceMsg += fmt.Sprintf(" TOTAL PROCESSING TIME: %s\r\n", time.Now().Sub(start).String())
-		logrus.Info(traceMsg)
+		logrus.Trace(traceMsg)
 	}()
 	tDiff = time.Now().Sub(t)
 	prom.SetTimeMetric("t_free_postgres", tDiff)

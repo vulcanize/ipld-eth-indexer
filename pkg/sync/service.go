@@ -31,10 +31,6 @@ import (
 	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 )
 
-const (
-	PayloadChanBufferSize = 2000
-)
-
 // Indexer is the top level interface for streaming, converting to IPLDs, publishing, and indexing all chain data at head
 // This service is compatible with the Ethereum service interface (node.Service)
 type Indexer interface {
@@ -97,7 +93,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup) error {
 		return err
 	}
 	// spin up publish worker goroutines
-	publishPayload := make(chan statediff.Payload, PayloadChanBufferSize)
+	publishPayload := make(chan statediff.Payload, eth.PayloadChanBufferSize)
 	for i := 1; i <= int(sap.Workers); i++ {
 		go sap.transform(wg, i, publishPayload)
 		log.Debugf("ethereum sync worker %d successfully spun up", i)
