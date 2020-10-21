@@ -887,13 +887,6 @@ CREATE INDEX tx_cid_index ON eth.transaction_cids USING btree (cid);
 
 
 --
--- Name: tx_data_index; Type: INDEX; Schema: eth; Owner: -
---
-
-CREATE INDEX tx_data_index ON eth.transaction_cids USING btree (tx_data);
-
-
---
 -- Name: tx_dst_index; Type: INDEX; Schema: eth; Owner: -
 --
 
