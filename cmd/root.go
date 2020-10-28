@@ -25,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/prom"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/web"
 )
 
 var (
@@ -47,7 +46,8 @@ func Execute() {
 }
 
 func initFuncs(cmd *cobra.Command, args []string) {
-	logfile := viper.GetString("logfile")
+	viper.BindEnv("log.file", "LOGRUS_FILE")
+	logfile := viper.GetString("log.file")
 	if logfile != "" {
 		file, err := os.OpenFile(logfile,
 			os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -65,13 +65,17 @@ func initFuncs(cmd *cobra.Command, args []string) {
 		log.Fatal("Could not set log level: ", err)
 	}
 
-	if viper.GetBool("http") {
-		addr := fmt.Sprintf("%s:%s", viper.GetString("http.addr"), viper.GetString("http.port"))
-		web.Listen(addr)
-	}
-
 	if viper.GetBool("metrics") {
 		prom.Init()
+	}
+
+	if viper.GetBool("prom.http") {
+		addr := fmt.Sprintf(
+			"%s:%s",
+			viper.GetString("prom.http.addr"),
+			viper.GetString("prom.http.port"),
+		)
+		prom.Listen(addr)
 	}
 }
 
@@ -103,8 +107,8 @@ func init() {
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 
-	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
-	rootCmd.PersistentFlags().String("logfile", "", "file path for logging")
+	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "log level (trace, debug, info, warn, error, fatal, panic)")
+	rootCmd.PersistentFlags().String("log-file", "", "file path for logging")
 
 	rootCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
 	rootCmd.PersistentFlags().String("eth-client-name", "Geth", "eth client name")
@@ -112,9 +116,9 @@ func init() {
 	rootCmd.PersistentFlags().String("eth-network-id", "1", "eth network id")
 	rootCmd.PersistentFlags().String("eth-chain-id", "1", "eth chain id")
 
-	rootCmd.PersistentFlags().Bool("http", false, "enable http service")
-	rootCmd.PersistentFlags().String("http-addr", "127.0.0.1", "http host")
-	rootCmd.PersistentFlags().String("http-port", "8080", "http port")
+	rootCmd.PersistentFlags().Bool("prom-http", false, "enable prometheus http service")
+	rootCmd.PersistentFlags().String("prom-http-addr", "127.0.0.1", "prometheus http host")
+	rootCmd.PersistentFlags().String("prom-http-port", "8080", "prometheus http port")
 
 	rootCmd.PersistentFlags().Bool("metrics", false, "enable metrics")
 
@@ -125,7 +129,7 @@ func init() {
 	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("database-user"))
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 
-	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
+	viper.BindPFlag("log.file", rootCmd.PersistentFlags().Lookup("log-file"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 
 	viper.BindPFlag("ethereum.nodeID", rootCmd.PersistentFlags().Lookup("eth-node-id"))
@@ -134,9 +138,9 @@ func init() {
 	viper.BindPFlag("ethereum.networkID", rootCmd.PersistentFlags().Lookup("eth-network-id"))
 	viper.BindPFlag("ethereum.chainID", rootCmd.PersistentFlags().Lookup("eth-chain-id"))
 
-	viper.BindPFlag("http", rootCmd.PersistentFlags().Lookup("http"))
-	viper.BindPFlag("http.addr", rootCmd.PersistentFlags().Lookup("http-addr"))
-	viper.BindPFlag("http.port", rootCmd.PersistentFlags().Lookup("http-port"))
+	viper.BindPFlag("prom.http", rootCmd.PersistentFlags().Lookup("prom-http"))
+	viper.BindPFlag("prom.http.addr", rootCmd.PersistentFlags().Lookup("prom-http-addr"))
+	viper.BindPFlag("prom.http.port", rootCmd.PersistentFlags().Lookup("prom-http-port"))
 
 	viper.BindPFlag("metrics", rootCmd.PersistentFlags().Lookup("metrics"))
 }
