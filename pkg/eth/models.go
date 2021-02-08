@@ -68,6 +68,8 @@ type ReceiptModel struct {
 	TxID         int64          `db:"tx_id"`
 	CID          string         `db:"cid"`
 	MhKey        string         `db:"mh_key"`
+	PostStatus   uint64         `db:"post_status"`
+	PostState    string         `db:"post_state"`
 	Contract     string         `db:"contract"`
 	ContractHash string         `db:"contract_hash"`
 	LogContracts pq.StringArray `db:"log_contracts"`

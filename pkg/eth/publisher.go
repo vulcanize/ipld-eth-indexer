@@ -148,6 +148,11 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 		rctModel := payload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
 		rctModel.MhKey = shared.MultihashKeyFromCID(rctNode.Cid())
+		if len(payload.Receipts[i].PostState) == 0 {
+			rctModel.PostStatus = payload.Receipts[i].Status
+		} else {
+			rctModel.PostState = common.Bytes2Hex(payload.Receipts[i].PostState)
+		}
 		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			return err
 		}

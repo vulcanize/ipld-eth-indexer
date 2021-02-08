@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.4
+-- Dumped by pg_dump version 12.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -78,28 +78,6 @@ END
 $$;
 
 
---
--- Name: header_weight(character varying); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.header_weight(hash character varying) RETURNS bigint
-    LANGUAGE sql
-    AS $$
-  WITH RECURSIVE validator AS (
-          SELECT block_hash, parent_hash, block_number
-          FROM eth.header_cids
-          WHERE block_hash = hash
-      UNION
-          SELECT eth.header_cids.block_hash, eth.header_cids.parent_hash, eth.header_cids.block_number
-          FROM eth.header_cids
-          INNER JOIN validator
-            ON eth.header_cids.parent_hash = validator.block_hash
-            AND eth.header_cids.block_number = validator.block_number + 1
-  )
-  SELECT COUNT(*) FROM validator;
-$$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -143,6 +121,39 @@ COMMENT ON COLUMN eth.header_cids.node_id IS '@name EthNodeID';
 
 
 --
+-- Name: ethHeaderCidByBlockNumber(bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public."ethHeaderCidByBlockNumber"(n bigint) RETURNS SETOF eth.header_cids
+    LANGUAGE sql STABLE
+    AS $_$
+SELECT * FROM eth.header_cids WHERE block_number=$1 ORDER BY id
+$_$;
+
+
+--
+-- Name: header_weight(character varying); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.header_weight(hash character varying) RETURNS bigint
+    LANGUAGE sql
+    AS $$
+  WITH RECURSIVE validator AS (
+          SELECT block_hash, parent_hash, block_number
+          FROM eth.header_cids
+          WHERE block_hash = hash
+      UNION
+          SELECT eth.header_cids.block_hash, eth.header_cids.parent_hash, eth.header_cids.block_number
+          FROM eth.header_cids
+          INNER JOIN validator
+            ON eth.header_cids.parent_hash = validator.block_hash
+            AND eth.header_cids.block_number = validator.block_number + 1
+  )
+  SELECT COUNT(*) FROM validator;
+$$;
+
+
+--
 -- Name: header_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
 --
 
@@ -177,7 +188,9 @@ CREATE TABLE eth.receipt_cids (
     topic1s character varying(66)[],
     topic2s character varying(66)[],
     topic3s character varying(66)[],
-    log_contracts character varying(66)[]
+    log_contracts character varying(66)[],
+    post_state character varying(66),
+    post_status integer
 );
 
 

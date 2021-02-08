@@ -136,10 +136,25 @@ var _ = Describe("PublishAndIndexer", func() {
 				switch c {
 				case mocks.Rct1CID.String():
 					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(0)))
+					var postStatus uint64
+					pgStr = `SELECT post_status FROM eth.receipt_cids WHERE cid = $1`
+					err = db.Get(&postStatus, pgStr, c)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(postStatus).To(Equal(mocks.MockRctMeta[0].PostStatus))
 				case mocks.Rct2CID.String():
 					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(1)))
+					var postState string
+					pgStr = `SELECT post_state FROM eth.receipt_cids WHERE cid = $1`
+					err = db.Get(&postState, pgStr, c)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(postState).To(Equal(mocks.MockRctMeta[1].PostState))
 				case mocks.Rct3CID.String():
 					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(2)))
+					var postState string
+					pgStr = `SELECT post_state FROM eth.receipt_cids WHERE cid = $1`
+					err = db.Get(&postState, pgStr, c)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(postState).To(Equal(mocks.MockRctMeta[2].PostState))
 				}
 			}
 		})

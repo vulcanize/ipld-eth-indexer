@@ -158,8 +158,9 @@ var (
 	}
 	MockRctMeta = []eth.ReceiptModel{
 		{
-			CID:   "",
-			MhKey: "",
+			CID:        "",
+			MhKey:      "",
+			PostStatus: 1,
 			Topic0s: []string{
 				mockTopic11.String(),
 			},
@@ -173,8 +174,9 @@ var (
 			},
 		},
 		{
-			CID:   "",
-			MhKey: "",
+			CID:       "",
+			MhKey:     "",
+			PostState: common.Bytes2Hex(common.HexToHash("0x1").Bytes()),
 			Topic0s: []string{
 				mockTopic21.String(),
 			},
@@ -190,6 +192,7 @@ var (
 		{
 			CID:          "",
 			MhKey:        "",
+			PostState:    common.Bytes2Hex(common.HexToHash("0x2").Bytes()),
 			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
@@ -197,8 +200,9 @@ var (
 	}
 	MockRctMetaPostPublish = []eth.ReceiptModel{
 		{
-			CID:   Rct1CID.String(),
-			MhKey: Rct1MhKey,
+			CID:        Rct1CID.String(),
+			MhKey:      Rct1MhKey,
+			PostStatus: 1,
 			Topic0s: []string{
 				mockTopic11.String(),
 			},
@@ -212,8 +216,9 @@ var (
 			},
 		},
 		{
-			CID:   Rct2CID.String(),
-			MhKey: Rct2MhKey,
+			CID:       Rct2CID.String(),
+			MhKey:     Rct2MhKey,
+			PostState: common.Bytes2Hex(common.HexToHash("0x1").Bytes()),
 			Topic0s: []string{
 				mockTopic21.String(),
 			},
@@ -229,6 +234,7 @@ var (
 		{
 			CID:          Rct3CID.String(),
 			MhKey:        Rct3MhKey,
+			PostState:    common.Bytes2Hex(common.HexToHash("0x2").Bytes()),
 			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
@@ -467,7 +473,7 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 		log.Fatal(err)
 	}
 	// make receipts
-	mockReceipt1 := types.NewReceipt(common.HexToHash("0x0").Bytes(), false, 50)
+	mockReceipt1 := types.NewReceipt(nil, false, 50)
 	mockReceipt1.Logs = []*types.Log{MockLog1}
 	mockReceipt1.TxHash = signedTrx1.Hash()
 	mockReceipt2 := types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
