@@ -312,6 +312,11 @@ func (sdt *StateDiffTransformer) processReceiptsAndTxs(tx *sqlx.Tx, args process
 			CID:          rctNode.Cid().String(),
 			MhKey:        shared.MultihashKeyFromCID(rctNode.Cid()),
 		}
+		if len(receipt.PostState) == 0 {
+			rctModel.PostStatus = receipt.Status
+		} else {
+			rctModel.PostState = common.Bytes2Hex(receipt.PostState)
+		}
 		if err := sdt.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			return err
 		}
