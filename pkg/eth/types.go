@@ -17,11 +17,11 @@
 package eth
 
 import (
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/statediff"
 )
 
 // ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
@@ -42,7 +42,7 @@ type TrieNode struct {
 	Path    []byte
 	LeafKey common.Hash
 	Value   []byte
-	Type    statediff.NodeType
+	Type    sdtypes.NodeType
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres

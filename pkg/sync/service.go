@@ -35,7 +35,9 @@ import (
 // This service is compatible with the Ethereum service interface (node.Service)
 type Indexer interface {
 	// APIs(), Protocols(), Start() and Stop()
-	ethnode.Service
+	ethnode.Lifecycle
+	APIs() []rpc.API
+	Protocols() []p2p.Protocol
 	// Data processing event loop
 	Sync(wg *sync.WaitGroup) error
 	// Method to access chain type
@@ -146,7 +148,7 @@ func (sap *Service) transform(wg *sync.WaitGroup, id int, statediffChan <-chan s
 
 // Start is used to begin the service
 // This is mostly just to satisfy the node.Service interface
-func (sap *Service) Start(*p2p.Server) error {
+func (sap *Service) Start() error {
 	log.Info("starting ethereum indexer service")
 	wg := new(sync.WaitGroup)
 	return sap.Sync(wg)

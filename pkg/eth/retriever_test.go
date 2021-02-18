@@ -18,6 +18,7 @@ package eth_test
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/trie"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -337,7 +338,7 @@ var _ = Describe("Retriever", func() {
 func newMockBlock(blockNumber uint64) *types.Block {
 	header := mocks.MockHeader
 	header.Number.SetUint64(blockNumber)
-	return types.NewBlock(&mocks.MockHeader, mocks.MockTransactions, nil, mocks.MockReceipts)
+	return types.NewBlock(&mocks.MockHeader, mocks.MockTransactions, nil, mocks.MockReceipts, new(trie.Trie))
 }
 
 // ListContainsGap used to check if a list of Gaps contains a particular Gap

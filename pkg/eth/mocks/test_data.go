@@ -32,7 +32,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/ethereum/go-ethereum/statediff/testhelpers"
-	"github.com/ipfs/go-block-format"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
+	"github.com/ethereum/go-ethereum/trie"
 	"github.com/multiformats/go-multihash"
 	log "github.com/sirupsen/logrus"
 
@@ -55,7 +56,7 @@ var (
 	}
 	MockTransactions, MockReceipts, SenderAddr = createTransactionsAndReceipts()
 	ReceiptsRlp, _                             = rlp.EncodeToBytes(MockReceipts)
-	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
+	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts, new(trie.Trie))
 	MockBlockRlp, _                            = rlp.EncodeToBytes(MockBlock)
 	MockHeaderRlp, _                           = rlp.EncodeToBytes(MockBlock.Header())
 	Address                                    = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
@@ -286,16 +287,16 @@ var (
 		Account,
 	})
 
-	StateDiffs = []statediff.StateNode{
+	StateDiffs = []sdtypes.StateNode{
 		{
 			Path:      []byte{'\x06'},
-			NodeType:  statediff.Leaf,
+			NodeType:  sdtypes.Leaf,
 			LeafKey:   ContractLeafKey,
 			NodeValue: ContractLeafNode,
-			StorageNodes: []statediff.StorageNode{
+			StorageNodes: []sdtypes.StorageNode{
 				{
 					Path:      []byte{},
-					NodeType:  statediff.Leaf,
+					NodeType:  sdtypes.Leaf,
 					LeafKey:   StorageLeafKey,
 					NodeValue: StorageLeafNode,
 				},
@@ -303,10 +304,10 @@ var (
 		},
 		{
 			Path:         []byte{'\x0c'},
-			NodeType:     statediff.Leaf,
+			NodeType:     sdtypes.Leaf,
 			LeafKey:      AccountLeafKey,
 			NodeValue:    AccountLeafNode,
-			StorageNodes: []statediff.StorageNode{},
+			StorageNodes: []sdtypes.StorageNode{},
 		},
 	}
 
@@ -314,7 +315,7 @@ var (
 		BlockNumber: new(big.Int).Set(BlockNumber),
 		BlockHash:   MockBlock.Hash(),
 		Nodes:       StateDiffs,
-		CodeAndCodeHashes: []statediff.CodeAndCodeHash{
+		CodeAndCodeHashes: []sdtypes.CodeAndCodeHash{
 			{
 				Code: MockContractByteCode,
 				Hash: MockCodeHash,
@@ -327,13 +328,13 @@ var (
 			LeafKey: common.BytesToHash(ContractLeafKey),
 			Path:    []byte{'\x06'},
 			Value:   ContractLeafNode,
-			Type:    statediff.Leaf,
+			Type:    sdtypes.Leaf,
 		},
 		{
 			LeafKey: common.BytesToHash(AccountLeafKey),
 			Path:    []byte{'\x0c'},
 			Value:   AccountLeafNode,
-			Type:    statediff.Leaf,
+			Type:    sdtypes.Leaf,
 		},
 	}
 	MockStateMetaPostPublish = []eth.StateNodeModel{
@@ -357,7 +358,7 @@ var (
 			{
 				LeafKey: common.BytesToHash(StorageLeafKey),
 				Value:   StorageLeafNode,
-				Type:    statediff.Leaf,
+				Type:    sdtypes.Leaf,
 				Path:    []byte{},
 			},
 		},
@@ -431,17 +432,6 @@ var (
 			},
 		},
 	}
-
-	HeaderIPLD, _  = blocks.NewBlockWithCid(MockHeaderRlp, HeaderCID)
-	Trx1IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(0), Trx1CID)
-	Trx2IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(1), Trx2CID)
-	Trx3IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(2), Trx3CID)
-	Rct1IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(0), Rct1CID)
-	Rct2IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(1), Rct2CID)
-	Rct3IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(2), Rct3CID)
-	State1IPLD, _  = blocks.NewBlockWithCid(ContractLeafNode, State1CID)
-	State2IPLD, _  = blocks.NewBlockWithCid(AccountLeafNode, State2CID)
-	StorageIPLD, _ = blocks.NewBlockWithCid(StorageLeafNode, StorageCID)
 )
 
 // createTransactionsAndReceipts is a helper function to generate signed mock transactions and mock receipts with mock logs

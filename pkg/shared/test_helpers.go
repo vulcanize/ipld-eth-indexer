@@ -20,17 +20,49 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multihash"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
+	"os"
+	"strconv"
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 )
 
 // SetupDB is use to setup a db for watcher tests
 func SetupDB() (*postgres.DB, error) {
-	return postgres.NewDB(postgres.Config{
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     5432,
-	}, node.Info{})
+	return postgres.NewDB(getTestConfig(), node.Info{})
+}
+
+func SetupDBWithNode(node node.Info) (*postgres.DB, error) {
+	return postgres.NewDB(getTestConfig(), node)
+}
+
+func getTestConfig() postgres.Config {
+	// get connection to test database from environment variables
+	hostname := os.Getenv(postgres.DATABASE_HOSTNAME)
+	if hostname == "" {
+		hostname = "127.0.0.1"
+	}
+	name := os.Getenv(postgres.DATABASE_NAME)
+	if name == "" {
+		name = "vulcanize_testing"
+	}
+
+	portStr := os.Getenv(postgres.DATABASE_PORT)
+	if portStr == "" {
+		portStr = "5432"
+	}
+
+	port, _ := strconv.Atoi(portStr)
+
+	user := os.Getenv(postgres.DATABASE_USER)
+	password := os.Getenv(postgres.DATABASE_PASSWORD)
+
+	return postgres.Config{
+		Hostname: hostname,
+		Name:     name,
+		Port:     port,
+		User:     user,
+		Password: password,
+	}
 }
 
 // ListContainsString used to check if a list of strings contains a particular string

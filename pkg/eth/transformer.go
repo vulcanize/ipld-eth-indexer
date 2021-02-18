@@ -18,6 +18,7 @@ package eth
 
 import (
 	"fmt"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"math/big"
 	"time"
 
@@ -346,7 +347,7 @@ func (sdt *StateDiffTransformer) processStateAndStorage(tx *sqlx.Tx, headerID in
 			return err
 		}
 		// if we have a leaf, decode and index the account data
-		if stateNode.NodeType == statediff.Leaf {
+		if stateNode.NodeType == sdtypes.Leaf {
 			var i []interface{}
 			if err := rlp.DecodeBytes(stateNode.NodeValue, &i); err != nil {
 				return fmt.Errorf("error decoding state leaf node rlp: %s", err.Error())
@@ -391,7 +392,7 @@ func (sdt *StateDiffTransformer) processStateAndStorage(tx *sqlx.Tx, headerID in
 }
 
 // processCodeAndCodeHashes publishes code and codehash pairs to the ipld database
-func (sdt *StateDiffTransformer) processCodeAndCodeHashes(tx *sqlx.Tx, codeAndCodeHashes []statediff.CodeAndCodeHash) error {
+func (sdt *StateDiffTransformer) processCodeAndCodeHashes(tx *sqlx.Tx, codeAndCodeHashes []sdtypes.CodeAndCodeHash) error {
 	for _, c := range codeAndCodeHashes {
 		// codec doesn't matter since db key is multihash-based
 		mhKey, err := shared.MultihashKeyFromKeccak256(c.Hash)
