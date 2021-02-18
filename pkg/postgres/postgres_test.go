@@ -18,31 +18,27 @@ package postgres_test
 
 import (
 	"fmt"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 	"strings"
 
 	"math/big"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
-	"github.com/vulcanize/ipld-eth-indexer/test_config"
 )
 
 var _ = Describe("Postgres DB", func() {
-	var sqlxdb *sqlx.DB
-
-	It("connects to the database", func() {
-		var err error
-		pgConfig := postgres.DbConnectionString(test_config.DBConfig)
-
-		sqlxdb, err = sqlx.Connect("postgres", pgConfig)
-
-		Expect(err).Should(BeNil())
-		Expect(sqlxdb).ShouldNot(BeNil())
+	var (
+		db  *postgres.DB
+		err error
+	)
+	BeforeEach(func() {
+		db, err = shared.SetupDB()
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("serializes big.Int to db", func() {
@@ -52,10 +48,6 @@ var _ = Describe("Postgres DB", func() {
 		// postgres numeric can handle an arbitrary
 		// sized int, so use string representation of big.Int
 		// and cast on insert
-
-		pgConnectString := postgres.DbConnectionString(test_config.DBConfig)
-		db, err := sqlx.Connect("postgres", pgConnectString)
-		Expect(err).NotTo(HaveOccurred())
 
 		bi := new(big.Int)
 		bi.SetString("34940183920000000000", 10)
@@ -95,7 +87,7 @@ var _ = Describe("Postgres DB", func() {
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 		node := node.Info{GenesisBlock: badHash, NetworkID: "1", ID: "x123", ClientName: "geth"}
 
-		_, err := postgres.NewDB(test_config.DBConfig, node)
+		_, err := shared.SetupDBWithNode(node)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(postgres.SettingNodeFailedMsg))

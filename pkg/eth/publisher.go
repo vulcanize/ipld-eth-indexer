@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"github.com/jmoiron/sqlx"
 	"github.com/multiformats/go-multihash"
 
@@ -184,7 +184,7 @@ func (pub *IPLDPublisher) publishAndIndexStateAndStorage(tx *sqlx.Tx, payload Co
 			return err
 		}
 		// If we have a leaf, decode and index the account data and any associated storage diffs
-		if stateNode.Type == statediff.Leaf {
+		if stateNode.Type == sdtypes.Leaf {
 			var i []interface{}
 			if err := rlp.DecodeBytes(stateNode.Value, &i); err != nil {
 				return err

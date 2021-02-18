@@ -20,18 +20,18 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/statediff"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 )
 
-func ResolveFromNodeType(nodeType statediff.NodeType) int {
+func ResolveFromNodeType(nodeType sdtypes.NodeType) int {
 	switch nodeType {
-	case statediff.Branch:
+	case sdtypes.Branch:
 		return 0
-	case statediff.Extension:
+	case sdtypes.Extension:
 		return 1
-	case statediff.Leaf:
+	case sdtypes.Leaf:
 		return 2
-	case statediff.Removed:
+	case sdtypes.Removed:
 		return 3
 	default:
 		return -1
@@ -44,7 +44,7 @@ func ChainConfig(chainID uint64) (*params.ChainConfig, error) {
 	case 1:
 		return params.MainnetChainConfig, nil
 	case 3:
-		return params.TestnetChainConfig, nil // Ropsten
+		return params.RopstenChainConfig, nil
 	case 4:
 		return params.RinkebyChainConfig, nil
 	case 5:

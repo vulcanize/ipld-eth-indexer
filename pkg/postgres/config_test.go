@@ -34,7 +34,7 @@ port = 5432
 var _ = Describe("Loading the config", func() {
 	It("reads the private config using the environment", func() {
 		viper.SetConfigName("config")
-		viper.AddConfigPath("$GOPATH/src/github.com/vulcanize/ipld-eth-indexer/environments/")
+		viper.AddConfigPath("environments/")
 
 		testConfig := viper.New()
 		testConfig.SetConfigType("toml")
