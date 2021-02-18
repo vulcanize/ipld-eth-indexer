@@ -54,7 +54,7 @@ TEST_DB = vulcanize_testing
 TEST_CONNECT_STRING = postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOSTNAME):$(DATABASE_PORT)/$(TEST_DB)?sslmode=disable
 
 .PHONY: test
-test: | $(GINKGO) $(LINT)
+test: | $(GINKGO) $(GOOSE)
 	go vet ./...
 	go fmt ./...
 	export PGPASSWORD=$(DATABASE_PASSWORD)
@@ -64,7 +64,7 @@ test: | $(GINKGO) $(LINT)
 	$(GINKGO) -r --skipPackage=integration_tests,integration
 
 .PHONY: integrationtest
-integrationtest: | $(GINKGO) $(LINT)
+integrationtest: | $(GINKGO) $(GOOSE)
 	go vet ./...
 	go fmt ./...
 	#dropdb -h $(DATABASE_HOSTNAME) -p $(PORT) -U $(USER) -W --if-exists $(TEST_DB)
