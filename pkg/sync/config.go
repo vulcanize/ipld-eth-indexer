@@ -67,7 +67,7 @@ func NewConfig() (*Config, error) {
 
 	c.DBConfig.Init()
 	overrideDBConnConfig(&c.DBConfig)
-	syncDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+	syncDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo, true)
 	c.DB = &syncDB
 	return c, nil
 }

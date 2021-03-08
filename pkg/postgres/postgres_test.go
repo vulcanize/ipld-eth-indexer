@@ -77,7 +77,7 @@ var _ = Describe("Postgres DB", func() {
 		invalidDatabase := postgres.Config{}
 		node := node.Info{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "geth"}
 
-		_, err := postgres.NewDB(invalidDatabase, node)
+		_, err := postgres.NewDB(invalidDatabase, node, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(postgres.DbConnectionFailedMsg))

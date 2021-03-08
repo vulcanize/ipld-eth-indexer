@@ -112,7 +112,7 @@ func NewConfig() (*Config, error) {
 
 	c.DBConfig.Init()
 	overrideDBConnConfig(&c.DBConfig)
-	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo, true)
 	c.DB = &db
 	return c, nil
 }
