@@ -28,11 +28,11 @@ import (
 
 // SetupDB is use to setup a db for watcher tests
 func SetupDB() (*postgres.DB, error) {
-	return postgres.NewDB(getTestConfig(), node.Info{})
+	return postgres.NewDB(getTestConfig(), node.Info{}, true)
 }
 
 func SetupDBWithNode(node node.Info) (*postgres.DB, error) {
-	return postgres.NewDB(getTestConfig(), node)
+	return postgres.NewDB(getTestConfig(), node, true)
 }
 
 func getTestConfig() postgres.Config {
