@@ -44,8 +44,6 @@ const (
 
 // Config struct
 type Config struct {
-	DBConfig postgres.Config
-
 	DB              *postgres.DB
 	HTTPClient      *rpc.Client
 	Frequency       time.Duration
@@ -92,9 +90,9 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	c.DBConfig.Init()
-	overrideDBConnConfig(&c.DBConfig)
-	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo, true)
+	dbConfig := postgres.NewConfig()
+	overrideDBConnConfig(dbConfig)
+	db := utils.LoadPostgres(dbConfig, c.NodeInfo, true)
 	c.DB = &db
 	return c, nil
 }

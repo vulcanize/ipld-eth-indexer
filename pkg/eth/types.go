@@ -17,11 +17,11 @@
 package eth
 
 import (
-	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 )
 
 // ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers

@@ -17,13 +17,13 @@
 package shared
 
 import (
-	"github.com/ipfs/go-cid"
-	"github.com/multiformats/go-multihash"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 	"os"
 	"strconv"
 
+	"github.com/ipfs/go-cid"
+	"github.com/multiformats/go-multihash"
 	"github.com/vulcanize/ipld-eth-indexer/pkg/node"
+	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
 // SetupDB is use to setup a db for watcher tests
@@ -35,7 +35,7 @@ func SetupDBWithNode(node node.Info) (*postgres.DB, error) {
 	return postgres.NewDB(getTestConfig(), node, true)
 }
 
-func getTestConfig() postgres.Config {
+func getTestConfig() *postgres.Config {
 	// get connection to test database from environment variables
 	hostname := os.Getenv(postgres.DATABASE_HOSTNAME)
 	if hostname == "" {
@@ -56,7 +56,7 @@ func getTestConfig() postgres.Config {
 	user := os.Getenv(postgres.DATABASE_USER)
 	password := os.Getenv(postgres.DATABASE_PASSWORD)
 
-	return postgres.Config{
+	return &postgres.Config{
 		Hostname: hostname,
 		Name:     name,
 		Port:     port,

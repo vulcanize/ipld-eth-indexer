@@ -45,7 +45,7 @@ type Config struct {
 	MaxLifetime int
 }
 
-func DbConnectionString(config Config) string {
+func (config *Config) DbConnectionString() string {
 	if len(config.User) > 0 && len(config.Password) > 0 {
 		return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
 			config.User, config.Password, config.Hostname, config.Port, config.Name)
@@ -57,7 +57,9 @@ func DbConnectionString(config Config) string {
 	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", config.Hostname, config.Port, config.Name)
 }
 
-func (d *Config) Init() {
+// NewConfig initializes and returns a new db config
+func NewConfig() *Config {
+	config := new(Config)
 	viper.BindEnv("database.name", DATABASE_NAME)
 	viper.BindEnv("database.hostname", DATABASE_HOSTNAME)
 	viper.BindEnv("database.port", DATABASE_PORT)
@@ -67,12 +69,13 @@ func (d *Config) Init() {
 	viper.BindEnv("database.maxOpen", DATABASE_MAX_OPEN_CONNECTIONS)
 	viper.BindEnv("database.maxLifetime", DATABASE_MAX_CONN_LIFETIME)
 
-	d.Name = viper.GetString("database.name")
-	d.Hostname = viper.GetString("database.hostname")
-	d.Port = viper.GetInt("database.port")
-	d.User = viper.GetString("database.user")
-	d.Password = viper.GetString("database.password")
-	d.MaxIdle = viper.GetInt("database.maxIdle")
-	d.MaxOpen = viper.GetInt("database.maxOpen")
-	d.MaxLifetime = viper.GetInt("database.maxLifetime")
+	config.Name = viper.GetString("database.name")
+	config.Hostname = viper.GetString("database.hostname")
+	config.Port = viper.GetInt("database.port")
+	config.User = viper.GetString("database.user")
+	config.Password = viper.GetString("database.password")
+	config.MaxIdle = viper.GetInt("database.maxIdle")
+	config.MaxOpen = viper.GetInt("database.maxOpen")
+	config.MaxLifetime = viper.GetInt("database.maxLifetime")
+	return config
 }
