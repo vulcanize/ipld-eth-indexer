@@ -23,61 +23,6 @@ SET row_security = off;
 CREATE SCHEMA eth;
 
 
---
--- Name: graphql_subscription(); Type: FUNCTION; Schema: eth; Owner: -
---
-
-CREATE FUNCTION eth.graphql_subscription() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $_$
-declare
-    table_name text = TG_ARGV[0];
-    attribute text = TG_ARGV[1];
-    id text;
-begin
-    execute 'select $1.' || quote_ident(attribute)
-        using new
-        into id;
-    perform pg_notify('postgraphile:' || table_name,
-                      json_build_object(
-                              '__node__', json_build_array(
-                              table_name,
-                              id
-                          )
-                          )::text
-        );
-    return new;
-end;
-$_$;
-
-
---
--- Name: canonical_header(bigint); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.canonical_header(height bigint) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  current_weight INT;
-  heaviest_weight INT DEFAULT 0;
-  heaviest_id INT;
-  r eth.header_cids%ROWTYPE;
-BEGIN
-  FOR r IN SELECT * FROM eth.header_cids
-  WHERE block_number = height
-  LOOP
-    SELECT INTO current_weight * FROM header_weight(r.block_hash);
-    IF current_weight > heaviest_weight THEN
-        heaviest_weight := current_weight;
-        heaviest_id := r.id;
-    END IF;
-  END LOOP;
-  RETURN heaviest_id;
-END
-$$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -121,35 +66,200 @@ COMMENT ON COLUMN eth.header_cids.node_id IS '@name EthNodeID';
 
 
 --
--- Name: ethHeaderCidByBlockNumber(bigint); Type: FUNCTION; Schema: public; Owner: -
+-- Name: child_result; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public."ethHeaderCidByBlockNumber"(n bigint) RETURNS SETOF eth.header_cids
-    LANGUAGE sql STABLE
+CREATE TYPE public.child_result AS (
+	has_child boolean,
+	children eth.header_cids[]
+);
+
+
+--
+-- Name: graphql_subscription(); Type: FUNCTION; Schema: eth; Owner: -
+--
+
+CREATE FUNCTION eth.graphql_subscription() RETURNS trigger
+    LANGUAGE plpgsql
     AS $_$
-SELECT * FROM eth.header_cids WHERE block_number=$1 ORDER BY id
+declare
+    table_name text = TG_ARGV[0];
+    attribute text = TG_ARGV[1];
+    id text;
+begin
+    execute 'select $1.' || quote_ident(attribute)
+        using new
+        into id;
+    perform pg_notify('postgraphile:' || table_name,
+                      json_build_object(
+                              '__node__', json_build_array(
+                              table_name,
+                              id
+                          )
+                          )::text
+        );
+    return new;
+end;
 $_$;
 
 
 --
--- Name: header_weight(character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: canonical_header_from_array(eth.header_cids[]); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.header_weight(hash character varying) RETURNS bigint
+CREATE FUNCTION public.canonical_header_from_array(headers eth.header_cids[]) RETURNS eth.header_cids
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+canonical_header eth.header_cids;
+  canonical_child eth.header_cids;
+  header eth.header_cids;
+  current_child_result child_result;
+  child_headers eth.header_cids[];
+  current_header_with_child eth.header_cids;
+  has_children_count INT DEFAULT 0;
+BEGIN
+  -- for each header in the provided set
+  FOREACH header IN ARRAY headers
+  LOOP
+    -- check if it has any children
+    current_child_result = has_child(header.block_hash, header.block_number);
+    IF current_child_result.has_child THEN
+      -- if it does, take note
+      has_children_count = has_children_count + 1;
+      current_header_with_child = header;
+      -- and add the children to the growing set of child headers
+      child_headers = array_cat(child_headers, current_child_result.children);
+END IF;
+END LOOP;
+  -- if none of the headers had children, none is more canonical than the other
+  IF has_children_count = 0 THEN
+    -- return the first one selected
+SELECT * INTO canonical_header FROM unnest(headers) LIMIT 1;
+-- if only one header had children, it can be considered the heaviest/canonical header of the set
+ELSIF has_children_count = 1 THEN
+    -- return the only header with a child
+    canonical_header = current_header_with_child;
+  -- if there are multiple headers with children
+ELSE
+    -- find the canonical header from the child set
+    canonical_child = canonical_header_from_array(child_headers);
+    -- the header that is parent to this header, is the canonical header at this level
+SELECT * INTO canonical_header FROM unnest(headers)
+WHERE block_hash = canonical_child.parent_hash;
+END IF;
+RETURN canonical_header;
+END
+$$;
+
+
+--
+-- Name: canonical_header_id(bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.canonical_header_id(height bigint) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+canonical_header eth.header_cids;
+  headers eth.header_cids[];
+  header_count INT;
+  temp_header eth.header_cids;
+BEGIN
+  -- collect all headers at this height
+FOR temp_header IN
+SELECT * FROM eth.header_cids WHERE block_number = height
+    LOOP
+    headers = array_append(headers, temp_header);
+END LOOP;
+  -- count the number of headers collected
+  header_count = array_length(headers, 1);
+  -- if we have less than 1 header, return NULL
+  IF header_count IS NULL OR header_count < 1 THEN
+    RETURN NULL;
+  -- if we have one header, return its id
+  ELSIF header_count = 1 THEN
+    RETURN headers[1].id;
+  -- if we have multiple headers we need to determine which one is canonical
+ELSE
+    canonical_header = canonical_header_from_array(headers);
+RETURN canonical_header.id;
+END IF;
+END;
+$$;
+
+
+--
+-- Name: has_child(character varying, bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.has_child(hash character varying, height bigint) RETURNS public.child_result
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+child_height INT;
+  temp_child eth.header_cids;
+  new_child_result child_result;
+BEGIN
+  child_height = height + 1;
+  -- short circuit if there are no children
+SELECT exists(SELECT 1
+              FROM eth.header_cids
+              WHERE parent_hash = hash
+                AND block_number = child_height
+              LIMIT 1)
+INTO new_child_result.has_child;
+-- collect all the children for this header
+IF new_child_result.has_child THEN
+    FOR temp_child IN
+SELECT * FROM eth.header_cids WHERE parent_hash = hash AND block_number = child_height
+    LOOP
+      new_child_result.children = array_append(new_child_result.children, temp_child);
+END LOOP;
+END IF;
+RETURN new_child_result;
+END
+$$;
+
+
+--
+-- Name: was_state_removed(bytea, bigint, character varying); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.was_state_removed(path bytea, height bigint, hash character varying) RETURNS boolean
     LANGUAGE sql
     AS $$
-  WITH RECURSIVE validator AS (
-          SELECT block_hash, parent_hash, block_number
-          FROM eth.header_cids
-          WHERE block_hash = hash
-      UNION
-          SELECT eth.header_cids.block_hash, eth.header_cids.parent_hash, eth.header_cids.block_number
-          FROM eth.header_cids
-          INNER JOIN validator
-            ON eth.header_cids.parent_hash = validator.block_hash
-            AND eth.header_cids.block_number = validator.block_number + 1
-  )
-  SELECT COUNT(*) FROM validator;
+SELECT exists(SELECT 1
+              FROM eth.state_cids
+                       INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
+              WHERE state_path = path
+                AND block_number > height
+                AND block_number <= (SELECT block_number
+                                     FROM eth.header_cids
+                                     WHERE block_hash = hash)
+                AND state_cids.node_type = 3
+              LIMIT 1);
+$$;
+
+
+--
+-- Name: was_storage_removed(bytea, bigint, character varying); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.was_storage_removed(path bytea, height bigint, hash character varying) RETURNS boolean
+    LANGUAGE sql
+    AS $$
+SELECT exists(SELECT 1
+              FROM eth.storage_cids
+                       INNER JOIN eth.state_cids ON (storage_cids.state_id = state_cids.id)
+                       INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
+              WHERE storage_path = path
+                AND block_number > height
+                AND block_number <= (SELECT block_number
+                                     FROM eth.header_cids
+                                     WHERE block_hash = hash)
+                AND storage_cids.node_type = 3
+              LIMIT 1);
 $$;
 
 
@@ -269,7 +379,6 @@ CREATE TABLE eth.state_cids (
 --
 
 CREATE SEQUENCE eth.state_cids_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -305,7 +414,6 @@ CREATE TABLE eth.storage_cids (
 --
 
 CREATE SEQUENCE eth.storage_cids_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
