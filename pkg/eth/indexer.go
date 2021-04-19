@@ -65,18 +65,21 @@ func (in *CIDIndexer) Index(cids CIDPayload) error {
 		}
 	}()
 
-	headerID, err := in.indexHeaderCID(tx, cids.HeaderCID)
+	var headerID int64
+	headerID, err = in.indexHeaderCID(tx, cids.HeaderCID)
 	if err != nil {
 		log.Error("eth indexer error when indexing header")
 		return err
 	}
 	for _, uncle := range cids.UncleCIDs {
-		if err := in.indexUncleCID(tx, uncle, headerID); err != nil {
+		err = in.indexUncleCID(tx, uncle, headerID)
+		if err != nil {
 			log.Error("eth indexer error when indexing uncle")
 			return err
 		}
 	}
-	if err := in.indexTransactionAndReceiptCIDs(tx, cids, headerID); err != nil {
+	err = in.indexTransactionAndReceiptCIDs(tx, cids, headerID)
+	if err != nil {
 		log.Error("eth indexer error when indexing transactions and receipts")
 		return err
 	}

@@ -76,18 +76,21 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 
 	// Publish trie nodes
 	for _, node := range txTrieNodes {
-		if err := shared.PublishIPLD(tx, node); err != nil {
+		err = shared.PublishIPLD(tx, node)
+		if err != nil {
 			return err
 		}
 	}
 	for _, node := range rctTrieNodes {
-		if err := shared.PublishIPLD(tx, node); err != nil {
+		err = shared.PublishIPLD(tx, node)
+		if err != nil {
 			return err
 		}
 	}
 
 	// Publish and index header
-	if err := shared.PublishIPLD(tx, headerNode); err != nil {
+	err = shared.PublishIPLD(tx, headerNode)
+	if err != nil {
 		return err
 	}
 	reward := CalcEthBlockReward(payload.Block.Header(), payload.Block.Uncles(), payload.Block.Transactions(), payload.Receipts)
@@ -106,14 +109,16 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 		UncleRoot:       payload.Block.UncleHash().String(),
 		Timestamp:       payload.Block.Time(),
 	}
-	headerID, err := pub.indexer.indexHeaderCID(tx, header)
+	var headerID int64
+	headerID, err = pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
 		return err
 	}
 
 	// Publish and index uncles
 	for _, uncleNode := range uncleNodes {
-		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
+		err = shared.PublishIPLD(tx, uncleNode)
+		if err != nil {
 			return err
 		}
 		uncleReward := CalcUncleMinerReward(payload.Block.Number().Uint64(), uncleNode.Number.Uint64())
@@ -124,24 +129,28 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 			BlockHash:  uncleNode.Hash().String(),
 			Reward:     uncleReward.String(),
 		}
-		if err := pub.indexer.indexUncleCID(tx, uncle, headerID); err != nil {
+		err = pub.indexer.indexUncleCID(tx, uncle, headerID)
+		if err != nil {
 			return err
 		}
 	}
 
 	// Publish and index txs and receipts
 	for i, txNode := range txNodes {
-		if err := shared.PublishIPLD(tx, txNode); err != nil {
+		err = shared.PublishIPLD(tx, txNode)
+		if err != nil {
 			return err
 		}
 		rctNode := rctNodes[i]
-		if err := shared.PublishIPLD(tx, rctNode); err != nil {
+		err = shared.PublishIPLD(tx, rctNode)
+		if err != nil {
 			return err
 		}
 		txModel := payload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
 		txModel.MhKey = shared.MultihashKeyFromCID(txNode.Cid())
-		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
+		var txID int64
+		txID, err = pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			return err
 		}
@@ -153,7 +162,8 @@ func (pub *IPLDPublisher) Publish(payload ConvertedPayload) error {
 		} else {
 			rctModel.PostState = common.Bytes2Hex(payload.Receipts[i].PostState)
 		}
-		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
+		err = pub.indexer.indexReceiptCID(tx, rctModel, txID)
+		if err != nil {
 			return err
 		}
 	}
