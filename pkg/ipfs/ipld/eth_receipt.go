@@ -22,7 +22,6 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-cid"
 	node "github.com/ipfs/go-ipld-format"
 	mh "github.com/multiformats/go-multihash"
@@ -44,7 +43,7 @@ var _ node.Node = (*EthReceipt)(nil)
 
 // NewReceipt converts a types.ReceiptForStorage to an EthReceipt IPLD node
 func NewReceipt(receipt *types.Receipt) (*EthReceipt, error) {
-	receiptRLP, err := rlp.EncodeToBytes(receipt)
+	receiptRLP, err := receipt.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +65,8 @@ func NewReceipt(receipt *types.Receipt) (*EthReceipt, error) {
 // DecodeEthReceipt takes a cid and its raw binary data
 // from IPFS and returns an EthTx object for further processing.
 func DecodeEthReceipt(c cid.Cid, b []byte) (*EthReceipt, error) {
-	var r *types.Receipt
-	if err := rlp.DecodeBytes(b, r); err != nil {
+	r := new(types.Receipt)
+	if err := r.UnmarshalBinary(b); err != nil {
 		return nil, err
 	}
 	return &EthReceipt{
