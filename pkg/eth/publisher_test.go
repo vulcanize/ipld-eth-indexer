@@ -101,11 +101,11 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				switch c {
 				case mocks.Trx1CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(0)))
+					Expect(data).To(Equal(mocks.Tx1))
 				case mocks.Trx2CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(1)))
+					Expect(data).To(Equal(mocks.Tx2))
 				case mocks.Trx3CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(2)))
+					Expect(data).To(Equal(mocks.Tx3))
 				}
 			}
 		})
@@ -136,11 +136,11 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				switch c {
 				case mocks.Rct1CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(0)))
+					Expect(data).To(Equal(mocks.Rct1))
 				case mocks.Rct2CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(1)))
+					Expect(data).To(Equal(mocks.Rct2))
 				case mocks.Rct3CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(2)))
+					Expect(data).To(Equal(mocks.Rct3))
 				}
 			}
 		})
