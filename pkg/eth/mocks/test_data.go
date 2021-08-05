@@ -17,6 +17,7 @@
 package mocks
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -79,19 +80,27 @@ var (
 		Topics:  []common.Hash{mockTopic21, mockTopic22},
 		Data:    []byte{},
 	}
+	Tx1 = GetTxnRlp(0, MockTransactions)
+	Tx2 = GetTxnRlp(1, MockTransactions)
+	Tx3 = GetTxnRlp(2, MockTransactions)
+
+	Rct1 = GetRctRlp(0, MockReceipts)
+	Rct2 = GetRctRlp(1, MockReceipts)
+	Rct3 = GetRctRlp(2, MockReceipts)
+
 	HeaderCID, _  = ipld.RawdataToCid(ipld.MEthHeader, MockHeaderRlp, multihash.KECCAK_256)
 	HeaderMhKey   = shared.MultihashKeyFromCID(HeaderCID)
-	Trx1CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(0), multihash.KECCAK_256)
+	Trx1CID, _    = ipld.RawdataToCid(ipld.MEthTx, Tx1, multihash.KECCAK_256)
 	Trx1MhKey     = shared.MultihashKeyFromCID(Trx1CID)
-	Trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(1), multihash.KECCAK_256)
+	Trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, Tx2, multihash.KECCAK_256)
 	Trx2MhKey     = shared.MultihashKeyFromCID(Trx2CID)
-	Trx3CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(2), multihash.KECCAK_256)
+	Trx3CID, _    = ipld.RawdataToCid(ipld.MEthTx, Tx3, multihash.KECCAK_256)
 	Trx3MhKey     = shared.MultihashKeyFromCID(Trx3CID)
-	Rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(0), multihash.KECCAK_256)
+	Rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, Rct1, multihash.KECCAK_256)
 	Rct1MhKey     = shared.MultihashKeyFromCID(Rct1CID)
-	Rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(1), multihash.KECCAK_256)
+	Rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, Rct2, multihash.KECCAK_256)
 	Rct2MhKey     = shared.MultihashKeyFromCID(Rct2CID)
-	Rct3CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(2), multihash.KECCAK_256)
+	Rct3CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, Rct3, multihash.KECCAK_256)
 	Rct3MhKey     = shared.MultihashKeyFromCID(Rct3CID)
 	State1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ContractLeafNode, multihash.KECCAK_256)
 	State1MhKey   = shared.MultihashKeyFromCID(State1CID)
@@ -473,4 +482,22 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	mockReceipt3.Logs = []*types.Log{}
 	mockReceipt3.TxHash = signedTrx3.Hash()
 	return types.Transactions{signedTrx1, signedTrx2, signedTrx3}, types.Receipts{mockReceipt1, mockReceipt2, mockReceipt3}, SenderAddr
+}
+
+func GetTxnRlp(num int, txs types.Transactions) []byte {
+	buf := new(bytes.Buffer)
+	txs.EncodeIndex(num, buf)
+	tx := make([]byte, buf.Len())
+	copy(tx, buf.Bytes())
+	buf.Reset()
+	return tx
+}
+
+func GetRctRlp(num int, rcts types.Receipts) []byte {
+	buf := new(bytes.Buffer)
+	rcts.EncodeIndex(num, buf)
+	rct := make([]byte, buf.Len())
+	copy(rct, buf.Bytes())
+	buf.Reset()
+	return rct
 }

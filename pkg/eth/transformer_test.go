@@ -102,11 +102,11 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				switch c {
 				case mocks.Trx1CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(0)))
+					Expect(data).To(Equal(mocks.Tx1))
 				case mocks.Trx2CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(1)))
+					Expect(data).To(Equal(mocks.Tx2))
 				case mocks.Trx3CID.String():
-					Expect(data).To(Equal(mocks.MockTransactions.GetRlp(2)))
+					Expect(data).To(Equal(mocks.Tx3))
 				}
 			}
 		})
@@ -135,21 +135,21 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				switch c {
 				case mocks.Rct1CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(0)))
+					Expect(data).To(Equal(mocks.Rct1))
 					var postStatus uint64
 					pgStr = `SELECT post_status FROM eth.receipt_cids WHERE cid = $1`
 					err = db.Get(&postStatus, pgStr, c)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(postStatus).To(Equal(mocks.MockRctMeta[0].PostStatus))
 				case mocks.Rct2CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(1)))
+					Expect(data).To(Equal(mocks.Rct2))
 					var postState string
 					pgStr = `SELECT post_state FROM eth.receipt_cids WHERE cid = $1`
 					err = db.Get(&postState, pgStr, c)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(postState).To(Equal(mocks.MockRctMeta[1].PostState))
 				case mocks.Rct3CID.String():
-					Expect(data).To(Equal(mocks.MockReceipts.GetRlp(2)))
+					Expect(data).To(Equal(mocks.Rct3))
 					var postState string
 					pgStr = `SELECT post_state FROM eth.receipt_cids WHERE cid = $1`
 					err = db.Get(&postState, pgStr, c)

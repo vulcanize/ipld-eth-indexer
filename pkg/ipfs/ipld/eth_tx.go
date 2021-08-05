@@ -23,7 +23,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-cid"
 	node "github.com/ipfs/go-ipld-format"
 	mh "github.com/multiformats/go-multihash"
@@ -46,7 +45,7 @@ var _ node.Node = (*EthTx)(nil)
 
 // NewEthTx converts a *types.Transaction to an EthTx IPLD node
 func NewEthTx(tx *types.Transaction) (*EthTx, error) {
-	txRLP, err := rlp.EncodeToBytes(tx)
+	txRLP, err := tx.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +67,8 @@ func NewEthTx(tx *types.Transaction) (*EthTx, error) {
 // DecodeEthTx takes a cid and its raw binary data
 // from IPFS and returns an EthTx object for further processing.
 func DecodeEthTx(c cid.Cid, b []byte) (*EthTx, error) {
-	var t *types.Transaction
-	if err := rlp.DecodeBytes(b, t); err != nil {
+	var t = new(types.Transaction)
+	if err := t.UnmarshalBinary(b); err != nil {
 		return nil, err
 	}
 	return &EthTx{
