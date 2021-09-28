@@ -1,3 +1,8 @@
+⛔️ DEPRECATED: This repository is no longer maintained.
+
+For performance reasons, the functionality of this repository has been internalized into our [statediffing fork of go-ethereum](https://github.com/vulcanize/go-ethereum).
+For documentation on the statediffing geth client, please see the readme located [here](https://github.com/vulcanize/go-ethereum/blob/statediff/statediff/README.md).
+
 # ipld-eth-indexer
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/ipld-eth-indexer)](https://goreportcard.com/report/github.com/vulcanize/ipld-eth-indexer)
