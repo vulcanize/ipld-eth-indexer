@@ -18,7 +18,6 @@ package eth
 
 import (
 	"fmt"
-	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"math/big"
 	"time"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	node "github.com/ipfs/go-ipld-format"
 	"github.com/jmoiron/sqlx"
 	"github.com/multiformats/go-multihash"

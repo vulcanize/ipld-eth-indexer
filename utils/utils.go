@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/ipld-eth-indexer/pkg/postgres"
 )
 
-func LoadPostgres(database postgres.Config, node node.Info, createNode bool) postgres.DB {
+func LoadPostgres(database *postgres.Config, node node.Info, createNode bool) postgres.DB {
 	db, err := postgres.NewDB(database, node, createNode)
 	if err != nil {
 		logrus.Fatal("Error loading postgres: ", err)

@@ -29,10 +29,11 @@ type DB struct {
 	*sqlx.DB
 	Node   node.Info
 	NodeID int64
+	Config *Config
 }
 
-func NewDB(databaseConfig Config, node node.Info, createNode bool) (*DB, error) {
-	connectString := DbConnectionString(databaseConfig)
+func NewDB(databaseConfig *Config, node node.Info, createNode bool) (*DB, error) {
+	connectString := databaseConfig.DbConnectionString()
 	db, connectErr := sqlx.Connect("postgres", connectString)
 	if connectErr != nil {
 		return &DB{}, ErrDBConnectionFailed(connectErr)
@@ -48,7 +49,7 @@ func NewDB(databaseConfig Config, node node.Info, createNode bool) (*DB, error) 
 		lifetime := time.Duration(databaseConfig.MaxLifetime) * time.Second
 		db.SetConnMaxLifetime(lifetime)
 	}
-	pg := DB{DB: db, Node: node}
+	pg := DB{DB: db, Node: node, Config: databaseConfig}
 
 	if createNode {
 		nodeErr := pg.CreateNode(&node)

@@ -40,7 +40,6 @@ const (
 // Config struct
 type Config struct {
 	DB       *postgres.DB
-	DBConfig postgres.Config
 	Workers  int64
 	WSClient *rpc.Client
 	NodeInfo node.Info
@@ -65,9 +64,9 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	c.DBConfig.Init()
-	overrideDBConnConfig(&c.DBConfig)
-	syncDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo, true)
+	dbConfig := postgres.NewConfig()
+	overrideDBConnConfig(dbConfig)
+	syncDB := utils.LoadPostgres(dbConfig, c.NodeInfo, true)
 	c.DB = &syncDB
 	return c, nil
 }

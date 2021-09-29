@@ -18,8 +18,9 @@ package postgres_test
 
 import (
 	"fmt"
-	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 	"strings"
+
+	"github.com/vulcanize/ipld-eth-indexer/pkg/shared"
 
 	"math/big"
 
@@ -74,7 +75,7 @@ var _ = Describe("Postgres DB", func() {
 	})
 
 	It("throws error when can't connect to the database", func() {
-		invalidDatabase := postgres.Config{}
+		invalidDatabase := &postgres.Config{}
 		node := node.Info{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "geth"}
 
 		_, err := postgres.NewDB(invalidDatabase, node, true)
